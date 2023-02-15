@@ -1,10 +1,5 @@
 package com.metamask.android.sdk
 
-import android.accessibilityservice.GestureDescription.StrokeDescription
-import android.os.Message
-import android.util.Log
-import java.io.IOException
-
 data class MessageInfo (
     val key: String?,
     val value: String?,
@@ -18,13 +13,7 @@ data class KeyExchangeMessage(
 class KeyExchange(crypto: Crypto) {
     companion object {
         const val TAG = "MM_ANDROID_SDK"
-
-        const val CONNECTION_STEP = 0
-        const val KEY_EXCHANGE_STEP = 1
-        const val MESSAGE_STEP = 2
-
         const val KEY_EXCHANGE = "key_exchange"
-        const val MESSAGE = "message"
 
         const val KEY_EXCHANGE_START = "key_exchange_start"
         const val KEY_EXCHANGE_SYN = "key_exchange_syn"
