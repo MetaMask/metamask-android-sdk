@@ -28,10 +28,12 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
+    ndkVersion '25.2.9519653'
+    buildToolsVersion '30.0.3'
 }
 
 dependencies {
-
+    implementation name: '../libs/ecies', ext: 'aar'
     implementation 'androidx.core:core-ktx:1.7.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.8.0'
