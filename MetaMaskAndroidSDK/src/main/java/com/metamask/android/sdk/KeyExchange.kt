@@ -43,11 +43,9 @@ class KeyExchange(crypto: Crypto) {
         return encryption.decrypt(message, key)
     }
 
-    fun updateTheirPublicKey(key: String) {
-        theirPublickKey = key
-    }
-
     fun nextKeyExchangeMessage(current: KeyExchangeMessage): MessageInfo? {
+        theirPublickKey = current.publicKey
+
         return when(current.step) {
             KEY_EXCHANGE_START -> MessageInfo(KEY_EXCHANGE, KEY_EXCHANGE_SYN)
             KEY_EXCHANGE_SYN -> MessageInfo(KEY_EXCHANGE, KEY_EXCHANGE_SYNACK)
