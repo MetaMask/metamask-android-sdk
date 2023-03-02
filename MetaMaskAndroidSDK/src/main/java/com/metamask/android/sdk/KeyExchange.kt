@@ -10,10 +10,11 @@ data class KeyExchangeMessage(
     val publicKey: String?
     )
 
-class KeyExchange(crypto: Crypto) {
+class KeyExchange(crypto: Crypto = Ecies()) {
     companion object {
         const val TAG = "MM_ANDROID_SDK"
         const val KEY_EXCHANGE = "key_exchange"
+        const val PUBLIC_KEY = "public_key"
 
         const val KEY_EXCHANGE_START = "key_exchange_start"
         const val KEY_EXCHANGE_SYN = "key_exchange_syn"
@@ -43,13 +44,13 @@ class KeyExchange(crypto: Crypto) {
         return encryption.decrypt(message, key)
     }
 
-    fun nextKeyExchangeMessage(current: KeyExchangeMessage): MessageInfo? {
+    fun nextKeyExchangeMessage(current: KeyExchangeMessage): String? {
         theirPublickKey = current.publicKey
 
         return when(current.step) {
-            KEY_EXCHANGE_START -> MessageInfo(KEY_EXCHANGE, KEY_EXCHANGE_SYN)
-            KEY_EXCHANGE_SYN -> MessageInfo(KEY_EXCHANGE, KEY_EXCHANGE_SYNACK)
-            KEY_EXCHANGE_SYNACK -> MessageInfo(KEY_EXCHANGE, KEY_EXCHANGE_ACK)
+            KEY_EXCHANGE_START -> KEY_EXCHANGE_SYN
+            KEY_EXCHANGE_SYN -> KEY_EXCHANGE_SYNACK
+            KEY_EXCHANGE_SYNACK -> KEY_EXCHANGE_ACK
             KEY_EXCHANGE_ACK -> null
             else -> null
         }
