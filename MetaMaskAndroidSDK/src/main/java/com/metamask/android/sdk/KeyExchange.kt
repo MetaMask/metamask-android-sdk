@@ -1,10 +1,5 @@
 package com.metamask.android.sdk
 
-data class MessageInfo (
-    val key: String?,
-    val value: String?,
-    )
-
 data class KeyExchangeMessage(
     val step: String,
     val publicKey: String?
@@ -12,7 +7,8 @@ data class KeyExchangeMessage(
 
 class KeyExchange(crypto: Crypto) {
     companion object {
-        const val TAG = "MM_ANDROID_SDK"
+        const val STEP = "step"
+        const val PUBLIC_KEY = "public_key"
         const val KEY_EXCHANGE = "key_exchange"
 
         const val KEY_EXCHANGE_START = "key_exchange_start"
@@ -43,13 +39,13 @@ class KeyExchange(crypto: Crypto) {
         return encryption.decrypt(message, key)
     }
 
-    fun nextKeyExchangeMessage(current: KeyExchangeMessage): MessageInfo? {
+    fun nextKeyExchangeMessage(current: KeyExchangeMessage): KeyExchangeMessage? {
         theirPublickKey = current.publicKey
 
         return when(current.step) {
-            KEY_EXCHANGE_START -> MessageInfo(KEY_EXCHANGE, KEY_EXCHANGE_SYN)
-            KEY_EXCHANGE_SYN -> MessageInfo(KEY_EXCHANGE, KEY_EXCHANGE_SYNACK)
-            KEY_EXCHANGE_SYNACK -> MessageInfo(KEY_EXCHANGE, KEY_EXCHANGE_ACK)
+            KEY_EXCHANGE_START -> KeyExchangeMessage(KEY_EXCHANGE_SYN, publicKey)
+            KEY_EXCHANGE_SYN -> KeyExchangeMessage(KEY_EXCHANGE_SYNACK, publicKey)
+            KEY_EXCHANGE_SYNACK -> KeyExchangeMessage(KEY_EXCHANGE_ACK, publicKey)
             KEY_EXCHANGE_ACK -> null
             else -> null
         }
