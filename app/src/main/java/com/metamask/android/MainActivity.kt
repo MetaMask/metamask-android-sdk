@@ -11,7 +11,6 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import android.view.Menu
 import android.view.MenuItem
 import com.metamask.android.databinding.ActivityMainBinding
-import com.metamask.android.sdk.Ecies
 
 class MainActivity : AppCompatActivity() {
 
@@ -35,8 +34,8 @@ class MainActivity : AppCompatActivity() {
                 .setAction("Action", null).show()
         }
 
-        val intent = Intent(this, com.metamask.android.sdk.MainActivity::class.java)
-        startActivity(intent)
+//        val intent = Intent(this, com.metamask.android.sdk.MainActivity::class.java)
+//        startActivity(intent)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

@@ -9,8 +9,6 @@ class KeyExchange(crypto: Crypto = Ecies()) {
     companion object {
         const val STEP = "step"
         const val PUBLIC_KEY = "public_key"
-        const val KEY_EXCHANGE = "key_exchange"
-        const val PUBLIC_KEY = "public_key"
 
         const val KEY_EXCHANGE_START = "key_exchange_start"
         const val KEY_EXCHANGE_SYN = "key_exchange_syn"
