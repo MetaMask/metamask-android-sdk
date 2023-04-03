@@ -1,5 +1,6 @@
 package com.metamask.android
 
+import android.content.Intent
 import android.os.Bundle
 import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
@@ -10,6 +11,7 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import android.view.Menu
 import android.view.MenuItem
 import com.metamask.android.databinding.ActivityMainBinding
+import com.metamask.android.sdk.Ecies
 
 class MainActivity : AppCompatActivity() {
 
@@ -32,6 +34,9 @@ class MainActivity : AppCompatActivity() {
             Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                 .setAction("Action", null).show()
         }
+
+        val intent = Intent(this, com.metamask.android.sdk.MainActivity::class.java)
+        startActivity(intent)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
