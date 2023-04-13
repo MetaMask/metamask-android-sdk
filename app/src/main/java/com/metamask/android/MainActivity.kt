@@ -2,6 +2,7 @@ package com.metamask.android
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
@@ -10,12 +11,22 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.Button
+import androidx.lifecycle.LifecycleObserver
 import com.metamask.android.databinding.ActivityMainBinding
+import com.metamask.android.sdk.CommunicationClient
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), LifecycleObserver {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
+
+    companion object {
+        const val TAG = "MM_ANDROID_SDK"
+    }
+
+    private lateinit var communicationClient: CommunicationClient
+    private lateinit var button: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,8 +45,13 @@ class MainActivity : AppCompatActivity() {
                 .setAction("Action", null).show()
         }
 
-//        val intent = Intent(this, com.metamask.android.sdk.MainActivity::class.java)
-//        startActivity(intent)
+        button = findViewById<Button>(R.id.bind)
+        button.setOnClickListener {
+        }
+
+        Log.d(TAG, "onCreate")
+        communicationClient = CommunicationClient(this, lifecycle)
+        lifecycle.addObserver(this)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -58,5 +74,15 @@ class MainActivity : AppCompatActivity() {
         val navController = findNavController(R.id.nav_host_fragment_content_main)
         return navController.navigateUp(appBarConfiguration)
                 || super.onSupportNavigateUp()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Log.d(TAG, "Started SDK activity")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "Destroyed SDK activity")
     }
 }

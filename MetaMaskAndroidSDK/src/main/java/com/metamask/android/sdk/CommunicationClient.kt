@@ -17,6 +17,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
     private val appContext = context.applicationContext
     private var messageService: IMessegeService? = null
     private val keyExchange = KeyExchange()
+
     companion object {
         const val TAG = "MM_ANDROID_SDK"
         const val MESSAGE = "message"
@@ -26,19 +27,18 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
     private val observer = object : DefaultLifecycleObserver {
 
         override fun onCreate(owner: LifecycleOwner) {
-            Log.d(TAG, "Connecting...")
-            val serviceIntent = Intent()
-                .setComponent(
-                    ComponentName(
-                        "io.metamask",
-                        "io.metamask.MesssageService"
-                    )
-                )
-            appContext.bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+            Log.d(TAG, "CommClient: onCreate()")
+            super.onCreate(owner)
+            bindService()
+        }
+
+        override fun onStart(owner: LifecycleOwner) {
+            Log.d(TAG, "CommClient: onStart()")
         }
 
         override fun onDestroy(owner: LifecycleOwner) {
-            Log.d(TAG, "Disconnecting...")
+            super.onDestroy(owner)
+            Log.d(TAG, "CommClient: onDestroy: Disconnecting...")
             appContext.unbindService(serviceConnection)
         }
     }
@@ -51,13 +51,13 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             messageService = IMessegeService.Stub.asInterface(service)
             messageService?.registerCallback(messageServiceCallback)
-            Log.d(MainActivity.TAG,"Service connected $name")
+            Log.d(TAG,"CommClient: Service connected $name")
             initiateKeyExchange()
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             messageService = null
-            Log.e(MainActivity.TAG,"Service connected $name")
+            Log.e(TAG,"CommClient: Service disconnected $name")
         }
     }
 
@@ -70,7 +70,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
                 }
             }
 
-            // Handle the received message
+            // Handle the received key exchange
             val keyExchange = message?.getBundle(KEY_EXCHANGE)
             keyExchange?.let {
                 handleKeyExchange(it)
@@ -121,7 +121,17 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
     fun sendMessage(message: Bundle) {
         messageService?.sendMessage(message)
     }
-
+    fun bindService() {
+        Log.d(TAG, "Binding service now!")
+        val serviceIntent = Intent()
+            .setComponent(
+                ComponentName(
+                    "com.reactwallet",
+                    "com.reactwallet.MesssageService"
+                )
+            )
+        appContext.bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+    }
     private fun initiateKeyExchange() {
         Log.d(TAG, "Initiating key exchange")
         val message = Bundle().apply {
