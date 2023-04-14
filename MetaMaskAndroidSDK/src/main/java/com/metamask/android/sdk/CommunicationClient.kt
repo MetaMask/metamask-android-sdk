@@ -28,7 +28,6 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
 
         override fun onCreate(owner: LifecycleOwner) {
             Log.d(TAG, "CommClient: onCreate()")
-            super.onCreate(owner)
             bindService()
         }
 
@@ -37,7 +36,6 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
         }
 
         override fun onDestroy(owner: LifecycleOwner) {
-            super.onDestroy(owner)
             Log.d(TAG, "CommClient: onDestroy: Disconnecting...")
             appContext.unbindService(serviceConnection)
         }
@@ -59,6 +57,14 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
             messageService = null
             Log.e(TAG,"CommClient: Service disconnected $name")
         }
+
+        override fun onBindingDied(name: ComponentName?) {
+            Log.d(TAG, "CommClient: binding died: $name")
+        }
+
+        override fun onNullBinding(name: ComponentName?) {
+            Log.d(TAG, "CommClient: null binding: $name")
+        }
     }
 
     private val messageServiceCallback: IMessegeServiceCallback = object : IMessegeServiceCallback.Stub() {
@@ -70,16 +76,13 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
                 }
             }
 
-            // Handle the received key exchange
-            val keyExchange = message?.getBundle(KEY_EXCHANGE)
-            keyExchange?.let {
-                handleKeyExchange(it)
-            }
-
-            // Handle the received message
-            val payload = message?.getBundle(MESSAGE)
-            payload?.let {
-                handleMessage(it)
+            message?.let { it ->
+                it.getBundle(KEY_EXCHANGE)?.let { exchange ->
+                    handleKeyExchange(exchange)
+                }
+                it.getBundle(MESSAGE)?.let { payload ->
+                    handleMessage(payload)
+                }
             }
         }
     }
@@ -90,15 +93,17 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
             val value = message.get(key)
             Log.d(TAG, "$key <- $value")
         }
-
-        val response = Bundle()
-        response.putBundle(MESSAGE, Bundle())
-        sendMessage(response)
     }
 
-    private fun handleKeyExchange(bundle: Bundle) {
-        val step = bundle.getString(KeyExchange.STEP) ?: KeyExchange.KEY_EXCHANGE_SYN
-        val theirPublicKey = bundle.getString(KeyExchange.PUBLIC_KEY)
+    private fun handleKeyExchange(message: Bundle) {
+        Log.d(TAG,"Received key exchange")
+        for (key in message.keySet()) {
+            val value = message.get(key)
+            Log.d(TAG, "$key <- $value")
+        }
+
+        val step = message.getString(KeyExchange.STEP) ?: KeyExchange.KEY_EXCHANGE_SYN
+        val theirPublicKey = message.getString(KeyExchange.PUBLIC_KEY)
         val keyExchangeMessage = KeyExchangeMessage(step, theirPublicKey)
         val nextStep  = keyExchange.nextKeyExchangeMessage(keyExchangeMessage)
 
@@ -111,14 +116,19 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
             }
             response.putBundle(KEY_EXCHANGE, bundle)
         } ?: run {
-            // Send originator info
-            response.putBundle(MESSAGE, Bundle())
+
+            response.putString(MESSAGE, "Over & out!!")
         }
 
-        sendMessage(bundle)
+        sendMessage(response)
     }
 
     fun sendMessage(message: Bundle) {
+        Log.d(TAG, "Sending message:")
+        for (key in message.keySet()) {
+            val value = message.get(key)
+            Log.d(TAG, "$key <- $value")
+        }
         messageService?.sendMessage(message)
     }
     fun bindService() {
@@ -127,13 +137,18 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
             .setComponent(
                 ComponentName(
                     "com.reactwallet",
-                    "com.reactwallet.MesssageService"
+                    "com.reactwallet.MessageService"
                 )
             )
-        appContext.bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+        if (appContext != null) {
+            Log.d(TAG, "App context all good")
+            appContext.bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+        } else {
+            Log.d(TAG, "App context null!")
+        }
     }
     private fun initiateKeyExchange() {
-        Log.d(TAG, "Initiating key exchange")
+        Log.d(TAG, "CommClient: Initiating key exchange")
         val message = Bundle().apply {
             val bundle = Bundle().apply {
                 putString(KeyExchange.STEP, KeyExchange.KEY_EXCHANGE_SYN)

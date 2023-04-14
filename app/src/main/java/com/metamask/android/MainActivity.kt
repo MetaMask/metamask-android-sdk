@@ -47,10 +47,14 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
 
         button = findViewById<Button>(R.id.bind)
         button.setOnClickListener {
+            val bundle = Bundle().apply {
+                putString("KEY_EXCHANGE", "KEY_EXCHANGE_SYN")
+            }
+            communicationClient.sendMessage(bundle)
         }
 
-        Log.d(TAG, "onCreate")
-        communicationClient = CommunicationClient(this, lifecycle)
+        Log.d(TAG, "app: onCreate")
+        communicationClient = CommunicationClient(applicationContext, lifecycle)
         lifecycle.addObserver(this)
     }
 
@@ -78,11 +82,11 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
 
     override fun onStart() {
         super.onStart()
-        Log.d(TAG, "Started SDK activity")
+        Log.d(TAG, "app: Started SDK activity")
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.d(TAG, "Destroyed SDK activity")
+        Log.d(TAG, "app: Destroyed SDK activity")
     }
 }
