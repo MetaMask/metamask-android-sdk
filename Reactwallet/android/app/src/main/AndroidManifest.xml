@@ -25,18 +25,10 @@
 
         <!-- Define the service component -->
         <service
-            android:name=".MessageService"
+            android:name="com.reactwallet.MessageService"
             android:enabled="true"
             android:exported="true">
 
-            <!-- Declare that the service should run in its own process -->
-            <process android:process=":my_service_process"/>
-
-            <!-- Declare the AIDL interface that the service will implement -->
-            <intent-filter>
-                <action android:name="io.metamask.IMessegeService" />
-                <action android:name="io.metamask.IMessegeServiceCallback" />
-            </intent-filter>
         </service>
     </application>
 </manifest>
