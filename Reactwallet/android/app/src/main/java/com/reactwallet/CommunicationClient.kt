@@ -23,18 +23,11 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
     override fun getName() = "CommunicationClient"
 
     companion object {
-        const val TAG = "REACT_WALLET"
+        const val TAG = "MM_MOBILE"
     }
 
     private var isServiceConnected = false
     private var messageService: IMessegeService? = null
-
-    override fun getConstants(): MutableMap<String, Any> {
-        return mutableMapOf(
-            "SERVICE_PACKAGE_NAME" to "io.metamask",
-            "SERVICE_CLASS_NAME" to "io.metamask.MesssageService"
-        )
-    }
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -47,6 +40,41 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
             messageService = null
             isServiceConnected = false
             Log.e(TAG,"Service disconnected $name")
+        }
+    }
+
+    override fun onCatalystInstanceDestroy() {
+        super.onCatalystInstanceDestroy()
+        if (isServiceConnected) {
+            context.unbindService(serviceConnection)
+            isServiceConnected = false
+        }
+    }
+
+    private fun timeNow() : String {
+        val sdf = SimpleDateFormat("hh:mm:ss")
+        val currentTime = Date()
+        val formattedTime = sdf.format(currentTime)
+        return formattedTime
+    }
+
+    /*
+        @ReactMethods
+     */
+
+    @ReactMethod
+    fun bindService(promise: Promise) {
+        Log.d(TAG, "Binding Reactwallet!")
+        val intent = Intent(context, MessageService::class.java)
+        context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+        promise.resolve("Connected!")
+    }
+
+    @ReactMethod
+    fun unbindService() {
+        if (isServiceConnected) {
+            context.unbindService(serviceConnection)
+            isServiceConnected = false
         }
     }
 
@@ -74,39 +102,8 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
         }
     }
 
-    override fun onCatalystInstanceDestroy() {
-        super.onCatalystInstanceDestroy()
-        if (isServiceConnected) {
-            context.unbindService(serviceConnection)
-            isServiceConnected = false
-        }
-    }
-
-    @ReactMethod
-    fun bindService(promise: Promise) {
-        Log.d(TAG, "Binding Reactwallet!")
-        val intent = Intent(context, MessageService::class.java)
-        context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
-        promise.resolve("Connected!")
-    }
-
-    @ReactMethod
-    fun unbindService() {
-        if (isServiceConnected) {
-            context.unbindService(serviceConnection)
-            isServiceConnected = false
-        }
-    }
-
     @ReactMethod
     fun sayHello(promise: Promise) {
         promise.resolve("Hello back to ya!")
-    }
-
-    fun timeNow() : String {
-        val sdf = SimpleDateFormat("hh:mm:ss")
-        val currentTime = Date()
-        val formattedTime = sdf.format(currentTime)
-        return formattedTime
     }
 }

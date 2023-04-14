@@ -30,45 +30,35 @@ class MessageService : Service() {
         }
 
         override fun sendMessage(message: Bundle?) {
-            if (message != null) {
-                for (key in message.keySet()) {
-                    val value = message.get(key)
-                    Log.d(TAG, "$key <- $value")
+            message?.let { it ->
+                it.getBundle(KEY_EXCHANGE)?.let { exchange ->
+                    handleKeyExchange(exchange)
                 }
-            }
-
-            // Handle the received key exchange
-            val keyExchange = message?.getBundle(KEY_EXCHANGE)
-            keyExchange?.let {
-                handleKeyExchange(it)
-            }
-
-            // Handle the received message
-            val payload = message?.getBundle(MESSAGE)
-            payload?.let {
-                handleMessage(it)
+                it.getBundle(MESSAGE)?.let { payload ->
+                    handleMessage(payload)
+                }
             }
         }
     }
 
     fun sendMessage(message: Bundle) {
+        Log.d(TAG, "Sending message:")
+        for (key in message.keySet()) {
+            val value = message.get(key)
+            Log.d(TAG, "$key <- $value")
+        }
         messageCallback?.onMessageReceived(message)
     }
 
-    private fun initiateKeyExchange() {
-        Log.d(TAG, "Initiating key exchange")
-        val message = Bundle().apply {
-            val bundle = Bundle().apply {
-                putString(KeyExchange.STEP, KeyExchange.KEY_EXCHANGE_SYN)
-            }
-            putBundle(KEY_EXCHANGE, bundle)
+    private fun handleKeyExchange(message: Bundle) {
+        Log.d(TAG,"Received key exchange")
+        for (key in message.keySet()) {
+            val value = message.get(key)
+            Log.d(TAG, "$key <- $value")
         }
-        sendMessage(message)
-    }
 
-    private fun handleKeyExchange(bundle: Bundle) {
-        val step = bundle.getString(KeyExchange.STEP) ?: KeyExchange.KEY_EXCHANGE_SYN
-        val theirPublicKey = bundle.getString(KeyExchange.PUBLIC_KEY)
+        val step = message.getString(KeyExchange.STEP) ?: KeyExchange.KEY_EXCHANGE_SYN
+        val theirPublicKey = message.getString(KeyExchange.PUBLIC_KEY)
         val keyExchangeMessage = KeyExchangeMessage(step, theirPublicKey)
         val nextStep  = keyExchange.nextKeyExchangeMessage(keyExchangeMessage)
 
@@ -81,15 +71,15 @@ class MessageService : Service() {
             }
             response.putBundle(KEY_EXCHANGE, bundle)
         } ?: run {
-            // Send originator info
-            response.putBundle(MESSAGE, Bundle())
+
+            response.putString(MESSAGE, "Exchange complete!")
         }
 
-        sendMessage(bundle)
+        sendMessage(response)
     }
 
     private fun handleMessage(message: Bundle) {
-        Log.d(TAG, "Received message")
+        Log.d(TAG, "Received message:")
         for (key in message.keySet()) {
             val value = message.get(key)
             Log.d(TAG, "$key <- $value")
