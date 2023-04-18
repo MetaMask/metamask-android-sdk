@@ -57,9 +57,10 @@ class MessageService : Service() {
             Log.d(TAG, "$key <- $value")
         }
 
-        val step = message.getString(KeyExchange.STEP) ?: KeyExchange.KEY_EXCHANGE_SYN
+        val keyExchangeStep = message.getString(KeyExchange.TYPE) ?: KeyExchangeMessageType.key_exchange_SYN.name
+        val type = KeyExchangeMessageType.valueOf(keyExchangeStep)
         val theirPublicKey = message.getString(KeyExchange.PUBLIC_KEY)
-        val keyExchangeMessage = KeyExchangeMessage(step, theirPublicKey)
+        val keyExchangeMessage = KeyExchangeMessage(type, theirPublicKey)
         val nextStep  = keyExchange.nextKeyExchangeMessage(keyExchangeMessage)
 
         val response = Bundle()
@@ -67,11 +68,10 @@ class MessageService : Service() {
         nextStep?.let {
             val bundle = Bundle().apply {
                 putString(KeyExchange.PUBLIC_KEY, it.publicKey)
-                putString(KeyExchange.STEP, it.step)
+                putString(KeyExchange.TYPE, it.type.name)
             }
             response.putBundle(KEY_EXCHANGE, bundle)
         } ?: run {
-
             response.putString(MESSAGE, "Exchange complete!")
         }
 

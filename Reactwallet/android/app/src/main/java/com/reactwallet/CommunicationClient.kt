@@ -7,11 +7,8 @@ import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
-import com.facebook.react.bridge.Promise
+import com.facebook.react.bridge.*
 
-import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReactContextBaseJavaModule
-import com.facebook.react.bridge.ReactMethod
 import io.metamask.IMessegeService
 import io.metamask.IMessegeServiceCallback
 import java.text.SimpleDateFormat
@@ -28,12 +25,23 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
 
     private var isServiceConnected = false
     private var messageService: IMessegeService? = null
+    private lateinit var communicationLayer: CommunicationLayer
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             messageService = IMessegeService.Stub.asInterface(service)
             isServiceConnected = true
             Log.d(TAG,"Service connected $name")
+
+            communicationLayer = CommunicationLayer(messageService)
+            communicationLayer.isConnected = { isServiceConnected }
+            communicationLayer.onDisconnect = { unbindService() }
+            communicationLayer.onPause = { unbindService() }
+            communicationLayer.onResume = { promise ->
+                if (!isServiceConnected) {
+                    bindService(promise)
+                }
+            }
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
@@ -66,8 +74,8 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
     fun bindService(promise: Promise) {
         Log.d(TAG, "Binding Reactwallet!")
         val intent = Intent(context, MessageService::class.java)
-        context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
-        promise.resolve("Connected!")
+        val bind = context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+        promise.resolve(bind)
     }
 
     @ReactMethod
@@ -76,6 +84,16 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
             context.unbindService(serviceConnection)
             isServiceConnected = false
         }
+    }
+
+    @ReactMethod
+    fun sendAndroidMessage(messageType: MessageType, message: ReadableMap, promise: Promise) {
+        if (!isServiceConnected) {
+            Log.e(TAG,"Service is not connected")
+            promise.reject(Exception("Service is not connected"))
+            return
+        }
+        communicationLayer.sendAndroidMessage(messageType, message, promise)
     }
 
     @ReactMethod

@@ -20,8 +20,8 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
 
     companion object {
         const val TAG = "MM_ANDROID_SDK"
-        const val MESSAGE = "message"
-        const val KEY_EXCHANGE = "key_exchange"
+        const val MESSAGE = "MESSAGE"
+        const val KEY_EXCHANGE = "KEY_EXCHANGE"
     }
 
     private val observer = object : DefaultLifecycleObserver {
