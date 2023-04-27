@@ -20,8 +20,8 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
 
     companion object {
         const val TAG = "MM_ANDROID_SDK"
-        const val MESSAGE = "MESSAGE"
-        const val KEY_EXCHANGE = "KEY_EXCHANGE"
+        const val MESSAGE = "message"
+        const val KEY_EXCHANGE = "key_exchange"
     }
 
     private val observer = object : DefaultLifecycleObserver {
@@ -69,6 +69,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
 
     private val messageServiceCallback: IMessegeServiceCallback = object : IMessegeServiceCallback.Stub() {
         override fun onMessageReceived(message: Bundle?) {
+            Log.d(TAG, "CommClient: onMessageReceived!")
             if (message != null) {
                 for (key in message.keySet()) {
                     val value = message.get(key)
@@ -83,28 +84,46 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
                 it.getBundle(MESSAGE)?.let { payload ->
                     handleMessage(payload)
                 }
+                it.getString(MESSAGE)?.let { string ->
+                    handleMessage(string)
+                }
             }
         }
     }
 
+    private fun handleMessage(message: String) {
+        Log.d(TAG, "CommClient: Received message: $message")
+
+        val response = Bundle().apply {
+            putString(MESSAGE, "Over and Out!!")
+        }
+        sendMessage(response)
+    }
+
     private fun handleMessage(message: Bundle) {
-        Log.d(TAG, "Received message")
+        Log.d(TAG, "CommClient: Received message")
         for (key in message.keySet()) {
             val value = message.get(key)
             Log.d(TAG, "$key <- $value")
         }
+
+        val response = Bundle().apply {
+            putString(MESSAGE, "Over and Out!!")
+        }
+        sendMessage(response)
     }
 
     private fun handleKeyExchange(message: Bundle) {
-        Log.d(TAG,"Received key exchange")
+        Log.d(TAG,"CommClient: Received key exchange")
         for (key in message.keySet()) {
             val value = message.get(key)
             Log.d(TAG, "$key <- $value")
         }
 
-        val step = message.getString(KeyExchange.STEP) ?: KeyExchange.KEY_EXCHANGE_SYN
+        val keyExchangeStep = message.getString(KeyExchange.TYPE) ?: KeyExchangeMessageType.key_exchange_SYN.name
+        val type = KeyExchangeMessageType.valueOf(keyExchangeStep)
         val theirPublicKey = message.getString(KeyExchange.PUBLIC_KEY)
-        val keyExchangeMessage = KeyExchangeMessage(step, theirPublicKey)
+        val keyExchangeMessage = KeyExchangeMessage(type, theirPublicKey)
         val nextStep  = keyExchange.nextKeyExchangeMessage(keyExchangeMessage)
 
         val response = Bundle()
@@ -112,11 +131,10 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
         nextStep?.let {
             val bundle = Bundle().apply {
                 putString(KeyExchange.PUBLIC_KEY, it.publicKey)
-                putString(KeyExchange.STEP, it.step)
+                putString(KeyExchange.TYPE, it.type.name)
             }
             response.putBundle(KEY_EXCHANGE, bundle)
         } ?: run {
-
             response.putString(MESSAGE, "Over & out!!")
         }
 
@@ -124,7 +142,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
     }
 
     fun sendMessage(message: Bundle) {
-        Log.d(TAG, "Sending message:")
+        Log.d(TAG, "Sending message ->")
         for (key in message.keySet()) {
             val value = message.get(key)
             Log.d(TAG, "$key <- $value")
@@ -151,7 +169,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
         Log.d(TAG, "CommClient: Initiating key exchange")
         val message = Bundle().apply {
             val bundle = Bundle().apply {
-                putString(KeyExchange.STEP, KeyExchange.KEY_EXCHANGE_SYN)
+                putString(KeyExchange.TYPE, KeyExchangeMessageType.key_exchange_SYN.name)
             }
             putBundle(KEY_EXCHANGE, bundle)
         }

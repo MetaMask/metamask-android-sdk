@@ -25,7 +25,7 @@
 
         <!-- Define the service component -->
         <service
-            android:name="com.reactwallet.MessageService"
+            android:name="MessageService"
             android:enabled="true"
             android:exported="true">
 

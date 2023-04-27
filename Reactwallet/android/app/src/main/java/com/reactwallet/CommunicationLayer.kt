@@ -12,8 +12,8 @@ import io.metamask.IMessegeServiceCallback
 
 class CommunicationLayer(private val messageService: IMessegeService?) {
     companion object {
-        const val MESSAGE = "MESSAGE"
-        const val MESSAGE_TYPE = "MESSAGE_TYPE"
+        const val MESSAGE = "message"
+        const val MESSAGE_TYPE = "message_type"
     }
 
     @ReactMethod
@@ -85,20 +85,22 @@ class CommunicationLayer(private val messageService: IMessegeService?) {
     private fun ping(promise: Promise) {
         Log.d(CommunicationClient.TAG, "Ping")
         try {
-            val bundle = Bundle().apply {
-                putString(MESSAGE_TYPE, MessageType.PING.name)
-            }
             val message = Bundle().apply {
+                val bundle = Bundle().apply {
+                    putString(MESSAGE_TYPE, MessageType.PING.name)
+                }
                 putBundle(MESSAGE, bundle)
             }
-            messageService?.sendMessage(message)
+
             val messageServiceCallback: IMessegeServiceCallback = object : IMessegeServiceCallback.Stub() {
                 override fun onMessageReceived(message: Bundle?) {
                     Log.d(CommunicationClient.TAG, "Received ping response")
                     promise.resolve(message)
                 }
             }
+
             messageService?.registerCallback(messageServiceCallback)
+            messageService?.sendMessage(message)
         } catch (e: Exception) {
             Log.e(CommunicationClient.TAG,"Could not convert message to Bundle: ${e.message}")
             promise.reject(e)
@@ -112,20 +114,23 @@ class CommunicationLayer(private val messageService: IMessegeService?) {
     private fun resetKeys(promise: Promise) {
         Log.d(CommunicationClient.TAG, "Resetting keys...")
         try {
-            val bundle = Bundle().apply {
-                putString(MESSAGE_TYPE, MessageType.RESET_KEYS.name)
-            }
             val message = Bundle().apply {
+                val bundle = Bundle().apply {
+                    putString(MESSAGE_TYPE, MessageType.RESET_KEYS.name)
+                }
                 putBundle(MESSAGE, bundle)
             }
-            messageService?.sendMessage(message)
+
             val messageServiceCallback: IMessegeServiceCallback = object : IMessegeServiceCallback.Stub() {
                 override fun onMessageReceived(message: Bundle?) {
                     Log.d(CommunicationClient.TAG, "Received resetKeys response")
                     promise.resolve(message)
                 }
             }
-            messageService?.registerCallback(messageServiceCallback)
+
+            //messageService?.registerCallback(messageServiceCallback)
+            //messageService?.sendMessage(message)
+            messageServiceCallback?.onMessageReceived(message)
         } catch (e: Exception) {
             Log.e(CommunicationClient.TAG,"Could not convert message to Bundle: ${e.message}")
             promise.reject(e)
@@ -135,14 +140,15 @@ class CommunicationLayer(private val messageService: IMessegeService?) {
     private fun sendMessage(message: Bundle, promise: Promise) {
         Log.d(CommunicationClient.TAG, "Sending new message...")
         try {
-            messageService?.sendMessage(message)
             val messageServiceCallback: IMessegeServiceCallback = object : IMessegeServiceCallback.Stub() {
                 override fun onMessageReceived(message: Bundle?) {
                     Log.d(CommunicationClient.TAG, "Received response}")
                     promise.resolve(message)
                 }
             }
-            messageService?.registerCallback(messageServiceCallback)
+            //messageService?.registerCallback(messageServiceCallback)
+            //messageService?.sendMessage(message)
+            messageServiceCallback?.onMessageReceived(message)
         } catch (e: Exception) {
             Log.e(CommunicationClient.TAG,"Could not convert message to Bundle: ${e.message}")
             promise.reject(e)
