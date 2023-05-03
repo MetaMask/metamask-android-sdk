@@ -142,7 +142,7 @@ class CommunicationLayer(private val messageService: IMessegeService?) {
         try {
             val messageServiceCallback: IMessegeServiceCallback = object : IMessegeServiceCallback.Stub() {
                 override fun onMessageReceived(message: Bundle?) {
-                    Log.d(CommunicationClient.TAG, "Received response}")
+                    Log.d(CommunicationClient.TAG, "Received response")
                     promise.resolve(message)
                 }
             }

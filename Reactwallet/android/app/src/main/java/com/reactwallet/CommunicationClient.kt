@@ -205,9 +205,9 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
         try {
             val message = Bundle().apply {
                 val bundle = Bundle().apply {
-                    putString(CommunicationLayer.MESSAGE_TYPE, MessageType.PING.name)
+                    putString(MESSAGE_TYPE, MessageType.PING.name)
                 }
-                putBundle(CommunicationLayer.MESSAGE, bundle)
+                putBundle(MESSAGE, bundle)
             }
 
             val messageServiceCallback: IMessegeServiceCallback = object : IMessegeServiceCallback.Stub() {
@@ -236,9 +236,9 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
         try {
             val message = Bundle().apply {
                 val bundle = Bundle().apply {
-                    putString(CommunicationLayer.MESSAGE_TYPE, MessageType.RESET_KEYS.name)
+                    putString(MESSAGE_TYPE, MessageType.RESET_KEYS.name)
                 }
-                putBundle(CommunicationLayer.MESSAGE, bundle)
+                putBundle(MESSAGE, bundle)
             }
 
             val messageServiceCallback: IMessegeServiceCallback = object : IMessegeServiceCallback.Stub() {
