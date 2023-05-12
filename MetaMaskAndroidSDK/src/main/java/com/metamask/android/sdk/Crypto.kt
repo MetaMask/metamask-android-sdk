@@ -1,29 +1,26 @@
 package com.metamask.android.sdk
 
-public interface Crypto {
-    fun generatePrivateKey(): String
+import android.os.Build
+import android.util.Log
+import com.crypto.ecies.Ecies
 
-    fun publicKey(privateKey: String): String
 
-    fun encrypt(message: String, publicKey: String): String
+public class Crypto {
+    private val ecies = Ecies()
 
-    fun decrypt(message: String, privateKey: String): String
-}
-
-public class Ecies: Crypto {
-    override fun generatePrivateKey(): String {
-        return ""
+    fun generatePrivateKey(): String {
+        return ecies.privateKey()
     }
 
-    override fun publicKey(privateKey: String): String {
-        return ""
+    fun publicKey(privateKey: String): String {
+        return ecies.publicKeyFrom(privateKey)
     }
 
-    override fun encrypt(message: String, publicKey: String): String {
-        return ""
+    fun encrypt(publicKey: String, message: String): String {
+        return ecies.encrypt(publicKey, message)
     }
 
-    override fun decrypt(message: String, privateKey: String): String {
-        return ""
+    fun decrypt(privateKey: String, message: String): String {
+        return ecies.decrypt(privateKey, message)
     }
 }

@@ -1,0 +1,22 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+android {
+    compileSdkVersion 30
+
+    defaultConfig {
+        minSdkVersion 16
+        targetSdkVersion 30
+    }
+
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['jniLibs']
+        }
+    }
+}
+
+dependencies {
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib:1.5.21'
+    implementation 'com.android.support:support-annotations:30.0.0'
+}

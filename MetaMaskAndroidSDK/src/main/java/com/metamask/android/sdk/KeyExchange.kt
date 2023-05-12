@@ -7,7 +7,7 @@ data class KeyExchangeMessage(
     val publicKey: String?
     )
 
-class KeyExchange(crypto: Crypto = Ecies()) {
+class KeyExchange(private val crypto: Crypto = Crypto()) {
     companion object {
         const val TYPE = "KEY_EXCHANGE_TYPE"
         const val PUBLIC_KEY = "PUBLIC_KEY"
@@ -17,22 +17,19 @@ class KeyExchange(crypto: Crypto = Ecies()) {
     private val publicKey: String?
     private var theirPublickKey: String? = null
 
-    private val encryption: Crypto
-
     init {
-        encryption = crypto
-        privateKey = encryption.generatePrivateKey()
-        publicKey = encryption.publicKey(privateKey)
+        privateKey = crypto.generatePrivateKey()
+        publicKey = crypto.publicKey(privateKey)
     }
 
     fun encrypt(message: String): String {
         val key: String = theirPublickKey ?: throw NullPointerException("theirPublickKey is null")
-        return encryption.encrypt(message, key)
+        return crypto.encrypt(key, message)
     }
 
     fun decrypt(message: String): String {
         val key: String = privateKey ?: throw NullPointerException("privateKey is null")
-        return encryption.decrypt(message, key)
+        return crypto.decrypt(key, message)
     }
 
     fun nextKeyExchangeMessage(current: KeyExchangeMessage): KeyExchangeMessage? {

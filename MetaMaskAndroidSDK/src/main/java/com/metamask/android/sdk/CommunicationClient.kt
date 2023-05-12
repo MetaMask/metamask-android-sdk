@@ -12,14 +12,20 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import io.metamask.IMessegeService
 import io.metamask.IMessegeServiceCallback
+import org.json.JSONObject
+import java.util.UUID
 
 class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
     private val appContext = context.applicationContext
     private var messageService: IMessegeService? = null
     private val keyExchange = KeyExchange()
 
+    lateinit var sessionId: String
+
     companion object {
         const val TAG = "MM_ANDROID_SDK"
+        const val SESSION_ID = "session_id"
+
         const val MESSAGE = "message"
         const val KEY_EXCHANGE = "key_exchange"
     }
@@ -28,6 +34,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
 
         override fun onCreate(owner: LifecycleOwner) {
             Log.d(TAG, "CommClient: onCreate()")
+            sessionId = UUID.randomUUID().toString()
             bindService()
         }
 
@@ -93,10 +100,20 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
 
     private fun handleMessage(message: String) {
         Log.d(TAG, "CommClient: Received message: $message")
+        val jsonString = keyExchange.decrypt(message)
+        val jsonObject = JSONObject(jsonString)
+        jsonObject.let {
+            // get data
+        }
 
         val response = Bundle().apply {
-            putString(MESSAGE, "Over and Out!!")
+            val json = JSONObject().apply {
+                put(SESSION_ID, sessionId)
+            }
+            val payload = keyExchange.encrypt(json.toString())
+            putString(MESSAGE, payload)
         }
+
         sendMessage(response)
     }
 
@@ -108,7 +125,11 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
         }
 
         val response = Bundle().apply {
-            putString(MESSAGE, "Over and Out!!")
+            val jsonObject = JSONObject().apply {
+                put(SESSION_ID, sessionId)
+            }
+            val payload = keyExchange.encrypt(jsonObject.toString())
+            putString(MESSAGE, payload)
         }
         sendMessage(response)
     }
@@ -135,6 +156,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
             }
             response.putBundle(KEY_EXCHANGE, bundle)
         } ?: run {
+            // send request_ethAccounts
             response.putString(MESSAGE, "Over & out!!")
         }
 
