@@ -15,6 +15,8 @@ import android.widget.Button
 import androidx.lifecycle.LifecycleObserver
 import com.metamask.android.databinding.ActivityMainBinding
 import com.metamask.android.sdk.CommunicationClient
+import com.metamask.android.sdk.KeyExchange
+import com.metamask.android.sdk.KeyExchangeMessageType
 
 class MainActivity : AppCompatActivity(), LifecycleObserver {
 
@@ -47,10 +49,13 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
 
         button = findViewById<Button>(R.id.bind)
         button.setOnClickListener {
-            val bundle = Bundle().apply {
-                putString("KEY_EXCHANGE", "KEY_EXCHANGE_SYN")
+            val message = Bundle().apply {
+                val bundle = Bundle().apply {
+                    putString(KeyExchange.TYPE, KeyExchangeMessageType.key_exchange_SYN.name)
+                }
+                putBundle("KEY_EXCHANGE", bundle)
             }
-            communicationClient.sendMessage(bundle)
+            communicationClient.sendMessage(message)
         }
 
         Log.d(TAG, "app: onCreate")

@@ -12,14 +12,20 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import io.metamask.IMessegeService
 import io.metamask.IMessegeServiceCallback
+import org.json.JSONObject
+import java.util.UUID
 
 class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
     private val appContext = context.applicationContext
     private var messageService: IMessegeService? = null
     private val keyExchange = KeyExchange()
 
+    lateinit var sessionId: String
+
     companion object {
         const val TAG = "MM_ANDROID_SDK"
+        const val SESSION_ID = "session_id"
+
         const val MESSAGE = "message"
         const val KEY_EXCHANGE = "key_exchange"
     }
@@ -28,6 +34,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
 
         override fun onCreate(owner: LifecycleOwner) {
             Log.d(TAG, "CommClient: onCreate()")
+            sessionId = UUID.randomUUID().toString()
             bindService()
         }
 
@@ -69,6 +76,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
 
     private val messageServiceCallback: IMessegeServiceCallback = object : IMessegeServiceCallback.Stub() {
         override fun onMessageReceived(message: Bundle?) {
+            Log.d(TAG, "CommClient: onMessageReceived!")
             if (message != null) {
                 for (key in message.keySet()) {
                     val value = message.get(key)
@@ -83,28 +91,60 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
                 it.getBundle(MESSAGE)?.let { payload ->
                     handleMessage(payload)
                 }
+                it.getString(MESSAGE)?.let { string ->
+                    handleMessage(string)
+                }
             }
         }
     }
 
+    private fun handleMessage(message: String) {
+        Log.d(TAG, "CommClient: Received message: $message")
+        val jsonString = keyExchange.decrypt(message)
+        val jsonObject = JSONObject(jsonString)
+        jsonObject.let {
+            // get data
+        }
+
+        val response = Bundle().apply {
+            val json = JSONObject().apply {
+                put(SESSION_ID, sessionId)
+            }
+            val payload = keyExchange.encrypt(json.toString())
+            putString(MESSAGE, payload)
+        }
+
+        sendMessage(response)
+    }
+
     private fun handleMessage(message: Bundle) {
-        Log.d(TAG, "Received message")
+        Log.d(TAG, "CommClient: Received message")
         for (key in message.keySet()) {
             val value = message.get(key)
             Log.d(TAG, "$key <- $value")
         }
+
+        val response = Bundle().apply {
+            val jsonObject = JSONObject().apply {
+                put(SESSION_ID, sessionId)
+            }
+            val payload = keyExchange.encrypt(jsonObject.toString())
+            putString(MESSAGE, payload)
+        }
+        sendMessage(response)
     }
 
     private fun handleKeyExchange(message: Bundle) {
-        Log.d(TAG,"Received key exchange")
+        Log.d(TAG,"CommClient: Received key exchange")
         for (key in message.keySet()) {
             val value = message.get(key)
             Log.d(TAG, "$key <- $value")
         }
 
-        val step = message.getString(KeyExchange.STEP) ?: KeyExchange.KEY_EXCHANGE_SYN
+        val keyExchangeStep = message.getString(KeyExchange.TYPE) ?: KeyExchangeMessageType.key_exchange_SYN.name
+        val type = KeyExchangeMessageType.valueOf(keyExchangeStep)
         val theirPublicKey = message.getString(KeyExchange.PUBLIC_KEY)
-        val keyExchangeMessage = KeyExchangeMessage(step, theirPublicKey)
+        val keyExchangeMessage = KeyExchangeMessage(type, theirPublicKey)
         val nextStep  = keyExchange.nextKeyExchangeMessage(keyExchangeMessage)
 
         val response = Bundle()
@@ -112,11 +152,11 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
         nextStep?.let {
             val bundle = Bundle().apply {
                 putString(KeyExchange.PUBLIC_KEY, it.publicKey)
-                putString(KeyExchange.STEP, it.step)
+                putString(KeyExchange.TYPE, it.type.name)
             }
             response.putBundle(KEY_EXCHANGE, bundle)
         } ?: run {
-
+            // send request_ethAccounts
             response.putString(MESSAGE, "Over & out!!")
         }
 
@@ -124,7 +164,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
     }
 
     fun sendMessage(message: Bundle) {
-        Log.d(TAG, "Sending message:")
+        Log.d(TAG, "Sending message ->")
         for (key in message.keySet()) {
             val value = message.get(key)
             Log.d(TAG, "$key <- $value")
@@ -151,7 +191,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
         Log.d(TAG, "CommClient: Initiating key exchange")
         val message = Bundle().apply {
             val bundle = Bundle().apply {
-                putString(KeyExchange.STEP, KeyExchange.KEY_EXCHANGE_SYN)
+                putString(KeyExchange.TYPE, KeyExchangeMessageType.key_exchange_SYN.name)
             }
             putBundle(KEY_EXCHANGE, bundle)
         }

@@ -1,24 +1,16 @@
 package com.reactwallet
 
-import android.os.Bundle
-import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReactContextBaseJavaModule
-import com.facebook.react.bridge.ReactMethod
+import com.reactwallet.KeyExchangeMessageType.*
 
 data class KeyExchangeMessage(
-    val step: String,
+    val type: KeyExchangeMessageType,
     val publicKey: String?
     )
 
 class KeyExchange(crypto: Crypto = Ecies()) {
     companion object {
-        const val STEP = "step"
-        const val PUBLIC_KEY = "public_key"
-
-        const val KEY_EXCHANGE_START = "key_exchange_start"
-        const val KEY_EXCHANGE_SYN = "key_exchange_syn"
-        const val KEY_EXCHANGE_SYNACK = "key_exchange_synack"
-        const val KEY_EXCHANGE_ACK = "key_exchange_ack"
+        const val TYPE = "KEY_EXCHANGE_TYPE"
+        const val PUBLIC_KEY = "PUBLIC_KEY"
     }
 
     private val privateKey: String?
@@ -46,11 +38,11 @@ class KeyExchange(crypto: Crypto = Ecies()) {
     fun nextKeyExchangeMessage(current: KeyExchangeMessage): KeyExchangeMessage? {
         theirPublickKey = current.publicKey
 
-        return when(current.step) {
-            KEY_EXCHANGE_START -> KeyExchangeMessage(KEY_EXCHANGE_SYN, publicKey)
-            KEY_EXCHANGE_SYN -> KeyExchangeMessage(KEY_EXCHANGE_SYNACK, publicKey)
-            KEY_EXCHANGE_SYNACK -> KeyExchangeMessage(KEY_EXCHANGE_ACK, publicKey)
-            KEY_EXCHANGE_ACK -> null
+        return when(current.type) {
+            key_handshake_start -> KeyExchangeMessage(key_exchange_SYN, publicKey)
+            key_exchange_SYN -> KeyExchangeMessage(key_exchange_SYNACK, publicKey)
+            key_exchange_SYNACK -> KeyExchangeMessage(key_exchange_ACK, publicKey)
+            key_exchange_ACK -> null
             else -> null
         }
     }
