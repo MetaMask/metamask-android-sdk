@@ -4,7 +4,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -12,23 +11,37 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import io.metamask.IMessegeService
 import io.metamask.IMessegeServiceCallback
+import kotlinx.coroutines.CompletableDeferred
 import org.json.JSONObject
 import java.util.UUID
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.decodeFromString
+import org.json.JSONArray
+import java.lang.ref.WeakReference
 
-class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
+class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: EthereumEventCallback)  {
     private val appContext = context.applicationContext
-    private var messageService: IMessegeService? = null
-    private val keyExchange = KeyExchange()
 
+    var dapp: Dapp? = null
     lateinit var sessionId: String
+    private val isConnected = false
+    private var isServiceConnected = false
+    private val keyExchange = KeyExchange()
+    private var messageService: IMessegeService? = null
+    private val ethereumEventCallbackRef: WeakReference<EthereumEventCallback> = WeakReference(callback)
 
     companion object {
         const val TAG = "MM_ANDROID_SDK"
         const val SESSION_ID = "session_id"
 
         const val MESSAGE = "message"
+        const val DATA = "data"
         const val KEY_EXCHANGE = "key_exchange"
     }
+
+    private var requestJobs: MutableList<() -> Unit> = mutableListOf()
+    private var submittedRequests: MutableMap<String, SubmittedRequest>  = mutableMapOf()
 
     private val observer = object : DefaultLifecycleObserver {
 
@@ -44,7 +57,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
 
         override fun onDestroy(owner: LifecycleOwner) {
             Log.d(TAG, "CommClient: onDestroy: Disconnecting...")
-            appContext.unbindService(serviceConnection)
+            unbindService()
         }
     }
 
@@ -56,12 +69,14 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             messageService = IMessegeService.Stub.asInterface(service)
             messageService?.registerCallback(messageServiceCallback)
+            isServiceConnected = true
             Log.d(TAG,"CommClient: Service connected $name")
             initiateKeyExchange()
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             messageService = null
+            isServiceConnected = false
             Log.e(TAG,"CommClient: Service disconnected $name")
         }
 
@@ -75,104 +90,268 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
     }
 
     private val messageServiceCallback: IMessegeServiceCallback = object : IMessegeServiceCallback.Stub() {
-        override fun onMessageReceived(message: Bundle?) {
+        override fun onMessageReceived(message: String) {
             Log.d(TAG, "CommClient: onMessageReceived!")
-            if (message != null) {
-                for (key in message.keySet()) {
-                    val value = message.get(key)
-                    Log.d(TAG, "$key <- $value")
-                }
-            }
 
-            message?.let { it ->
-                it.getBundle(KEY_EXCHANGE)?.let { exchange ->
-                    handleKeyExchange(exchange)
-                }
-                it.getBundle(MESSAGE)?.let { payload ->
-                    handleMessage(payload)
-                }
-                it.getString(MESSAGE)?.let { string ->
-                    handleMessage(string)
-                }
+            val json = JSONObject(message)
+            val keyExchange = json.optString(KEY_EXCHANGE)
+            val payload = json.optString(MESSAGE)
+
+            if(keyExchange.isNotEmpty()) {
+                handleKeyExchange(keyExchange)
+            } else if (payload.isNotEmpty()) {
+                handleMessage(payload)
             }
         }
     }
 
     private fun handleMessage(message: String) {
-        Log.d(TAG, "CommClient: Received message: $message")
         val jsonString = keyExchange.decrypt(message)
-        val jsonObject = JSONObject(jsonString)
-        jsonObject.let {
-            // get data
-        }
+        Logger.log("CommClient: Received message: $jsonString")
+        val json = JSONObject(jsonString)
 
-        val response = Bundle().apply {
-            val json = JSONObject().apply {
-                put(SESSION_ID, sessionId)
+        when (json.optString(MessageType.TYPE.value)) {
+            MessageType.TERMINATE.value -> {
+                Logger.log("Connection terminated")
+                unbindService()
+                keyExchange.generateNewKeys()
+                bindService()
             }
-            val payload = keyExchange.encrypt(json.toString())
-            putString(MESSAGE, payload)
-        }
+            MessageType.PAUSE.value -> {
+                Logger.log("Connection paused")
+            }
+            MessageType.READY.value -> {
+                Logger.log("Connection ready")
+                resumeRequestJobs()
+            }
+            MessageType.WALLET_INFO.value -> {
+                Logger.log("Received wallet info")
+            }
+            else -> {
+                Logger.log("Handling data case")
+                json.optJSONObject(MessageType.DATA.value)?.let { data ->
+                    val id = data.optString(MessageType.ID.value)
 
-        sendMessage(response)
+                    if (id.isNotEmpty()) {
+                        handleResponse(id, data)
+                    } else {
+                        handleEvent(data)
+                    }
+                }
+            }
+        }
     }
 
-    private fun handleMessage(message: Bundle) {
-        Log.d(TAG, "CommClient: Received message")
-        for (key in message.keySet()) {
-            val value = message.get(key)
-            Log.d(TAG, "$key <- $value")
+    private fun resumeRequestJobs() {
+        while (requestJobs.isNotEmpty()) {
+            val job = requestJobs.removeLast()
+            job()
         }
-
-        val response = Bundle().apply {
-            val jsonObject = JSONObject().apply {
-                put(SESSION_ID, sessionId)
-            }
-            val payload = keyExchange.encrypt(jsonObject.toString())
-            putString(MESSAGE, payload)
-        }
-        sendMessage(response)
     }
 
-    private fun handleKeyExchange(message: Bundle) {
-        Log.d(TAG,"CommClient: Received key exchange")
-        for (key in message.keySet()) {
-            val value = message.get(key)
-            Log.d(TAG, "$key <- $value")
+    private fun addRequestJob(job: () -> Unit) {
+        requestJobs.add { job }
+    }
+
+    private fun handleResponse(id: String, data: JSONObject) {
+        // check for error
+        val errorJson = data.optJSONObject("error")
+        if (errorJson != null) {
+            val error: Map<String, Any> = Json.decodeFromString(errorJson.toString())
+            completeRequest(id, RequestError(error))
+            return
         }
 
-        val keyExchangeStep = message.getString(KeyExchange.TYPE) ?: KeyExchangeMessageType.key_exchange_SYN.name
+        val request = submittedRequests[id]?.request
+        val isResultMethod = EthereumMethod.isResultMethod(request?.method ?: "")
+
+        if (!isResultMethod) {
+            val resultJson = data.optJSONObject("result")
+
+            if (resultJson != null) {
+                val result: Map<String, Any> = Json.decodeFromString(resultJson.toString())
+                submittedRequests[id]?.deferred?.complete(result)
+                completeRequest(id, result)
+            } else {
+                val result: Map<String, Any> = Json.decodeFromString(data.toString())
+                completeRequest(id, result)
+            }
+            return
+        }
+
+        when(request?.method) {
+            EthereumMethod.GETMETAMASKPROVIDERSTATE.value -> {
+                val result = data.optJSONObject("result")
+                val accountsArray = result?.optJSONArray("accounts").toString()
+                val accounts: List<String> = Json.decodeFromString(accountsArray)
+
+                accounts.getOrNull(0)?.let { account ->
+                    updateAccount(account)
+                    completeRequest(id, account)
+                }
+
+                val chainId = result?.optString("chainId")
+
+                if (chainId != null && chainId.isNullOrEmpty()) {
+                    updateChainId(chainId)
+                    completeRequest(id, chainId)
+                }
+            }
+            EthereumMethod.ETHREQUESTACCOUNTS.value  -> {
+                val resultArray: JSONArray = data.optJSONArray("result") ?: JSONArray()
+                val accounts: List<String> = Json.decodeFromString(resultArray.toString())
+                val account =  accounts.getOrNull(0)
+
+                if (account != null) {
+                    updateAccount(account)
+                    completeRequest(id, account)
+                } else {
+                    Logger.error("Request accounts failure")
+                }
+            }
+            EthereumMethod.ETHCHAINID.value -> {
+                val chainId = data.optString("result")
+
+                if (chainId.isNotEmpty()) {
+                    updateChainId(chainId)
+                    completeRequest(id, chainId)
+                }
+            }
+            EthereumMethod.ETHSIGNTYPEDDATAV3.value,
+            EthereumMethod.ETHSIGNTYPEDDATAV4.value,
+            EthereumMethod.ETHSENDTRANSACTION.value -> {
+                val result = data.optString("result")
+
+                if (result.isNotEmpty()) {
+                    completeRequest(id, result)
+                } else {
+                    Logger.error("Unexpected response: $data")
+                }
+            }
+            else -> {
+                val result = data.opt("result")
+                if (result != null) {
+                    completeRequest(id, result)
+                } else {
+                    Logger.error("Unexpected response: $data")
+                }
+            }
+        }
+    }
+
+    private fun completeRequest(id: String, result: Any) {
+        submittedRequests[id]?.deferred?.complete(result)
+        submittedRequests.remove(id)
+    }
+
+    private fun handleEvent(event: JSONObject) {
+
+        when (event.optString("method")) {
+            EthereumMethod.METAMASKACCOUNTSCHANGED.value -> {
+                val accountsArray: JSONArray = event.optJSONArray("params") ?: JSONArray()
+                val accounts: List<String> = Json.decodeFromString(accountsArray.toString())
+
+                accounts.getOrNull(0)?.let { account ->
+                    updateAccount(account)
+                }
+            }
+            EthereumMethod.METAMASKCHAINCHANGED.value -> {
+                val paramsJson = event.optJSONObject("params")
+                val chainId = paramsJson.optString("chainId")
+
+                if (chainId != null && chainId.isNullOrEmpty()) {
+                    updateChainId(chainId)
+                }
+            }
+            else -> {
+                Logger.error("Unexpected event: $event")
+            }
+        }
+    }
+
+    private fun updateAccount(account: String) {
+        val callback = ethereumEventCallbackRef.get()
+        callback?.updateAccount(account)
+    }
+
+    private fun updateChainId(chainId: String) {
+        val callback = ethereumEventCallbackRef.get()
+        callback?.updateAccount(chainId)
+    }
+
+    private fun handleKeyExchange(message: String) {
+        Log.d(TAG,"CommClient: Received key exchange $message")
+
+        val json = JSONObject(message)
+
+        val keyExchangeStep = json.optString(KeyExchange.TYPE, KeyExchangeMessageType.key_exchange_SYN.name)
         val type = KeyExchangeMessageType.valueOf(keyExchangeStep)
-        val theirPublicKey = message.getString(KeyExchange.PUBLIC_KEY)
-        val keyExchangeMessage = KeyExchangeMessage(type, theirPublicKey)
+        val theirPublicKey = json.optString(KeyExchange.PUBLIC_KEY)
+        val keyExchangeMessage = KeyExchangeMessage(type.name, theirPublicKey)
         val nextStep  = keyExchange.nextKeyExchangeMessage(keyExchangeMessage)
 
-        val response = Bundle()
-
-        nextStep?.let {
-            val bundle = Bundle().apply {
-                putString(KeyExchange.PUBLIC_KEY, it.publicKey)
-                putString(KeyExchange.TYPE, it.type.name)
+        if (nextStep != null) {
+            val exchangeMessage = JSONObject().apply {
+                val details = JSONObject().apply {
+                    put(KeyExchange.PUBLIC_KEY, nextStep.publicKey)
+                    put(KeyExchange.TYPE, nextStep.type)
+                }
+                put(KEY_EXCHANGE, details.toString())
             }
-            response.putBundle(KEY_EXCHANGE, bundle)
-        } ?: run {
-            // send request_ethAccounts
-            response.putString(MESSAGE, "Over & out!!")
+
+            Logger.log("Sending key exchange message $exchangeMessage")
+            sendKeyExchangeMesage(exchangeMessage.toString())
         }
 
-        sendMessage(response)
+        if (keyExchange.keysExchanged) {
+            //sendOriginatorInfo()
+        }
     }
 
-    fun sendMessage(message: Bundle) {
-        Log.d(TAG, "Sending message ->")
-        for (key in message.keySet()) {
-            val value = message.get(key)
-            Log.d(TAG, "$key <- $value")
+    fun sendMessage(message: String) {
+        Log.d(TAG, "Sending message: $message")
+
+        if (!keyExchange.keysExchanged) {
+            addRequestJob { messageService?.sendMessage(message) }
+        } else {
+            messageService?.sendMessage(message)
         }
-        messageService?.sendMessage(message)
     }
+
+    fun sendRequest(request: EthereumRequest, deferred: CompletableDeferred<Any>) {
+        val message = JSONObject().apply {
+            val details = JSONObject().apply {
+                put(SESSION_ID, sessionId)
+                put(DATA, Json.encodeToString(request))
+            }
+            val payload = keyExchange.encrypt(details.toString())
+            put(MESSAGE, payload)
+        }
+
+        submittedRequests[request.id] = SubmittedRequest(request, deferred)
+        sendMessage(message.toString())
+    }
+
+    private fun sendOriginatorInfo() {
+        Logger.log("Sending originator info")
+        val apiVersion = BuildConfig::class.java.getField("versionName").get(null) as String
+        val originatorInfo = OriginatorInfo(dapp?.name, dapp?.url, "Android", apiVersion)
+        val requestInfo = RequestInfo("originator_info", originatorInfo)
+
+        val message = JSONObject().apply {
+            val details = JSONObject().apply {
+                put(SESSION_ID, sessionId)
+                put(DATA, Json.encodeToString(requestInfo))
+            }
+            val payload = keyExchange.encrypt(details.toString())
+            put(MESSAGE, payload)
+        }
+
+        sendMessage(message.toString())
+    }
+
     fun bindService() {
-        Log.d(TAG, "Binding service now!")
+        Log.d(TAG, "Binding service")
         val serviceIntent = Intent()
             .setComponent(
                 ComponentName(
@@ -181,20 +360,34 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle)  {
                 )
             )
         if (appContext != null) {
-            Log.d(TAG, "App context all good")
             appContext.bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
         } else {
-            Log.d(TAG, "App context null!")
+            Logger.error("App context null!")
         }
     }
+
+    fun unbindService() {
+        if (isServiceConnected) {
+            Log.d(TAG, "Unbinding service")
+            appContext.unbindService(serviceConnection)
+            isServiceConnected = false
+        }
+    }
+
     private fun initiateKeyExchange() {
         Log.d(TAG, "CommClient: Initiating key exchange")
-        val message = Bundle().apply {
-            val bundle = Bundle().apply {
-                putString(KeyExchange.TYPE, KeyExchangeMessageType.key_exchange_SYN.name)
+        val json = JSONObject().apply {
+            val keyExchange = JSONObject().apply {
+                put(KeyExchange.PUBLIC_KEY, keyExchange.publicKey)
+                put(KeyExchange.TYPE, KeyExchangeMessageType.key_exchange_SYN.name)
             }
-            putBundle(KEY_EXCHANGE, bundle)
+            put(KEY_EXCHANGE, keyExchange.toString())
         }
-        sendMessage(message)
+        Logger.log("Sending exchange $json")
+        sendKeyExchangeMesage(json.toString())
+    }
+
+    private fun sendKeyExchangeMesage(message: String) {
+        messageService?.sendMessage(message)
     }
 }

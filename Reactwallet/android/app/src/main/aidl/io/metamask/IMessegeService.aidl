@@ -6,5 +6,5 @@ import io.metamask.IMessegeServiceCallback;
 
 interface IMessegeService {
     void registerCallback(in IMessegeServiceCallback callback);
-    void sendMessage(inout @nullable Bundle message);
+    void sendMessage(String message);
 }

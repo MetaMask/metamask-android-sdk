@@ -1,15 +1,11 @@
 package com.metamask.android.sdk
 
-enum class MessageType {
-    CREATE_CHANNEL,
-    CONNECT_TO_CHANNEL,
-    SEND_MESSAGE,
-    GET_KEY_INFO,
-    PAUSE,
-    RESET_KEYS,
-    PING,
-    KEY_CHECK,
-    IS_CONNECTED,
-    RESUME,
-    DISCONNECT
+enum class MessageType(val value: String) {
+    ID("id"),
+    TYPE("type"),
+    DATA("data"),
+    PAUSE("pause"),
+    READY("ready"),
+    TERMINATE("terminate"),
+    WALLET_INFO("wallet_info")
 }

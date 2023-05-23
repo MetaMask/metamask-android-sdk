@@ -2,11 +2,13 @@ package com.reactwallet
 
 import android.app.Service
 import android.content.Intent
-import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
 import io.metamask.IMessegeService
 import io.metamask.IMessegeServiceCallback
+import org.json.JSONObject
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.decodeFromString
 
 class MessageService : Service() {
     private val messageServiceCallbacks = mutableListOf<IMessegeServiceCallback>()
@@ -31,94 +33,79 @@ class MessageService : Service() {
             }
         }
 
-        override fun sendMessage(message: Bundle?) {
-            Log.d(TAG, "MessageService: Received message!")
-            message?.let {
-                for (key in it.keySet()) {
-                    val value = it.get(key)
-                    Log.d(TAG, "$key <- $value")
-                }
-            }
+        override fun sendMessage(message: String) {
+            Log.d(TAG, "MessageService(sendMessage): Received message: $message")
+            val messageJson = JSONObject(message)
+            val keyExchange = messageJson.optString(KEY_EXCHANGE)
+            val data = messageJson.optString(MESSAGE)
 
-            message?.let {
-                it.getBundle(KEY_EXCHANGE)?.let { exchange ->
-                    handleKeyExchange(exchange)
-                }
-
-                it.getBundle(MESSAGE)?.let {  message ->
-                    handleMessage(message)
-                }
-
-                it.getString(MESSAGE)?.let { string ->
-                    handleMessage(string)
-                }
+            if (keyExchange.isNotEmpty()) {
+                handleKeyExchange(keyExchange)
+            } else if (data.isNotEmpty()) {
+                handleMessage(data)
             }
         }
     }
 
-    fun sendMessage(message: Bundle) {
-        Log.d(TAG, "MessageService: Sending message:")
-        for (key in message.keySet()) {
-            val value = message.get(key)
-            Log.d(TAG, "$key <- $value")
-        }
+    fun sendMessage(message: String) {
+        Log.d(TAG, "MessageService: Sending message: $message")
         messageServiceCallbacks.forEach {
             it.onMessageReceived(message)
         }
-        //messageCallback?.onMessageReceived(message)
     }
 
-    private fun handleKeyExchange(message: Bundle) {
-        Log.d(TAG,"MessageService: Received key exchange")
-        for (key in message.keySet()) {
-            val value = message.get(key)
-            Log.d(TAG, "$key <- $value")
-        }
+    private fun handleKeyExchange(message: String) {
+        Log.d(TAG,"MessageService: Received key exchange $message")
+        val json = JSONObject(message)
+        Log.d(TAG,"MessageService: json $json")
 
-        val keyExchangeStep = message.getString(KeyExchange.TYPE) ?: KeyExchangeMessageType.key_exchange_SYN.name
+        val keyExchangeStep = json.optString(KeyExchange.TYPE, KeyExchangeMessageType.key_exchange_SYN.name)
         val type = KeyExchangeMessageType.valueOf(keyExchangeStep)
-        val theirPublicKey = message.getString(KeyExchange.PUBLIC_KEY)
-        val keyExchangeMessage = KeyExchangeMessage(type, theirPublicKey)
+        val theirPublicKey = json.optString(KeyExchange.PUBLIC_KEY)
+        val keyExchangeMessage = KeyExchangeMessage(type.name, theirPublicKey) //Json.decodeFromString(message)
         val nextStep  = keyExchange.nextKeyExchangeMessage(keyExchangeMessage)
 
-        val response = Bundle()
-
-        nextStep?.let {
-            val bundle = Bundle().apply {
-                putString(KeyExchange.PUBLIC_KEY, it.publicKey)
-                putString(KeyExchange.TYPE, it.type.name)
+        if (nextStep != null) {
+            val exchangeMessage = JSONObject().apply {
+                val details = JSONObject().apply {
+                    put(KeyExchange.PUBLIC_KEY, nextStep.publicKey)
+                    put(KeyExchange.TYPE, nextStep.type)
+                }
+                put(KEY_EXCHANGE, details.toString())
             }
-            response.putBundle(KEY_EXCHANGE, bundle)
-        } ?: run {
-            response.putString(MESSAGE, "Done!")
-        }
 
-        sendMessage(response)
+            Log.d(TAG, "Sending key exchange message $exchangeMessage")
+
+            sendKeyExchangeMesage(exchangeMessage.toString())
+        } else {
+            val response = JSONObject().apply {
+                val walletInfo = JSONObject().apply {
+                    put("type", "ready")
+                }
+                val payload = keyExchange.encrypt(walletInfo.toString())
+                put(MESSAGE, payload)
+            }
+            sendMessage(response.toString())
+        }
+    }
+
+    private fun sendKeyExchangeMesage(message: String) {
+        messageServiceCallbacks.forEach {
+            it.onMessageReceived(message)
+        }
     }
 
     private fun handleMessage(message: String) {
-        Log.d(TAG, "MessageService: Received message $message")
+        val payload = keyExchange.decrypt(message)
+        Log.d(TAG, "MessageService (handleMessage): Received message: $payload")
+
+//        messageServiceCallbacks.forEach { callback ->
+//            callback.onMessageReceived(message)
+//        }
 
         Log.d(TAG, "MessageService: Broadcasting message...")
         val intent = Intent("com.reactwallet.MESSAGE")
-        intent.putExtra(MESSAGE, message)
-        applicationContext.sendBroadcast(intent)
-    }
-
-    private fun handleMessage(message: Bundle) {
-        Log.d(TAG, "MessageService: Received message:")
-        for (key in message.keySet()) {
-            val value = message.get(key)
-            Log.d(TAG, "$key <- $value")
-        }
-
-        messageServiceCallbacks.forEach { callback ->
-            callback.onMessageReceived(message)
-        }
-
-        Log.d(TAG, "MessageService: Broadcasting message...")
-        val intent = Intent("com.reactwallet.MESSAGE")
-        intent.putExtra(MESSAGE, message)
+        intent.putExtra(MESSAGE, payload)
         applicationContext.sendBroadcast(intent)
     }
 }

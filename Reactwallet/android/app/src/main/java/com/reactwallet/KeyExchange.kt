@@ -1,48 +1,59 @@
 package com.reactwallet
 
+import kotlinx.serialization.Serializable
 import com.reactwallet.KeyExchangeMessageType.*
+import kotlinx.serialization.SerialName
 
 data class KeyExchangeMessage(
-    val type: KeyExchangeMessageType,
+    val type: String,
     val publicKey: String?
     )
 
-class KeyExchange(crypto: Crypto = Ecies()) {
+class KeyExchange(private val crypto: Crypto = Crypto()) {
     companion object {
-        const val TYPE = "KEY_EXCHANGE_TYPE"
-        const val PUBLIC_KEY = "PUBLIC_KEY"
+        const val TYPE = "type"
+        const val PUBLIC_KEY = "public_key"
     }
 
-    private val privateKey: String?
-    private val publicKey: String?
-    private var theirPublickKey: String? = null
-
-    private val encryption: Crypto
+    private var privateKey: String? = null
+    var publicKey: String? = null
+    private var theirPublicKey: String? = null
+    var keysExchanged = false
 
     init {
-        encryption = crypto
-        privateKey = encryption.generatePrivateKey()
-        publicKey = encryption.publicKey(privateKey)
+        generateNewKeys()
+    }
+
+    fun generateNewKeys() {
+        privateKey = crypto.generatePrivateKey()
+        privateKey?.let {
+            publicKey = crypto.publicKey(it)
+        }
+        keysExchanged = false
+        theirPublicKey = null
     }
 
     fun encrypt(message: String): String {
-        val key: String = theirPublickKey ?: throw NullPointerException("theirPublickKey is null")
-        return encryption.encrypt(message, key)
+        val key: String = theirPublicKey ?: throw NullPointerException("theirPublicKey is null")
+        return crypto.encrypt(key, message)
     }
 
     fun decrypt(message: String): String {
         val key: String = privateKey ?: throw NullPointerException("privateKey is null")
-        return encryption.decrypt(message, key)
+        return crypto.decrypt(key, message)
     }
 
     fun nextKeyExchangeMessage(current: KeyExchangeMessage): KeyExchangeMessage? {
-        theirPublickKey = current.publicKey
+        current.publicKey?.let {
+            theirPublicKey = it
+            keysExchanged = true
+        }
 
         return when(current.type) {
-            key_handshake_start -> KeyExchangeMessage(key_exchange_SYN, publicKey)
-            key_exchange_SYN -> KeyExchangeMessage(key_exchange_SYNACK, publicKey)
-            key_exchange_SYNACK -> KeyExchangeMessage(key_exchange_ACK, publicKey)
-            key_exchange_ACK -> null
+            key_handshake_start.name -> KeyExchangeMessage(key_exchange_SYN.name, publicKey)
+            key_exchange_SYN.name -> KeyExchangeMessage(key_exchange_SYNACK.name, publicKey)
+            key_exchange_SYNACK.name -> KeyExchangeMessage(key_exchange_ACK.name, publicKey)
+            key_exchange_ACK.name -> null
             else -> null
         }
     }

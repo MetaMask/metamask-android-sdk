@@ -2,7 +2,6 @@ package com.reactwallet
 
 import android.app.Service
 import android.content.*
-import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
 import android.widget.Toast
@@ -10,6 +9,7 @@ import com.facebook.react.bridge.*
 
 import io.metamask.IMessegeService
 import io.metamask.IMessegeServiceCallback
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -26,6 +26,7 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
     }
 
     private var isServiceConnected = false
+    private val keyExchange = KeyExchange()
     private var messageService: IMessegeService? = null
     var messageCallback: IMessegeServiceCallback? = null
 
@@ -65,8 +66,6 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
     override fun onCatalystInstanceDestroy() {
         super.onCatalystInstanceDestroy()
         if (isServiceConnected) {
-            context.unbindService(serviceConnection)
-            isServiceConnected = false
             unbindService()
         }
     }
@@ -99,17 +98,13 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
         unregisterReceiver()
     }
 
-    fun sendMessage(message: Bundle) {
-        Log.d(MessageService.TAG, "ReactCommClient: Sending message:")
-        for (key in message.keySet()) {
-            val value = message.get(key)
-            Log.d(MessageService.TAG, "$key <- $value")
-        }
+    fun sendMessage(message: String) {
+        Log.d(MessageService.TAG, "ReactCommClient: Sending message: $message")
         messageCallback?.onMessageReceived(message)
     }
 
     @ReactMethod
-    fun sendMessage(message: Bundle, promise: Promise) {
+    fun sendMessage(message: String, promise: Promise) {
         Log.d(TAG, "Sending new message at ${timeNow()}")
         if (!isServiceConnected) {
             Log.e(TAG,"Service is not connected")
@@ -119,7 +114,7 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
 
         try {
             val messageServiceCallback: IMessegeServiceCallback = object : IMessegeServiceCallback.Stub() {
-                override fun onMessageReceived(message: Bundle?) {
+                override fun onMessageReceived(message: String) {
                     Log.d(TAG, "Received response at ${timeNow()}")
                     promise.resolve(message)
                 }
@@ -128,15 +123,11 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
             //messageService?.sendMessage(message)
             messageServiceCallback?.onMessageReceived(message)
         } catch (e: Exception) {
-            Log.e(TAG,"Could not convert message to Bundle: ${e.message}")
+            Log.e(TAG,"Could not send message: ${e.message}")
             promise.reject(e)
         }
     }
 
-    @ReactMethod
-    fun sayHello(promise: Promise) {
-        promise.resolve("Hello back to ya!")
-    }
 /*
  AndroidService
  */
@@ -150,9 +141,9 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
 
         when (messageType) {
             MessageType.SEND_MESSAGE -> {
-                Arguments.toBundle(message)?.let {
-                    sendMessage(it, promise)
-                }
+//                Arguments.toBundle(message)?.let {
+//                    sendMessage(it, promise)
+//                }
             }
             MessageType.RESET_KEYS -> {
                 resetKeys(promise)
@@ -201,17 +192,18 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
     }
 
     private fun ping(promise: Promise) {
-        Log.d(CommunicationClient.TAG, "Ping")
+        Log.d(TAG, "Ping")
         try {
-            val message = Bundle().apply {
-                val bundle = Bundle().apply {
-                    putString(MESSAGE_TYPE, MessageType.PING.name)
+            val message = JSONObject().apply {
+                val details = JSONObject().apply {
+                    put(MESSAGE_TYPE, MessageType.PING.name)
                 }
-                putBundle(MESSAGE, bundle)
+                val payload = keyExchange.encrypt(details.toString())
+                put(MESSAGE, payload)
             }
 
             val messageServiceCallback: IMessegeServiceCallback = object : IMessegeServiceCallback.Stub() {
-                override fun onMessageReceived(message: Bundle?) {
+                override fun onMessageReceived(message: String) {
                     Log.d(TAG, "Received ping response")
                     promise.resolve(message)
                 }
@@ -219,30 +211,32 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
 
             messageService?.registerCallback(messageServiceCallback)
             //messageService?.sendMessage(message)
-            messageServiceCallback?.onMessageReceived(message)
+            messageServiceCallback?.onMessageReceived(message.toString())
         } catch (e: Exception) {
-            Log.e(TAG,"Could not convert message to Bundle: ${e.message}")
+            Log.e(TAG,"Could not send message: ${e.message}")
             promise.reject(e)
         }
     }
 
     private fun getKeyInfo(promise: Promise) {
-        Log.d(CommunicationClient.TAG, "Getting key info...")
+        Log.d(TAG, "Getting key info...")
         promise.resolve(null)
     }
 
     private fun resetKeys(promise: Promise) {
-        Log.d(CommunicationClient.TAG, "Resetting keys...")
+        Log.d(TAG, "Resetting keys...")
         try {
-            val message = Bundle().apply {
-                val bundle = Bundle().apply {
-                    putString(MESSAGE_TYPE, MessageType.RESET_KEYS.name)
+
+            val message = JSONObject().apply {
+                val details = JSONObject().apply {
+                    put(MESSAGE_TYPE, MessageType.RESET_KEYS.name)
                 }
-                putBundle(MESSAGE, bundle)
+                val payload = keyExchange.encrypt(details.toString())
+                put(MESSAGE, payload)
             }
 
             val messageServiceCallback: IMessegeServiceCallback = object : IMessegeServiceCallback.Stub() {
-                override fun onMessageReceived(message: Bundle?) {
+                override fun onMessageReceived(message: String) {
                     Log.d(TAG, "Received resetKeys response")
                     promise.resolve(message)
                 }
@@ -250,7 +244,7 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
 
             messageService?.registerCallback(messageServiceCallback)
             //messageService?.sendMessage(message)
-            messageServiceCallback?.onMessageReceived(message)
+            messageServiceCallback?.onMessageReceived(message.toString())
         } catch (e: Exception) {
             Log.e(TAG,"Could not convert message to Bundle: ${e.message}")
             promise.reject(e)

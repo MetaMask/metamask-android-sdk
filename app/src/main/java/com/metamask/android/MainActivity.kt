@@ -14,9 +14,10 @@ import android.view.MenuItem
 import android.widget.Button
 import androidx.lifecycle.LifecycleObserver
 import com.metamask.android.databinding.ActivityMainBinding
-import com.metamask.android.sdk.CommunicationClient
-import com.metamask.android.sdk.KeyExchange
-import com.metamask.android.sdk.KeyExchangeMessageType
+import com.metamask.android.sdk.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity(), LifecycleObserver {
 
@@ -27,7 +28,8 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
         const val TAG = "MM_ANDROID_SDK"
     }
 
-    private lateinit var communicationClient: CommunicationClient
+    private lateinit var ethereum: Ethereum
+    //private lateinit var communicationClient: CommunicationClient
     private lateinit var button: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,17 +51,17 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
 
         button = findViewById<Button>(R.id.bind)
         button.setOnClickListener {
-            val message = Bundle().apply {
-                val bundle = Bundle().apply {
-                    putString(KeyExchange.TYPE, KeyExchangeMessageType.key_exchange_SYN.name)
-                }
-                putBundle("KEY_EXCHANGE", bundle)
-            }
-            communicationClient.sendMessage(message)
+//            CoroutineScope(Dispatchers.Main).launch {
+//                // Call suspend function here
+//                val result = ethereum.connect(Dapp("Droidapp", "https://droidapp.io"))
+//                Logger.log("Ethereum connection result: $result")
+//            }
+            ethereum.connect(Dapp("Droidapp", "https://droidapp.io"))
         }
 
         Log.d(TAG, "app: onCreate")
-        communicationClient = CommunicationClient(applicationContext, lifecycle)
+        ethereum = Ethereum(this, lifecycle)
+
         lifecycle.addObserver(this)
     }
 
