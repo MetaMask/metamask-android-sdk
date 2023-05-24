@@ -28,7 +28,8 @@ class Ethereum(context: Context, lifecycle: Lifecycle): EthereumEventCallback {
     suspend fun connect(dapp: Dapp): String {
         Logger.log("Ethereum connecting")
         communicationClient.dapp = dapp
-        return requestAccounts()
+//        return requestAccounts()
+        return ""
     }
 
     fun disconnect() {
@@ -38,14 +39,15 @@ class Ethereum(context: Context, lifecycle: Lifecycle): EthereumEventCallback {
     }
 
     private suspend fun requestAccounts(): String {
+        Logger.log("Requesting accounts")
         connected = true
-        val providerRequest = EthereumRequest(
+        val providerRequest = EthereumRequest<String>(
             communicationClient.sessionId,
             GETMETAMASKPROVIDERSTATE.name
         )
         sendRequest(providerRequest)
 
-        val accountsRequest = EthereumRequest(
+        val accountsRequest = EthereumRequest<String>(
             communicationClient.sessionId,
             ETHREQUESTACCOUNTS.name
         )
@@ -53,12 +55,14 @@ class Ethereum(context: Context, lifecycle: Lifecycle): EthereumEventCallback {
         return sendRequest(accountsRequest) as? String ?: String()
     }
 
-    suspend fun sendRequest(request: EthereumRequest): Any {
+    suspend fun <T>sendRequest(request: EthereumRequest<T>): Any {
         Logger.log("Sending request! $request")
-        if (!connected && request.method == EthereumMethod.ETHREQUESTACCOUNTS.value) {
+        if (!connected && request.method == ETHREQUESTACCOUNTS.value) {
             communicationClient.bindService()
             return requestAccounts()
         }
+
+        Logger.log("Proceeding sending request")
 
         val deferred = CompletableDeferred<Any>()
         communicationClient.sendRequest(request, deferred)

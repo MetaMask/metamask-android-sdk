@@ -3,10 +3,8 @@ import kotlinx.serialization.Serializable
 import java.util.*
 
 @Serializable
-class EthereumRequest(
+class EthereumRequest<T>(
     var id: String = UUID.randomUUID().toString(),
     val method: String,
-    val params: Serializable? = null
-) {
-
-}
+    val params: T? = null
+)

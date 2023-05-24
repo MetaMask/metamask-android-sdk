@@ -17,6 +17,9 @@ import java.util.UUID
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonNull.serializer
+import kotlinx.serialization.modules.SerializersModule
 import org.json.JSONArray
 import java.lang.ref.WeakReference
 
@@ -41,7 +44,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
     }
 
     private var requestJobs: MutableList<() -> Unit> = mutableListOf()
-    private var submittedRequests: MutableMap<String, SubmittedRequest>  = mutableMapOf()
+    private var submittedRequests: MutableMap<String, SubmittedRequest<*>>  = mutableMapOf()
 
     private val observer = object : DefaultLifecycleObserver {
 
@@ -157,8 +160,10 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
         // check for error
         val errorJson = data.optJSONObject("error")
         if (errorJson != null) {
-            val error: Map<String, Any> = Json.decodeFromString(errorJson.toString())
-            completeRequest(id, RequestError(error))
+            val error: Map<String, Any?> = Json.decodeFromString(errorJson.toString())
+            val code = error["code"] as? Int ?: -1
+            val message = error["message"] as? String ?: ErrorType.message(code)
+            completeRequest(id, RequestError(code, message))
             return
         }
 
@@ -169,11 +174,11 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
             val resultJson = data.optJSONObject("result")
 
             if (resultJson != null) {
-                val result: Map<String, Any> = Json.decodeFromString(resultJson.toString())
+                val result: Map<String, Serializable> = Json.decodeFromString(resultJson.toString())
                 submittedRequests[id]?.deferred?.complete(result)
                 completeRequest(id, result)
             } else {
-                val result: Map<String, Any> = Json.decodeFromString(data.toString())
+                val result: Map<String, Serializable> = Json.decodeFromString(data.toString())
                 completeRequest(id, result)
             }
             return
@@ -257,7 +262,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
             }
             EthereumMethod.METAMASKCHAINCHANGED.value -> {
                 val paramsJson = event.optJSONObject("params")
-                val chainId = paramsJson.optString("chainId")
+                val chainId = paramsJson?.optString("chainId")
 
                 if (chainId != null && chainId.isNullOrEmpty()) {
                     updateChainId(chainId)
@@ -304,7 +309,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
         }
 
         if (keyExchange.keysExchanged) {
-            //sendOriginatorInfo()
+            sendOriginatorInfo()
         }
     }
 
@@ -318,7 +323,11 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
         }
     }
 
-    fun sendRequest(request: EthereumRequest, deferred: CompletableDeferred<Any>) {
+    fun <T>sendRequest(request: EthereumRequest<T>, deferred: CompletableDeferred<Any>) {
+        Logger.log("CommClient: sending request $request")
+        val requestString = Json.encodeToString(request)
+        Logger.log("CommClient: requestString $requestString")
+
         val message = JSONObject().apply {
             val details = JSONObject().apply {
                 put(SESSION_ID, sessionId)
@@ -334,7 +343,12 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
 
     private fun sendOriginatorInfo() {
         Logger.log("Sending originator info")
-        val apiVersion = BuildConfig::class.java.getField("versionName").get(null) as String
+        val manager = appContext.packageManager
+        val packageInfo = manager.getPackageInfo(appContext.packageName, 0)
+        val apiVersion = packageInfo.versionName
+        Logger.log("apiVersion info is $apiVersion")
+
+        //val apiVersion = BuildConfig::class.java.getField("versionName").get(null) as String
         val originatorInfo = OriginatorInfo(dapp?.name, dapp?.url, "Android", apiVersion)
         val requestInfo = RequestInfo("originator_info", originatorInfo)
 

@@ -51,18 +51,26 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
 
         button = findViewById<Button>(R.id.bind)
         button.setOnClickListener {
-//            CoroutineScope(Dispatchers.Main).launch {
-//                // Call suspend function here
-//                val result = ethereum.connect(Dapp("Droidapp", "https://droidapp.io"))
-//                Logger.log("Ethereum connection result: $result")
-//            }
-            ethereum.connect(Dapp("Droidapp", "https://droidapp.io"))
+            openMetaMask()
         }
 
         Log.d(TAG, "app: onCreate")
         ethereum = Ethereum(this, lifecycle)
-
         lifecycle.addObserver(this)
+
+//        CoroutineScope(Dispatchers.Main).launch {
+//            // Call suspend function here
+//            val result = ethereum.connect(Dapp("Droidapp", "https://droidapp.io"))
+//            Logger.log("Ethereum connection result: $result")
+//        }
+    }
+
+    private fun openMetaMask() {
+        val intent = Intent().apply {
+            setClassName("com.reactwallet", "com.reactwallet.MainActivity")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        startActivity(intent)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

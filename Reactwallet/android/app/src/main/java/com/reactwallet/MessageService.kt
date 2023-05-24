@@ -90,6 +90,7 @@ class MessageService : Service() {
     }
 
     private fun sendKeyExchangeMesage(message: String) {
+        Log.d(TAG, "Sending key exchange: $message")
         messageServiceCallbacks.forEach {
             it.onMessageReceived(message)
         }
