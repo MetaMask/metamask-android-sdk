@@ -43,10 +43,13 @@ class KeyExchange(private val crypto: Crypto = Crypto()) {
         return crypto.decrypt(key, message)
     }
 
+    fun complete() {
+        keysExchanged = true
+    }
+
     fun nextKeyExchangeMessage(current: KeyExchangeMessage): KeyExchangeMessage? {
         current.publicKey?.let {
             theirPublicKey = it
-            keysExchanged = true
         }
 
         return when(current.type) {

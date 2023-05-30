@@ -29,8 +29,8 @@ class OverlayService : Service() {
         val windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         val displayMetrics = DisplayMetrics()
         windowManager.defaultDisplay.getMetrics(displayMetrics)
-        val width = (displayMetrics.widthPixels * 0.75f).toInt()
-        val height = (displayMetrics.heightPixels * 0.75f).toInt()
+        val width = (displayMetrics.widthPixels * 0.3f).toInt()
+        val height = (displayMetrics.heightPixels * 0.3f).toInt()
         layoutParams?.width = width
         layoutParams?.height = height
 

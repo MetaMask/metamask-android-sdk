@@ -9,11 +9,11 @@ data class KeyExchangeMessage(
     val publicKey: String?
     )
 
-class KeyExchange(private val crypto: Crypto = Crypto()) {
-    companion object {
-        const val TYPE = "type"
-        const val PUBLIC_KEY = "public_key"
-    }
+object KeyExchange {
+    const val TYPE = "type"
+    const val PUBLIC_KEY = "public_key"
+
+    private val crypto: Crypto = Crypto()
 
     private var privateKey: String? = null
     var publicKey: String? = null
@@ -43,10 +43,13 @@ class KeyExchange(private val crypto: Crypto = Crypto()) {
         return crypto.decrypt(key, message)
     }
 
+    fun complete() {
+        keysExchanged = true
+    }
+
     fun nextKeyExchangeMessage(current: KeyExchangeMessage): KeyExchangeMessage? {
         current.publicKey?.let {
             theirPublicKey = it
-            keysExchanged = true
         }
 
         return when(current.type) {

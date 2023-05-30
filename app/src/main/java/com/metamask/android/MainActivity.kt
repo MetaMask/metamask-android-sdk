@@ -29,7 +29,6 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
     }
 
     private lateinit var ethereum: Ethereum
-    //private lateinit var communicationClient: CommunicationClient
     private lateinit var button: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,14 +54,17 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
         }
 
         Log.d(TAG, "app: onCreate")
-        ethereum = Ethereum(this, lifecycle)
         lifecycle.addObserver(this)
+        ethereum = Ethereum(this, lifecycle)
 
-//        CoroutineScope(Dispatchers.Main).launch {
-//            // Call suspend function here
-//            val result = ethereum.connect(Dapp("Droidapp", "https://droidapp.io"))
-//            Logger.log("Ethereum connection result: $result")
-//        }
+        CoroutineScope(Dispatchers.Default).launch {
+            val result = ethereum.connect(Dapp("Droidapp", "https://droidapp.io"))
+            if (result is RequestError) {
+                Logger.log("Ethereum connection error: ${result.message}")
+            } else {
+                Logger.log("Ethereum connection result: $result")
+            }
+        }
     }
 
     private fun openMetaMask() {

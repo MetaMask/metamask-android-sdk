@@ -1,5 +1,11 @@
 package com.metamask.android.sdk
 
+import com.google.gson.TypeAdapter
+import com.google.gson.annotations.SerializedName
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonToken
+import com.google.gson.stream.JsonWriter
+
 enum class EthereumMethod(val value: String) {
     ETHSIGN("eth_sign"),
     WEB3SHA("web3_sha3"),
