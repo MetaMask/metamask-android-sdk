@@ -33,11 +33,16 @@
         </service>
 
         <service
-            android:name=".OverlayService"
+            android:name=".MetaMaskPartialOverlayService"
             android:enabled="true"
             android:exported="true">
-
         </service>
+
+        <activity
+            android:name=".OverlayActivity"
+            android:exported="true"
+            android:theme="@style/Theme.HalfHeight.Dialog">
+        </activity>
 
     </application>
 </manifest>

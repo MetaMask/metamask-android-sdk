@@ -16,9 +16,10 @@ class MessageService : Service() {
     private val messageServiceCallbacks = mutableListOf<IMessegeServiceCallback>()
 
     companion object {
-        const val TAG = "MM_MOBILE"
+        const val TAG = "AIDL_NATIVE_MODULE"
         const val MESSAGE = "message"
         const val KEY_EXCHANGE = "key_exchange"
+        const val SESSION_ID = "session_id"
     }
 
     override fun onCreate() {
@@ -37,6 +38,8 @@ class MessageService : Service() {
     }
 
     private val binder = object : IMessegeService.Stub() {
+        private var channelId: String? = null
+
         override fun registerCallback(callback: IMessegeServiceCallback?) {
             Log.d(TAG, "MessageService: Callback registered!")
             callback?.let {
@@ -46,12 +49,18 @@ class MessageService : Service() {
 
         override fun sendMessage(message: Bundle) {
             val keyExchange = message.getString(KEY_EXCHANGE)
+            val sessionId = message.getString(SESSION_ID)
+            if (sessionId != null && channelId.isNullOrEmpty()) {
+                channelId = sessionId
+                broadcastEvent(EventType.CLIENTS_CONNECTED,null, sessionId)
+            }
+
             val message = message.getString(MESSAGE)
 
             if (keyExchange != null) {
                 handleKeyExchange(keyExchange)
             } else if (message != null) {
-                handleMessage(message)
+                handleMessage(message, sessionId)
             }
         }
     }
@@ -82,7 +91,7 @@ class MessageService : Service() {
                 put(KeyExchange.TYPE, nextStep.type)
             }.toString()
 
-            Log.d(TAG, "Sending key exchange message $exchangeMessage")
+            Log.d(TAG, "Sending next key exchange message $exchangeMessage")
 
             sendKeyExchangeMesage(exchangeMessage)
         }
@@ -100,10 +109,33 @@ class MessageService : Service() {
             val payload = KeyExchange.encrypt(ready)
             sendMessage(payload)
 
-            val intent = Intent("local.client")
-            intent.putExtra(EventType.KEYS_EXCHANGED.value, EventType.KEYS_EXCHANGED.value)
-            applicationContext.sendBroadcast(intent)
+            broadcastEvent(EventType.KEYS_EXCHANGED,null, null)
         }
+    }
+
+    // Broadcasts event to CommunicationClient
+    private fun broadcastMessage(eventType: EventType, data: String? = null, sessionId: String?) {
+        val intent = Intent("local.client")
+        intent.putExtra(eventType.value, data)
+        if (sessionId != null) {
+            intent.putExtra(SESSION_ID, sessionId)
+        }
+        applicationContext.sendBroadcast(intent)
+    }
+
+    private fun broadcastEvent(eventType: EventType, data: String? = null, sessionId: String?) {
+        val intent = Intent("local.client")
+        intent.putExtra("event", eventType.value)
+
+        if (data != null) {
+            intent.putExtra("data", data)
+        }
+
+        if (sessionId != null) {
+            intent.putExtra(SESSION_ID, sessionId)
+        }
+
+        applicationContext.sendBroadcast(intent)
     }
 
     private fun sendKeyExchangeMesage(message: String) {
@@ -116,18 +148,11 @@ class MessageService : Service() {
         }
     }
 
-    private fun handleMessage(message: String) {
+    private fun handleMessage(message: String, sessionId: String?) {
         val payload = KeyExchange.decrypt(message)
         Log.d(TAG, "MessageService (handleMessage): Received message: $payload")
 
-//        messageServiceCallbacks.forEach { callback ->
-//            callback.onMessageReceived(message)
-//        }
-
-        Log.d(TAG, "MessageService: Broadcasting message to CommClient...")
-        val intent = Intent("local.client")
-        intent.putExtra(EventType.MESSAGE.value, payload)
-        applicationContext.sendBroadcast(intent)
+        broadcastMessage(EventType.MESSAGE, payload, sessionId)
     }
 
     private fun registerReceiver() {

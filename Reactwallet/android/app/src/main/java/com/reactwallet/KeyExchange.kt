@@ -12,19 +12,19 @@ data class KeyExchangeMessage(
 object KeyExchange {
     const val TYPE = "type"
     const val PUBLIC_KEY = "public_key"
-
+    var step: String = KeyExchangeMessageType.none.name
     private val crypto: Crypto = Crypto()
 
-    private var privateKey: String? = null
-    var publicKey: String? = null
+    private lateinit var privateKey: String
+    lateinit var publicKey: String
     private var theirPublicKey: String? = null
     var keysExchanged = false
 
     init {
-        generateNewKeys()
+        resetKeys()
     }
 
-    fun generateNewKeys() {
+    fun resetKeys() {
         privateKey = crypto.generatePrivateKey()
         privateKey?.let {
             publicKey = crypto.publicKey(it)
@@ -52,12 +52,17 @@ object KeyExchange {
             theirPublicKey = it
         }
 
-        return when(current.type) {
+        step = current.type
+
+        val nextStep = when(current.type) {
             key_handshake_start.name -> KeyExchangeMessage(key_exchange_SYN.name, publicKey)
             key_exchange_SYN.name -> KeyExchangeMessage(key_exchange_SYNACK.name, publicKey)
             key_exchange_SYNACK.name -> KeyExchangeMessage(key_exchange_ACK.name, publicKey)
             key_exchange_ACK.name -> null
             else -> null
         }
+
+        step = nextStep?.type ?: KeyExchangeMessageType.none.name
+        return nextStep
     }
 }
