@@ -5,5 +5,4 @@ package io.metamask;
 
 interface IMessegeServiceCallback {
     void onMessageReceived(inout Bundle response);
-    String identifier();
 }

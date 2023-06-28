@@ -26,10 +26,10 @@ class Ethereum(context: Context, lifecycle: Lifecycle): EthereumEventCallback {
         this.chainId = chainId
     }
 
-    suspend fun connect(dapp: Dapp): Any {
+    fun connect(dapp: Dapp, callback: (Any?) -> Unit) {
         Logger.log("Ethereum: connecting...")
         communicationClient.dapp = dapp
-        return requestAccounts()
+        requestAccounts(callback)
     }
 
     fun disconnect() {
@@ -38,35 +38,34 @@ class Ethereum(context: Context, lifecycle: Lifecycle): EthereumEventCallback {
         connected = false
     }
 
-    private suspend fun requestAccounts(): Any {
+    private fun requestAccounts(callback: (Any?) -> Unit) {
         Logger.log("Requesting accounts")
         connected = true
+
         val providerRequest = EthereumRequest(
             communicationClient.sessionId,
             GETMETAMASKPROVIDERSTATE.value
         )
 
-        sendRequest(providerRequest)
+        sendRequest(providerRequest) {
+        }
 
         val accountsRequest = EthereumRequest(
             communicationClient.sessionId,
             ETHREQUESTACCOUNTS.value
         )
-
-        return sendRequest(accountsRequest)
+        Logger.log("Now requesting accounts $accountsRequest")
+        sendRequest(accountsRequest, callback)
     }
 
-    suspend fun sendRequest(request: EthereumRequest): Any {
-        Logger.log("Sending request! $request")
+    fun sendRequest(request: EthereumRequest, callback: (Any?) -> Unit) {
+        Logger.log("Sending request $request")
         if (!connected && request.method == ETHREQUESTACCOUNTS.value) {
             communicationClient.bindService()
-            return requestAccounts()
+            return requestAccounts(callback)
         }
 
-        Logger.log("Proceeding sending request")
-
-        val deferred = CompletableDeferred<Any>()
-        communicationClient.sendRequest(request, deferred)
+        communicationClient.sendRequest(request, callback)
 
 //        val authorise = requiresAuthorisation(request.method)
 //
@@ -75,8 +74,6 @@ class Ethereum(context: Context, lifecycle: Lifecycle): EthereumEventCallback {
 //            val overlayServiceIntent = Intent(appContext, PartialOverlayService::class.java)
 //            ContextCompat.startForegroundService(appContext, overlayServiceIntent)
 //        }
-
-        return deferred.await()
     }
 
     private fun requiresAuthorisation(method: String): Boolean {

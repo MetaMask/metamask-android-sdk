@@ -69,11 +69,16 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
 
             if (intent.action == "local.client" && message != null) {
 
-                broadcastToMetaMask(EventType.MESSAGE.value, message)
-                Log.d(TAG,"CommunicationClient: Got client broadcast message: $message")
-
                 val messageJson = JSONObject(message)
-                val id = messageJson.optString("id")
+                val data = messageJson.getString("data")
+
+                if (data.isNotEmpty()) {
+                    broadcastToMetaMask(EventType.MESSAGE.value, data)
+                    Log.d(TAG,"CommunicationClient: Got client broadcast message: $message")
+                }
+
+                val dataJson = JSONObject(data)
+                val id = dataJson.optString("id")
 
                 if (id.isNotEmpty()) {
                     sendAccountsInfo(id)

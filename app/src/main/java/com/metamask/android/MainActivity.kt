@@ -57,8 +57,7 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
         lifecycle.addObserver(this)
         ethereum = Ethereum(this, lifecycle)
 
-        CoroutineScope(Dispatchers.Default).launch {
-            val result = ethereum.connect(Dapp("Droidapp", "https://droidapp.io"))
+        ethereum.connect(Dapp("Droidapp", "https://droidapp.io")) { result ->
             if (result is RequestError) {
                 Logger.log("Ethereum connection error: ${result.message}")
             } else {

@@ -38,11 +38,5 @@
             android:exported="true">
         </service>
 
-        <activity
-            android:name=".OverlayActivity"
-            android:exported="true"
-            android:theme="@style/Theme.HalfHeight.Dialog">
-        </activity>
-
     </application>
 </manifest>

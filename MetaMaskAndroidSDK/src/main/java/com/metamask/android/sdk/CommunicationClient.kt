@@ -133,6 +133,8 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
             else -> {
                 val data = json.optString(MessageType.DATA.value)
 
+                Logger.log("Received some data $json")
+
                 if (data.isNotEmpty()) {
                     val dataJson = JSONObject(data)
                     val id = dataJson.optString(MessageType.ID.value)
@@ -184,7 +186,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
 
             if (resultJson.isNotEmpty()) {
                 val result: Map<String, Any?> = Gson().fromJson(resultJson, object : TypeToken<Map<String, Any?>>() {}.type)
-                submittedRequests[id]?.deferred?.complete(result)
+                submittedRequests[id]?.callback?.invoke(result)
                 completeRequest(id, result)
             } else {
                 val result: Map<String, Serializable> = Gson().fromJson(data.toString(), object : TypeToken<Map<String, Serializable>>() {}.type)
@@ -261,7 +263,6 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
 
     private fun handleError(error: String, id: String): Boolean {
         if (error.isEmpty()) {
-            Logger.log("Error is empty")
             return false
         }
 
@@ -274,7 +275,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
     }
 
     private fun completeRequest(id: String, result: Any) {
-        submittedRequests[id]?.deferred?.complete(result)
+        submittedRequests[id]?.callback?.invoke(result)
         submittedRequests.remove(id)
     }
 
@@ -285,7 +286,6 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
             EthereumMethod.METAMASKACCOUNTSCHANGED.value -> {
                 val accountsJson = event.optString("params")
                 val accounts: List<String> = Gson().fromJson(accountsJson, object : TypeToken<List<String>>() {}.type)
-                val account = accounts.getOrNull(0)
 
                 accounts.getOrNull(0)?.let { account ->
                     updateAccount(account)
@@ -363,16 +363,16 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
         }
     }
 
-    fun sendRequest(request: EthereumRequest, deferred: CompletableDeferred<Any>) {
+    fun sendRequest(request: EthereumRequest, callback: (Any?) -> Unit) {
         if (keyExchange.keysExchanged) {
-            processRequest(request, deferred)
+            processRequest(request, callback)
         } else {
             Logger.log("CommClient: sendRequest - keys not yet exchange")
-            addRequestJob { processRequest(request, deferred) }
+            addRequestJob { processRequest(request, callback) }
         }
     }
 
-    private fun processRequest(request: EthereumRequest, deferred: CompletableDeferred<Any>) {
+    private fun processRequest(request: EthereumRequest, callback: (Any?) -> Unit) {
         val requestJson = Gson().toJson(request)
         Logger.log("CommClient: sending request $requestJson")
 
@@ -383,7 +383,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
 
         val payload = keyExchange.encrypt(message)
 
-        submittedRequests[request.id] = SubmittedRequest(request, deferred)
+        submittedRequests[request.id] = SubmittedRequest(request, callback)
         sendMessage(payload)
     }
 
