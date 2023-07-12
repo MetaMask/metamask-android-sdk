@@ -1,18 +1,12 @@
 package com.reactwallet
 
 import android.content.*
-import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
-import android.view.contentcapture.ContentCaptureSessionId
 import com.facebook.react.bridge.*
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
-import io.metamask.IMessegeService
-import io.metamask.IMessegeServiceCallback
-import org.json.JSONObject
-import java.text.SimpleDateFormat
-import java.util.*
-
+import io.metamask.nativesdk.IMessegeService
+import io.metamask.nativesdk.IMessegeServiceCallback
 
 class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
@@ -21,14 +15,11 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
     override fun getName() = "CommunicationClient"
 
     companion object {
-        const val TAG = "AIDL_NATIVE_MODULE"
-        const val MESSAGE_TYPE = "message_type"
-        const val SESSION_ID = "session_id"
+        const val TAG = "NATIVE_SDK"
+        const val SESSION_ID = "id"
     }
 
-    private var channelId = ""
     private var isServiceConnected = false
-    private var clientsConnected = false
     private var messageService: IMessegeService? = null
     var messageCallback: IMessegeServiceCallback? = null
 
@@ -49,122 +40,32 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
 
     private val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            val sessionId = intent.getStringExtra(SESSION_ID)
+
             val event = intent.getStringExtra("event")
             val data = intent.getStringExtra("data")
 
-            if (sessionId != null && !clientsConnected) {
-                clientsConnected = true
-                channelId = sessionId
-                broadcastToMetaMask(EventType.CLIENTS_CONNECTED.value, sessionId)
-            }
-
             if (event != null && data != null) {
                 broadcastToMetaMask(event, data)
-            } else if (event != null) {
-                broadcastToMetaMask(event, sessionId)
-            }
-
-            val message = intent.getStringExtra(EventType.MESSAGE.value)
-
-            if (intent.action == "local.client" && message != null) {
-
-                val messageJson = JSONObject(message)
-                val data = messageJson.getString("data")
-
-                if (data.isNotEmpty()) {
-                    broadcastToMetaMask(EventType.MESSAGE.value, data)
-                    Log.d(TAG,"CommunicationClient: Got client broadcast message: $message")
-                }
-
-                val dataJson = JSONObject(data)
-                val id = dataJson.optString("id")
-
-                if (id.isNotEmpty()) {
-                    sendAccountsInfo(id)
-                }
-
-                sendMetaMaskAccountsChangedEvent()
-            } else if (intent.action == "local.client" && intent.getStringExtra(EventType.KEYS_EXCHANGED.value)?.isNotEmpty() == true) {
-
-                sendWalletInfo()
-                broadcastToMetaMask(EventType.KEYS_EXCHANGED.value)
             }
         }
     }
 
     private fun broadcastToMessageService(message: String) {
-        Log.d(MessageService.TAG, "CommunicationClient: Broadcasting message $message to MessageService")
+        Log.d(MessageService.TAG, "CommunicationClient: Sending message $message to MessageService")
         val intent = Intent("local.service")
         intent.putExtra(EventType.MESSAGE.value, message)
         reactAppContext.sendBroadcast(intent)
     }
 
-    fun broadcastToMetaMask(event: String, data: Any? = null) {
-        Log.d(MessageService.TAG, "CommunicationClient: Sending event $event to MetaMask wallet")
+    fun broadcastToMetaMask(event: String, data: Any) {
+        Log.d(MessageService.TAG, "CommunicationClient: Sending [$event] event to communication layer")
         reactAppContext.getJSModule(
             RCTDeviceEventEmitter::class.java
         )
             .emit(event, data)
     }
 
-    private fun sendWalletInfo() {
-        val walletInfoJson = JSONObject().apply {
-            val data = JSONObject().apply {
-                put("type", "metamask wallet")
-                put("version", "6.5.2")
-            }
-            put("type", "wallet_info")
-            put("data", data.toString())
-        }
-
-        val walletInfo = walletInfoJson.toString()
-        Log.d(TAG,"CommunicationClient: Sending wallet info: $walletInfo")
-
-        val walletEncrypted = KeyExchange.encrypt(walletInfo)
-        broadcastToMessageService(walletEncrypted)
-    }
-
-    private fun sendAccountsInfo(id: String) {
-        val accountInfoJson = JSONObject().apply {
-            val data = JSONObject().apply {
-                val accounts = JSONObject().apply {
-                    put("accounts", listOf("12hfhw88374h3j3dhd873733"))
-                    put("chainId", "0x1")
-                }
-                put("result", accounts.toString())
-                put("id", id)
-            }
-            put("data", data.toString())
-        }
-
-        val accountsInfo = accountInfoJson.toString()
-
-        Log.d(TAG, "Sending accounts info: $accountsInfo")
-
-        val accountInfoEncrypted = KeyExchange.encrypt(accountsInfo)
-        broadcastToMessageService(accountInfoEncrypted)
-    }
-
-    private fun sendMetaMaskAccountsChangedEvent() {
-        val accountInfoJson = JSONObject().apply {
-            val data = JSONObject().apply {
-                put("params", listOf("12hfhw88374h3j3dhd873733"))
-                put("method", "metamask_accountsChanged")
-            }
-            put("data", data.toString())
-        }
-
-        val accountsInfo = accountInfoJson.toString()
-
-        Log.d(TAG, "CommunicationClient: Sending accounts info event")
-
-        val accountInfoEncrypted = KeyExchange.encrypt(accountsInfo)
-        broadcastToMessageService(accountInfoEncrypted)
-    }
-
     private fun registerReceiver() {
-        Log.d(TAG, "CommunicationClient: Registering broadcast receiver")
         val intentFilter = IntentFilter("local.client")
         reactAppContext.registerReceiver(broadcastReceiver, intentFilter)
     }
@@ -181,12 +82,6 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
         }
     }
 
-    private fun timeNow() : String {
-        val sdf = SimpleDateFormat("hh:mm:ss")
-        val currentTime = Date()
-        return sdf.format(currentTime)
-    }
-
     /*
         @ReactMethods
      */
@@ -195,8 +90,6 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
     fun bindService(promise: Promise) {
         val result = bindService()
         promise.resolve(result)
-
-
     }
 
     private fun bindService(): Boolean {
@@ -223,7 +116,7 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
 
     @ReactMethod
     fun sendMessage(message: String, promise: Promise) {
-        Log.d(TAG, "CommunicationClient: Sending message $message, ${timeNow()}")
+        Log.d(TAG, "CommunicationClient: Sending message $message")
         if (!isServiceConnected) {
             Log.e(TAG,"CommunicationClient: Service is not connected")
             promise.reject(Exception("Service is not connected"))

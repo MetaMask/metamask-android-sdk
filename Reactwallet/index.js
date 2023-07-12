@@ -24,7 +24,7 @@ const PopoverDialog = () => {
     );
 };
 
-AppRegistry.registerComponent(appName, () => AppContainer);
+AppRegistry.registerComponent(appName, () => App);
 
 const styles = StyleSheet.create({
     popover: {

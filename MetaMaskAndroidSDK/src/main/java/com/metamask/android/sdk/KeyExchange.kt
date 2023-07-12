@@ -44,6 +44,7 @@ class KeyExchange(private val crypto: Crypto = Crypto()) {
     }
 
     fun complete() {
+        Logger.log("Key exchange complete")
         keysExchanged = true
     }
 

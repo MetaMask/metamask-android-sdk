@@ -62,8 +62,8 @@ const Section = ({children, title}): Node => {
 };
 
 const CommunicationClient = NativeModules.CommunicationClient;
-const emitter = new EventEmitter2();
-const nativeEventEmitter = new NativeEventEmitter(DeviceEventEmitter);
+//const emitter = new EventEmitter2();
+//const nativeEventEmitter = new NativeEventEmitter(DeviceEventEmitter);
 
 const App: () => Node = () => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -74,38 +74,38 @@ const App: () => Node = () => {
 
   const [result, setResult] = useState('');
 
-  useEffect(() => {
-    const handleTerminate = message => {
-      // Handle the received event data
-      console.log(`Got terminate message: ${message}`);
-    };
+ // useEffect(() => {
+    // const handleTerminate = message => {
+    //   // Handle the received event data
+    //   console.log(`Got terminate message: ${message}`);
+    // };
 
-    const clientsConnectedListener = AndroidSDKEventHandler.onClientsConnected(
-      id => {
-        console.log(`YAY Received clients_connected: ${id}`);
-      },
-    );
+    // const clientsConnectedListener = AndroidSDKEventHandler.onClientsConnected(
+    //   id => {
+    //     console.log(`YAY Received clients_connected: ${id}`);
+    //   },
+    // );
 
-    const clientsDisconnectedListener =
-      AndroidSDKEventHandler.onClientsDisconnected(id => {
-        console.log(`YAY Received clients_disconnected: ${id}`);
-      });
+    // const clientsDisconnectedListener =
+    //   AndroidSDKEventHandler.onClientsDisconnected(id => {
+    //     console.log(`YAY Received clients_disconnected: ${id}`);
+    //   });
 
-    const messageListener = AndroidSDKEventHandler.onMessageReceived(
-      message => {
-        console.log(`YAY Received message: ${message}`);
-        const msg = {
-          message: {
-            type: 'wallet_info',
-            data: {
-              name: 'MetaMask',
-              version: '1.1.2',
-            },
-          },
-        };
-        CommunicationClient.sendMessage(JSON.stringify(msg));
-      },
-    );
+    // const messageListener = AndroidSDKEventHandler.onMessageReceived(
+    //   message => {
+    //     console.log(`YAY Received message: ${message}`);
+    //     const msg = {
+    //       message: {
+    //         type: 'wallet_info',
+    //         data: {
+    //           name: 'MetaMask',
+    //           version: '1.1.2',
+    //         },
+    //       },
+    //     };
+    //     CommunicationClient.sendMessage(JSON.stringify(msg));
+    //   },
+    // );
 
     // nativeEventEmitter.addListener('message', handleMessage);
     // nativeEventEmitter.addListener('terminate', handleTerminate);
@@ -119,16 +119,17 @@ const App: () => Node = () => {
     //   handleClientsDisconnected,
     // );
 
-    return () => {
-      // emitter.off('message', handleMessage);
-      nativeEventEmitter.removeAllListeners('message');
-    };
-  });
+  //   return () => {
+  //     // emitter.off('message', handleMessage);
+  //     nativeEventEmitter.removeAllListeners('message');
+  //   };
+  // });
 
   const bindService = async () => {
     await CommunicationClient.bindService()
       .then(response => {
         setResult(response);
+        console.log("Binding serving now now!");
         console.log(response);
       })
       .catch(error => {

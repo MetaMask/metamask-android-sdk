@@ -1,6 +1,6 @@
 // IMessegeService.aidl
-package io.metamask;
-import io.metamask.IMessegeServiceCallback;
+package io.metamask.nativesdk;
+import io.metamask.nativesdk.IMessegeServiceCallback;
 
 // Declare any non-default types here with import statements
 

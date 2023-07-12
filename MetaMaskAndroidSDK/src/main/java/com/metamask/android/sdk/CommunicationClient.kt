@@ -12,9 +12,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import io.metamask.IMessegeService
-import io.metamask.IMessegeServiceCallback
-import kotlinx.coroutines.CompletableDeferred
+import io.metamask.nativesdk.IMessegeService
+import io.metamask.nativesdk.IMessegeServiceCallback
 import org.json.JSONObject
 import java.util.UUID
 import kotlinx.serialization.Serializable
@@ -23,12 +22,8 @@ import java.lang.ref.WeakReference
 class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: EthereumEventCallback)  {
     private val appContext = context.applicationContext
 
-    var sessionId: String
-    private var orinatorInfoSent = false
-
-    init {
-        sessionId = UUID.randomUUID().toString()
-    }
+    private val sessionId: String = UUID.randomUUID().toString()
+    private var originatorInfoSent = false
 
     var dapp: Dapp? = null
     private var isServiceConnected = false
@@ -38,10 +33,8 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
 
     companion object {
         const val TAG = "MM_ANDROID_SDK"
-        const val SESSION_ID = "session_id"
 
         const val MESSAGE = "message"
-        const val DATA = "data"
         const val KEY_EXCHANGE = "key_exchange"
     }
 
@@ -152,10 +145,13 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
     private fun resumeRequestJobs() {
         Logger.log("Resuming jobs")
 
-        if (!orinatorInfoSent) {
-            orinatorInfoSent = true
+        if (!originatorInfoSent) {
+            Logger.log("CommClient: starting originator")
+            originatorInfoSent = true
             sendOriginatorInfo()
         }
+
+        Logger.log("CommClient: starting jobs")
 
         while (requestJobs.isNotEmpty()) {
             Logger.log("Running queued job")
@@ -328,6 +324,12 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
         val keyExchangeMessage = KeyExchangeMessage(type.name, theirPublicKey)
         val nextStep  = keyExchange.nextKeyExchangeMessage(keyExchangeMessage)
 
+        if (
+            type == KeyExchangeMessageType.key_exchange_SYNACK ||
+            type == KeyExchangeMessageType.key_exchange_ACK) {
+            keyExchange.complete()
+        }
+
         if (nextStep != null) {
             val exchangeMessage = JSONObject().apply {
                 put(KeyExchange.PUBLIC_KEY, nextStep.publicKey)
@@ -338,14 +340,8 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
             sendKeyExchangeMesage(exchangeMessage)
         }
 
-        if (
-            type == KeyExchangeMessageType.key_exchange_SYNACK ||
-            type == KeyExchangeMessageType.key_exchange_ACK) {
-            keyExchange.complete()
-        }
-
-        if (keyExchange.keysExchanged && !orinatorInfoSent) {
-            orinatorInfoSent = true
+        if (keyExchange.keysExchanged && !originatorInfoSent) {
+            originatorInfoSent = true
             sendOriginatorInfo()
         }
     }
@@ -357,8 +353,10 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
         }
 
         if (!keyExchange.keysExchanged) {
+            Logger.log("CommClient: Still keys not exchanged")
             addRequestJob { messageService?.sendMessage(message) }
         } else {
+            Logger.log("CommClient: Now sending message")
             messageService?.sendMessage(message)
         }
     }
@@ -376,38 +374,33 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
         val requestJson = Gson().toJson(request)
         Logger.log("CommClient: sending request $requestJson")
 
-        val message = JSONObject().apply {
-            put(SESSION_ID, sessionId)
-            put(DATA, requestJson)
-        }.toString()
-
-        val payload = keyExchange.encrypt(message)
+        val payload = keyExchange.encrypt(requestJson)
+        val message = Message(sessionId, payload)
+        val messageJson = Gson().toJson(message)
 
         submittedRequests[request.id] = SubmittedRequest(request, callback)
-        sendMessage(payload)
+        sendMessage(messageJson)
     }
 
     private fun sendOriginatorInfo() {
         val manager = appContext.packageManager
-        // this incorrectly gets the app package info not the SDK's
+        // (TODO) this incorrectly gets the app package info not the SDK's
         val packageInfo = manager.getPackageInfo(appContext.packageName, 0)
         val apiVersion = packageInfo.versionName
 
-        //val apiVersion = BuildConfig::class.java.getField("versionName").get(null) as String
+        // (TODO) val apiVersion = BuildConfig::class.java.getField("versionName").get(null) as String
         val originatorInfo = OriginatorInfo(dapp?.name, dapp?.url, "Android", apiVersion)
         val requestInfo = RequestInfo("originator_info", originatorInfo)
         val requestInfoJson = Gson().toJson(requestInfo)
 
         Logger.log("CommClient: Sending originator info: $requestInfoJson")
 
-        val details = JSONObject().apply {
-            put(SESSION_ID, sessionId)
-            put(DATA, requestInfoJson)
-        }
+        val payload = keyExchange.encrypt(requestInfoJson)
 
-        val payload = keyExchange.encrypt(details.toString())
+        val message = Message(sessionId, payload)
+        val messageJson = Gson().toJson(message)
 
-        sendMessage(payload)
+        sendMessage(messageJson)
     }
 
     fun bindService() {
@@ -416,8 +409,8 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
         val serviceIntent = Intent()
             .setComponent(
                 ComponentName(
-                    "com.reactwallet",
-                    "com.reactwallet.MessageService"
+                    "com.reactwallet",//"io.metamask",
+                    "com.reactwallet.MessageService"//"io.metamask.nativesdk.MessageService"
                 )
             )
         if (appContext != null) {

@@ -1,11 +1,13 @@
 package com.metamask.android.sdk
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import kotlinx.coroutines.CompletableDeferred
 import com.metamask.android.sdk.EthereumMethod.*
+import java.util.UUID
 import kotlin.Error
 
 class Ethereum(context: Context, lifecycle: Lifecycle): EthereumEventCallback {
@@ -43,7 +45,7 @@ class Ethereum(context: Context, lifecycle: Lifecycle): EthereumEventCallback {
         connected = true
 
         val providerRequest = EthereumRequest(
-            communicationClient.sessionId,
+            UUID.randomUUID().toString(),
             GETMETAMASKPROVIDERSTATE.value
         )
 
@@ -51,7 +53,7 @@ class Ethereum(context: Context, lifecycle: Lifecycle): EthereumEventCallback {
         }
 
         val accountsRequest = EthereumRequest(
-            communicationClient.sessionId,
+            UUID.randomUUID().toString(),
             ETHREQUESTACCOUNTS.value
         )
         Logger.log("Now requesting accounts $accountsRequest")
@@ -61,19 +63,27 @@ class Ethereum(context: Context, lifecycle: Lifecycle): EthereumEventCallback {
     fun sendRequest(request: EthereumRequest, callback: (Any?) -> Unit) {
         Logger.log("Sending request $request")
         if (!connected && request.method == ETHREQUESTACCOUNTS.value) {
+            Logger.log("Binding comm service...")
             communicationClient.bindService()
             return requestAccounts(callback)
         }
 
         communicationClient.sendRequest(request, callback)
 
-//        val authorise = requiresAuthorisation(request.method)
-//
+        val authorise = requiresAuthorisation(request.method)
+
 //        if (authorise) {
 //            // open MM wallet
-//            val overlayServiceIntent = Intent(appContext, PartialOverlayService::class.java)
-//            ContextCompat.startForegroundService(appContext, overlayServiceIntent)
+//            Logger.log("Opening metamask")
+//            openMetaMask()
 //        }
+    }
+
+    private fun openMetaMask() {
+        val intent = Intent().apply {
+            component = ComponentName("io.metamask", "io.metamask.MainActivity")
+        }
+        appContext.startActivity(intent)
     }
 
     private fun requiresAuthorisation(method: String): Boolean {

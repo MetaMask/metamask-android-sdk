@@ -8,18 +8,20 @@ import android.content.IntentFilter
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
-import io.metamask.IMessegeService
-import io.metamask.IMessegeServiceCallback
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import io.metamask.nativesdk.IMessegeService
+import io.metamask.nativesdk.IMessegeServiceCallback
 import org.json.JSONObject
 
 class MessageService : Service() {
     private val messageServiceCallbacks = mutableListOf<IMessegeServiceCallback>()
+    private var sessionId: String = ""
 
     companion object {
-        const val TAG = "AIDL_NATIVE_MODULE"
+        const val TAG = "NATIVE_SDK"
         const val MESSAGE = "message"
         const val KEY_EXCHANGE = "key_exchange"
-        const val SESSION_ID = "session_id"
     }
 
     override fun onCreate() {
@@ -33,15 +35,14 @@ class MessageService : Service() {
     }
 
     override fun onBind(p0: Intent?): IBinder? {
-        Log.d(TAG, "MessageService: onBind called!")
+        Log.d(TAG, "MessageService: onBind")
         return binder
     }
 
     private val binder = object : IMessegeService.Stub() {
-        private var channelId: String? = null
 
         override fun registerCallback(callback: IMessegeServiceCallback?) {
-            Log.d(TAG, "MessageService: Callback registered!")
+            Log.d(TAG, "MessageService: Callback registered")
             callback?.let {
                 messageServiceCallbacks.add(it)
             }
@@ -49,18 +50,21 @@ class MessageService : Service() {
 
         override fun sendMessage(message: Bundle) {
             val keyExchange = message.getString(KEY_EXCHANGE)
-            val sessionId = message.getString(SESSION_ID)
-            if (sessionId != null && channelId.isNullOrEmpty()) {
-                channelId = sessionId
-                broadcastEvent(EventType.CLIENTS_CONNECTED,null, sessionId)
-            }
+            val messageJson = message.getString(MESSAGE)
 
-            val message = message.getString(MESSAGE)
+            if (messageJson != null) {
+                val message: Message = Gson().fromJson(messageJson, object : TypeToken<Message>() {}.type)
+                sessionId = message.id
 
-            if (keyExchange != null) {
+                Log.d(TAG, "MessageService: received message $message")
+
+                if (sessionId.isEmpty()) {
+                    broadcastEvent(EventType.CLIENTS_CONNECTED, sessionId)
+                }
+
+                handleMessage(message.message)
+            } else if (keyExchange != null) {
                 handleKeyExchange(keyExchange)
-            } else if (message != null) {
-                handleMessage(message, sessionId)
             }
         }
     }
@@ -93,7 +97,7 @@ class MessageService : Service() {
 
             Log.d(TAG, "Sending next key exchange message $exchangeMessage")
 
-            sendKeyExchangeMesage(exchangeMessage)
+            sendKeyExchangeMessage(exchangeMessage)
         }
 
         if (
@@ -105,40 +109,22 @@ class MessageService : Service() {
                 put("type", "ready")
             }.toString()
 
-            Log.d(TAG, "Sending ready: $ready")
+            Log.d(TAG, "MessageService: $ready")
             val payload = KeyExchange.encrypt(ready)
             sendMessage(payload)
-
-            broadcastEvent(EventType.KEYS_EXCHANGED,null, null)
         }
     }
 
     // Broadcasts event to CommunicationClient
-    private fun broadcastMessage(eventType: EventType, data: String? = null, sessionId: String?) {
-        val intent = Intent("local.client")
-        intent.putExtra(eventType.value, data)
-        if (sessionId != null) {
-            intent.putExtra(SESSION_ID, sessionId)
-        }
-        applicationContext.sendBroadcast(intent)
-    }
-
-    private fun broadcastEvent(eventType: EventType, data: String? = null, sessionId: String?) {
+    private fun broadcastEvent(eventType: EventType, data: String) {
         val intent = Intent("local.client")
         intent.putExtra("event", eventType.value)
-
-        if (data != null) {
-            intent.putExtra("data", data)
-        }
-
-        if (sessionId != null) {
-            intent.putExtra(SESSION_ID, sessionId)
-        }
-
+        intent.putExtra("data", data)
+        intent.putExtra("id", sessionId)
         applicationContext.sendBroadcast(intent)
     }
 
-    private fun sendKeyExchangeMesage(message: String) {
+    private fun sendKeyExchangeMessage(message: String) {
         Log.d(TAG, "Sending key exchange: $message")
         val bundle = Bundle().apply {
             putString(KEY_EXCHANGE, message)
@@ -148,11 +134,10 @@ class MessageService : Service() {
         }
     }
 
-    private fun handleMessage(message: String, sessionId: String?) {
+    private fun handleMessage(message: String) {
         val payload = KeyExchange.decrypt(message)
-        Log.d(TAG, "MessageService (handleMessage): Received message: $payload")
-
-        broadcastMessage(EventType.MESSAGE, payload, sessionId)
+        val messageJson = Gson().toJson(Message(sessionId, payload))
+        broadcastEvent(EventType.MESSAGE, messageJson)
     }
 
     private fun registerReceiver() {
@@ -170,7 +155,7 @@ class MessageService : Service() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == "local.service") {
                 val message = intent.getStringExtra(EventType.MESSAGE.value) as String
-                Log.d(TAG,"MessegeService: Got broadcast message: $message")
+                Log.d(TAG,"MessageService: Got broadcast message: $message")
 
                 val bundle = Bundle().apply {
                     putString(EventType.MESSAGE.value, message)
