@@ -409,8 +409,8 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
         val serviceIntent = Intent()
             .setComponent(
                 ComponentName(
-                    "com.reactwallet",//"io.metamask",
-                    "com.reactwallet.MessageService"//"io.metamask.nativesdk.MessageService"
+                    "io.metamask",
+                    "io.metamask.nativesdk.MessageService"
                 )
             )
         if (appContext != null) {

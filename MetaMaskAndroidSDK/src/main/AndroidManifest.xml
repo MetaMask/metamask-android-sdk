@@ -6,8 +6,7 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <queries>
-<!--        <package android:name="io.metamask" />-->
-        <package android:name="com.reactwallet" />
+        <package android:name="io.metamask" />
     </queries>
 
     <application>
