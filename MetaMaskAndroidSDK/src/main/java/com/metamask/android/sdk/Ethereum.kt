@@ -3,20 +3,30 @@ package com.metamask.android.sdk
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
-import kotlinx.coroutines.CompletableDeferred
 import com.metamask.android.sdk.EthereumMethod.*
 import java.util.UUID
-import kotlin.Error
 
-class Ethereum(context: Context, lifecycle: Lifecycle): EthereumEventCallback {
+class Ethereum private constructor(private val context: Context, private val lifecycle: Lifecycle): EthereumEventCallback {
     var connected = false
+
     var chainId: String? = null
+        private set
     var selectedAddress: String? = null
-    private val appContext = context
+        private set
 
     private val communicationClient = CommunicationClient(context, lifecycle, this)
+
+    companion object {
+        private var instance: Ethereum? = null
+
+        fun getInstance(context: Context, lifecycle: Lifecycle): Ethereum {
+            if (instance == null) {
+                instance = Ethereum(context.applicationContext, lifecycle)
+            }
+            return instance as Ethereum
+        }
+    }
 
     override fun updateAccount(account: String) {
         Logger.log("Ethereum: Selected account changed: $account")
@@ -41,30 +51,26 @@ class Ethereum(context: Context, lifecycle: Lifecycle): EthereumEventCallback {
     }
 
     private fun requestAccounts(callback: (Any?) -> Unit) {
-        Logger.log("Requesting accounts")
+        Logger.log("Requesting ethereum accounts")
+
         connected = true
-
-        val providerRequest = EthereumRequest(
-            UUID.randomUUID().toString(),
-            GETMETAMASKPROVIDERSTATE.value
-        )
-
-        sendRequest(providerRequest) {
-        }
 
         val accountsRequest = EthereumRequest(
             UUID.randomUUID().toString(),
-            ETHREQUESTACCOUNTS.value
+            ETHREQUESTACCOUNTS.value,
+            ""
         )
-        Logger.log("Now requesting accounts $accountsRequest")
+
         sendRequest(accountsRequest, callback)
     }
 
     fun sendRequest(request: EthereumRequest, callback: (Any?) -> Unit) {
         Logger.log("Sending request $request")
-        if (!connected && request.method == ETHREQUESTACCOUNTS.value) {
-            Logger.log("Binding comm service...")
+        if (!communicationClient.isServiceConnected) {
             communicationClient.bindService()
+        }
+
+        if (!connected && request.method == ETHREQUESTACCOUNTS.value) {
             return requestAccounts(callback)
         }
 
@@ -72,32 +78,25 @@ class Ethereum(context: Context, lifecycle: Lifecycle): EthereumEventCallback {
 
         val authorise = requiresAuthorisation(request.method)
 
-//        if (authorise) {
-//            // open MM wallet
-//            Logger.log("Opening metamask")
-//            openMetaMask()
-//        }
+        if (authorise) {
+            openMetaMask()
+        }
     }
 
     private fun openMetaMask() {
         val intent = Intent().apply {
             component = ComponentName("io.metamask", "io.metamask.MainActivity")
         }
-        appContext.startActivity(intent)
+        context.startActivity(intent)
     }
 
     private fun requiresAuthorisation(method: String): Boolean {
-        return when (method) {
-            ETHREQUESTACCOUNTS.value -> selectedAddress.isNullOrEmpty()
-            else -> {
-                if (EthereumMethod.hasMethod(method)) {
-                    return EthereumMethod.requiresAuthorisation(method)
-                }
-
-                when(connected) {
-                    true -> false
-                    else -> true
-                }
+        return if (EthereumMethod.hasMethod(method)) {
+            EthereumMethod.requiresAuthorisation(method)
+        } else {
+            when(connected) {
+                true -> false
+                else -> true
             }
         }
     }

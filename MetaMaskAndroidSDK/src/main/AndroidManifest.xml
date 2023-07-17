@@ -7,6 +7,7 @@
 
     <queries>
         <package android:name="io.metamask" />
+<!--        <package android:name="com.reactwallet" />-->
     </queries>
 
     <application>

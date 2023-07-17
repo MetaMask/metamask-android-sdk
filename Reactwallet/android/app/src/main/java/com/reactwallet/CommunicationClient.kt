@@ -16,7 +16,6 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
 
     companion object {
         const val TAG = "NATIVE_SDK"
-        const val SESSION_ID = "id"
     }
 
     private var isServiceConnected = false

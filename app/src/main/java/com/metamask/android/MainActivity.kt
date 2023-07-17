@@ -1,9 +1,7 @@
 package com.metamask.android
 
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
@@ -12,12 +10,10 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
+import android.widget.TextView
 import androidx.lifecycle.LifecycleObserver
 import com.metamask.android.databinding.ActivityMainBinding
 import com.metamask.android.sdk.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity(), LifecycleObserver {
 
@@ -29,10 +25,21 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
     }
 
     private lateinit var ethereum: Ethereum
-    private lateinit var button: Button
+
+    private lateinit var connectButton: Button
+    private lateinit var connectResultLabel: TextView
+
+    private lateinit var signButton: Button
+    private lateinit var signResultLabel: TextView
+
+    private lateinit var sendButton: Button
+    private lateinit var sendResultLabel: TextView
+
+    private lateinit var exampleDapp: ExampleDapp
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d(TAG, "app: onCreate")
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -43,35 +50,32 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
         appBarConfiguration = AppBarConfiguration(navController.graph)
         setupActionBarWithNavController(navController, appBarConfiguration)
 
-        binding.fab.setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show()
-        }
-
-        button = findViewById<Button>(R.id.bind)
-        button.setOnClickListener {
-            openMetaMask()
-        }
-
-        Log.d(TAG, "app: onCreate")
-        lifecycle.addObserver(this)
-        ethereum = Ethereum(this, lifecycle)
-
-        ethereum.connect(Dapp("Droidapp", "https://droidapp.io")) { result ->
-            if (result is RequestError) {
-                Logger.log("Ethereum connection error: ${result.message}")
-            } else {
-                Logger.log("Ethereum connection result: $result")
+        connectButton = findViewById(R.id.connectButton)
+        connectResultLabel = findViewById(R.id.connectText)
+        connectButton.setOnClickListener {
+            exampleDapp.connect() { result ->
+                connectResultLabel.text = result.toString()
             }
         }
-    }
 
-    private fun openMetaMask() {
-        val intent = Intent().apply {
-            setClassName("com.reactwallet", "com.reactwallet.MainActivity")
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        signButton = findViewById(R.id.signButton)
+        signResultLabel = findViewById(R.id.signText)
+        signButton.setOnClickListener {
+            exampleDapp.signMessage() { result ->
+                signResultLabel.text = result.toString()
+            }
         }
-        startActivity(intent)
+
+        sendButton = findViewById(R.id.sendButton)
+        sendResultLabel = findViewById(R.id.sendText)
+        sendButton.setOnClickListener {
+            exampleDapp.sendTransaction() { result ->
+                sendResultLabel.text = result.toString()
+            }
+        }
+
+        lifecycle.addObserver(this)
+        exampleDapp = ExampleDapp(this, lifecycle)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

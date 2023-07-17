@@ -22,18 +22,18 @@ import java.lang.ref.WeakReference
 class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: EthereumEventCallback)  {
     private val appContext = context.applicationContext
 
-    private val sessionId: String = UUID.randomUUID().toString()
-    private var originatorInfoSent = false
+    private val sessionId: String
+    private val keyExchange: KeyExchange
 
     var dapp: Dapp? = null
-    private var isServiceConnected = false
-    private val keyExchange = KeyExchange()
+    var isServiceConnected = false
+        private set
+
     private var messageService: IMessegeService? = null
     private val ethereumEventCallbackRef: WeakReference<EthereumEventCallback> = WeakReference(callback)
 
     companion object {
         const val TAG = "MM_ANDROID_SDK"
-
         const val MESSAGE = "message"
         const val KEY_EXCHANGE = "key_exchange"
     }
@@ -45,7 +45,6 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
 
         override fun onCreate(owner: LifecycleOwner) {
             Logger.log("CommClient: onCreate()")
-            bindService()
         }
 
         override fun onStart(owner: LifecycleOwner) {
@@ -58,8 +57,14 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
         }
     }
 
+    private var sessionManager: SessionManager
+
     init {
         lifecycle.addObserver(observer)
+        keyExchange = KeyExchange()
+        sessionManager = SessionManager(KeyStorage(context))
+        sessionId = sessionManager.sessionId
+        Logger.log("CommClient: sessionId: $sessionId")
     }
 
     private val serviceConnection = object : ServiceConnection {
@@ -101,6 +106,10 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
         }
     }
 
+    fun setSessionDuration(duration: Long) {
+        sessionManager.setSessionDuration(duration)
+    }
+
     private fun handleMessage(message: String) {
         val jsonString = keyExchange.decrypt(message)
         Logger.log("CommClient: Received message: $jsonString")
@@ -116,6 +125,10 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
             MessageType.PAUSE.value -> {
                 Logger.log("Connection paused")
             }
+            MessageType.KEYS_EXCHANGED.value -> {
+                Logger.log("Keys exchanged")
+                sendOriginatorInfo()
+            }
             MessageType.READY.value -> {
                 Logger.log("Connection ready")
                 resumeRequestJobs()
@@ -126,7 +139,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
             else -> {
                 val data = json.optString(MessageType.DATA.value)
 
-                Logger.log("Received some data $json")
+                Logger.log("Received some data $data")
 
                 if (data.isNotEmpty()) {
                     val dataJson = JSONObject(data)
@@ -134,6 +147,8 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
 
                     if (id.isNotEmpty()) {
                         handleResponse(id, dataJson)
+                    } else if (dataJson.optString(MessageType.ERROR.value).isNotEmpty()) {
+                        Logger.error("Got error $dataJson")
                     } else {
                         handleEvent(dataJson)
                     }
@@ -144,14 +159,6 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
 
     private fun resumeRequestJobs() {
         Logger.log("Resuming jobs")
-
-        if (!originatorInfoSent) {
-            Logger.log("CommClient: starting originator")
-            originatorInfoSent = true
-            sendOriginatorInfo()
-        }
-
-        Logger.log("CommClient: starting jobs")
 
         while (requestJobs.isNotEmpty()) {
             Logger.log("Running queued job")
@@ -194,6 +201,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
         when(request?.method) {
             EthereumMethod.GETMETAMASKPROVIDERSTATE.value -> {
                 val result = data.optString("result")
+                Logger.log("metamask_getProviderState response: $result")
                 Logger.log("Result is: $result")
                 val resultJson = JSONObject(result)
                 val accountsJson = resultJson.optString("accounts")
@@ -215,9 +223,8 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
             }
             EthereumMethod.ETHREQUESTACCOUNTS.value  -> {
                 val result = data.optString("result")
-                val resultJson = JSONObject(result)
-                val accountsJson = resultJson.optString("accounts")
-                val accounts: List<String> = Gson().fromJson(accountsJson, object : TypeToken<List<String>>() {}.type)
+                Logger.log("eth_requestAccounts response: $result")
+                val accounts: List<String> = Gson().fromJson(result, object : TypeToken<List<String>>() {}.type)
                 val account = accounts.getOrNull(0)
 
                 if (account != null) {
@@ -276,7 +283,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
     }
 
     private fun handleEvent(event: JSONObject) {
-        Logger.log("Got event: ${event}")
+        Logger.log("Got event: $event")
 
         when (event.optString("method")) {
             EthereumMethod.METAMASKACCOUNTSCHANGED.value -> {
@@ -291,7 +298,9 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
                 val paramsJson = event.optJSONObject("params")
                 val chainId = paramsJson?.optString("chainId")
 
-                if (chainId != null && chainId.isNullOrEmpty()) {
+                Logger.log("Got metamask_chainChanged: params: $paramsJson, chainId: $chainId")
+
+                if (chainId != null && chainId.isNotEmpty()) {
                     updateChainId(chainId)
                 }
             }
@@ -339,11 +348,6 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
             Logger.log("Sending key exchange message $exchangeMessage")
             sendKeyExchangeMesage(exchangeMessage)
         }
-
-        if (keyExchange.keysExchanged && !originatorInfoSent) {
-            originatorInfoSent = true
-            sendOriginatorInfo()
-        }
     }
 
     fun sendMessage(message: String) {
@@ -353,10 +357,8 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
         }
 
         if (!keyExchange.keysExchanged) {
-            Logger.log("CommClient: Still keys not exchanged")
             addRequestJob { messageService?.sendMessage(message) }
         } else {
-            Logger.log("CommClient: Now sending message")
             messageService?.sendMessage(message)
         }
     }
@@ -409,8 +411,8 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
         val serviceIntent = Intent()
             .setComponent(
                 ComponentName(
-                    "io.metamask",
-                    "io.metamask.nativesdk.MessageService"
+                    "io.metamask",//"com.reactwallet",
+                    "io.metamask.nativesdk.MessageService"//"com.reactwallet.MessageService",
                 )
             )
         if (appContext != null) {
