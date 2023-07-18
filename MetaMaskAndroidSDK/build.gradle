@@ -39,6 +39,7 @@ android {
 dependencies {
 
     implementation files('libs/ecies.aar')
+    implementation 'com.squareup.okhttp3:okhttp:4.9.2'
     implementation 'androidx.security:security-crypto:1.1.0-alpha06'
     implementation 'com.google.code.gson:gson:2.9.0'
     implementation 'androidx.core:core-ktx:1.9.0'

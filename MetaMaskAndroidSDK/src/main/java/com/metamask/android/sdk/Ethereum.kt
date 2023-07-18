@@ -22,7 +22,7 @@ class Ethereum private constructor(private val context: Context, private val lif
 
         fun getInstance(context: Context, lifecycle: Lifecycle): Ethereum {
             if (instance == null) {
-                instance = Ethereum(context.applicationContext, lifecycle)
+                instance = Ethereum(context, lifecycle)
             }
             return instance as Ethereum
         }
@@ -40,6 +40,7 @@ class Ethereum private constructor(private val context: Context, private val lif
 
     fun connect(dapp: Dapp, callback: (Any?) -> Unit) {
         Logger.log("Ethereum: connecting...")
+        communicationClient.trackEvent(Event.CONNECTIONREQUEST, null)
         communicationClient.dapp = dapp
         requestAccounts(callback)
     }

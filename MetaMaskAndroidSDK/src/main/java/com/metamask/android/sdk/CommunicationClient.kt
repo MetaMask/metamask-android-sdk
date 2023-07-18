@@ -29,6 +29,8 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
     var isServiceConnected = false
         private set
 
+    private val tracker: Tracker = Analytics()
+
     private var messageService: IMessegeService? = null
     private val ethereumEventCallbackRef: WeakReference<EthereumEventCallback> = WeakReference(callback)
 
@@ -80,6 +82,7 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
             messageService = null
             isServiceConnected = false
             Log.e(TAG,"CommClient: Service disconnected $name")
+            trackEvent(Event.DISCONNECTED, null)
         }
 
         override fun onBindingDied(name: ComponentName?) {
@@ -104,6 +107,24 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
                 handleMessage(message)
             }
         }
+    }
+
+    fun trackEvent(event: Event, params: MutableMap<String, String>?) {
+        var params: MutableMap<String, String> = params ?: mutableMapOf()
+        params["id"] = sessionId
+
+        when(event) {
+            Event.CONNECTIONREQUEST -> {
+                params["commlayer"] = "android"
+                params["sdkVersion"] = "0.2.0"
+                params["url"] = dapp?.url ?: ""
+                params["title"] = dapp?.name ?: ""
+                params["platform"] = "android"
+            }
+            else -> Unit
+        }
+
+        tracker.trackEvent(event, params)
     }
 
     fun setSessionDuration(duration: Long) {
