@@ -24,8 +24,6 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
         const val TAG = "MM_ANDROID_SDK"
     }
 
-    private lateinit var ethereum: Ethereum
-
     private lateinit var connectButton: Button
     private lateinit var connectResultLabel: TextView
 
@@ -39,7 +37,7 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d(TAG, "app: onCreate")
+        Logger.log("app: onCreate")
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -102,11 +100,11 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
 
     override fun onStart() {
         super.onStart()
-        Log.d(TAG, "app: Started SDK activity")
+        Logger.log("app: Started SDK activity")
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.d(TAG, "app: Destroyed SDK activity")
+        Logger.log("app: Destroyed SDK activity")
     }
 }

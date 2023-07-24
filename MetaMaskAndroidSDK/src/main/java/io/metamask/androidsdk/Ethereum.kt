@@ -17,6 +17,7 @@ class Ethereum private constructor(private val context: Context, private val lif
         private set
 
     private val communicationClient = CommunicationClient(context, lifecycle, this)
+    private var serverBoundServiceStarted = false
 
     companion object {
         private var instance: Ethereum? = null
@@ -30,7 +31,7 @@ class Ethereum private constructor(private val context: Context, private val lif
     }
 
     override fun updateAccount(account: String) {
-        Logger.log("Ethereum: Selected account changed: $account")
+        Logger.log("Ethereum: Selected account changed")
         selectedAddress = account
     }
 
@@ -43,7 +44,7 @@ class Ethereum private constructor(private val context: Context, private val lif
         Logger.log("Ethereum: connecting...")
         communicationClient.trackEvent(Event.CONNECTIONREQUEST, null)
         communicationClient.dapp = dapp
-        bindMetaMaskService()
+        //bindMetaMaskService()
         requestAccounts(callback)
     }
 
@@ -86,15 +87,16 @@ class Ethereum private constructor(private val context: Context, private val lif
         }
     }
 
-    private fun openMetaMask(bind: Boolean = false) {
-        val deeplinkUrl = if (bind) "https://metamask.app.link/bind" else "https://metamask.app.link"
+    private fun openMetaMask() {
+        val deeplinkUrl = if (serverBoundServiceStarted) {
+            "https://metamask.app.link"
+        } else {
+            serverBoundServiceStarted = true
+            "https://metamask.app.link/bind"
+        }
+
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deeplinkUrl))
         context.startActivity(intent)
-    }
-
-    private fun bindMetaMaskService() {
-        Logger.log("Bind MetaMask Service for IPC")
-        openMetaMask(true)
     }
 
     private fun requiresAuthorisation(method: String): Boolean {

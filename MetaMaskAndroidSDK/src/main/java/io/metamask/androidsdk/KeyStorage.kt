@@ -10,12 +10,6 @@ import java.security.KeyStore
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 
-interface SecureStorage {
-    fun clearValue(key: String, file: String)
-    fun putValue(value: String, key: String, file: String)
-    fun getValue(key: String, file: String): String?
-}
-
 class KeyStorage(private val context: Context): SecureStorage {
 
     private val keyStoreAlias = context.packageName
@@ -32,10 +26,7 @@ class KeyStorage(private val context: Context): SecureStorage {
             return try {
                 keyStore.getEntry(keyStoreAlias, null) as? KeyStore.SecretKeyEntry
             } catch(e: Exception) {
-                if (!keyStore.containsAlias(keyStoreAlias)) {
-                    Logger.error("KeyStoreManager: $keyStoreAlias not found in keychain, WHY!:(")
-                }
-                Logger.log("KeyStoreManager: no existing secret key found")
+                Logger.error("KeyStorage: ${e.message}")
                 null
             }
     }
@@ -47,14 +38,16 @@ class KeyStorage(private val context: Context): SecureStorage {
     }
 
     private fun loadSecretKey() {
-        Logger.log("KeyStoreManager: Loading secret")
+        Logger.log("KeyStorage: Loading secret")
+
         keyStore = KeyStore.getInstance(androidKeyStore)
         keyStore.load(null)
         secretKey = secretKeyEntry?.secretKey ?: generateSecretKey()
     }
 
     private fun generateSecretKey(): SecretKey {
-        Logger.log("KeyStoreManager: Generating secret key")
+        Logger.log("KeyStorage: Generating secret key")
+
         val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, androidKeyStore)
         val keyGenParameterSpec = KeyGenParameterSpec.Builder(
             keyStoreAlias,
