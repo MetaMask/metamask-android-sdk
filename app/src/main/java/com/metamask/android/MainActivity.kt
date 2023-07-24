@@ -13,7 +13,7 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.lifecycle.LifecycleObserver
 import com.metamask.android.databinding.ActivityMainBinding
-import com.metamask.android.sdk.*
+import io.metamask.androidsdk.*
 
 class MainActivity : AppCompatActivity(), LifecycleObserver {
 

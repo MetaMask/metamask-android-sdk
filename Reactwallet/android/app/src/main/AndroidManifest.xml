@@ -26,16 +26,10 @@
 
         <!-- Define the service component -->
         <service
-            android:name="MessageService"
+            android:name="io.metamask.nativesdk.MessageService"
             android:enabled="true"
             android:exported="true">
 
-        </service>
-
-        <service
-            android:name=".MetaMaskPartialOverlayService"
-            android:enabled="true"
-            android:exported="true">
         </service>
 
     </application>

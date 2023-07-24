@@ -36,7 +36,7 @@ public class MainActivity extends ReactActivity {
 //
 //    boolean openAsOverlay = (launchAppIntent != null && launchAppIntent.getBooleanExtra("open_as_overlay", false));
 //    boolean launchedByDapp = "com.metamask.android".equals(launchAppIntent.getPackage());
-//    boolean launchedBySdk = "com.metamask.android.sdk".equals(launchAppIntent.getPackage());
+//    boolean launchedBySdk = "io.metamask.androidsdk".equals(launchAppIntent.getPackage());
 //    System.out.println(launchAppIntent.getExtras());
 //
 //    if (launchedBySdk) {

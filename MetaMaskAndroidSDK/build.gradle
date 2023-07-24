@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace 'com.metamask.android.sdk'
+    namespace 'io.metamask.androidsdk'
     compileSdk 32
 
     defaultConfig {
