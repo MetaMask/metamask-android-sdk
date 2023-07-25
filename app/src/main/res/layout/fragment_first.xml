@@ -5,24 +5,81 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".FirstFragment">
+    <Button
+            android:id="@+id/connectButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/connect"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="36dp"
+            android:layout_marginEnd="36dp"
+            app:layout_constraintBottom_toTopOf="@id/connectText"
+            app:layout_constraintHorizontal_bias="0.5"
+            android:layout_marginBottom="0dp"/>
 
     <TextView
-        android:id="@+id/textview_first"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/hello_first_fragment"
-        app:layout_constraintBottom_toTopOf="@id/bind"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+            android:id="@+id/connectText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/connection_label"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="36dp"
+            android:layout_marginEnd="36dp"
+            app:layout_constraintBottom_toTopOf="@id/signButton"
+            app:layout_constraintHorizontal_bias="0.5"
+            android:layout_marginBottom="12dp"/>
 
     <Button
-        android:id="@+id/bind"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/bind"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textview_first" />
+            android:id="@+id/signButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/sign"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="36dp"
+            android:layout_marginEnd="36dp"
+            app:layout_constraintBottom_toTopOf="@id/signText"
+            app:layout_constraintHorizontal_bias="0.5"
+            android:layout_marginBottom="0dp"/>
+
+    <TextView
+            android:id="@+id/signText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/sign_label"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="36dp"
+            android:layout_marginEnd="36dp"
+            app:layout_constraintBottom_toTopOf="@id/sendButton"
+            app:layout_constraintHorizontal_bias="0.5"
+            android:layout_marginBottom="12dp"/>
+
+    <Button
+            android:id="@+id/sendButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/send"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="36dp"
+            android:layout_marginEnd="36dp"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintBottom_toTopOf="@id/sendText"
+            android:layout_marginBottom="0dp"/>
+
+    <TextView
+            android:id="@+id/sendText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/send_label"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginStart="36dp"
+            android:layout_marginEnd="36dp"
+            android:layout_marginBottom="36dp" />
 </androidx.constraintlayout.widget.ConstraintLayout>

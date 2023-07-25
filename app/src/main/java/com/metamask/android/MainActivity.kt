@@ -1,9 +1,6 @@
 package com.metamask.android
 
-import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
@@ -12,26 +9,31 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
-import androidx.lifecycle.LifecycleObserver
+import android.widget.TextView
 import com.metamask.android.databinding.ActivityMainBinding
-import com.metamask.android.sdk.CommunicationClient
-import com.metamask.android.sdk.KeyExchange
-import com.metamask.android.sdk.KeyExchangeMessageType
+import io.metamask.androidsdk.*
 
-class MainActivity : AppCompatActivity(), LifecycleObserver {
+class MainActivity : AppCompatActivity() {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
 
-    companion object {
-        const val TAG = "MM_ANDROID_SDK"
-    }
+    private lateinit var connectButton: Button
+    private lateinit var connectResultLabel: TextView
 
-    private lateinit var communicationClient: CommunicationClient
-    private lateinit var button: Button
+    private lateinit var signButton: Button
+    private lateinit var signResultLabel: TextView
+
+    private lateinit var sendButton: Button
+    private lateinit var sendResultLabel: TextView
+
+    private val exampleDapp: ExampleDapp by lazy {
+        ExampleDapp(this)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Logger.log("app: onCreate")
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -42,25 +44,29 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
         appBarConfiguration = AppBarConfiguration(navController.graph)
         setupActionBarWithNavController(navController, appBarConfiguration)
 
-        binding.fab.setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show()
-        }
-
-        button = findViewById<Button>(R.id.bind)
-        button.setOnClickListener {
-            val message = Bundle().apply {
-                val bundle = Bundle().apply {
-                    putString(KeyExchange.TYPE, KeyExchangeMessageType.key_exchange_SYN.name)
-                }
-                putBundle("KEY_EXCHANGE", bundle)
+        connectButton = findViewById(R.id.connectButton)
+        connectResultLabel = findViewById(R.id.connectText)
+        connectButton.setOnClickListener {
+            exampleDapp.connect() { result ->
+                connectResultLabel.text = result.toString()
             }
-            communicationClient.sendMessage(message)
         }
 
-        Log.d(TAG, "app: onCreate")
-        communicationClient = CommunicationClient(applicationContext, lifecycle)
-        lifecycle.addObserver(this)
+        signButton = findViewById(R.id.signButton)
+        signResultLabel = findViewById(R.id.signText)
+        signButton.setOnClickListener {
+            exampleDapp.signMessage() { result ->
+                signResultLabel.text = result.toString()
+            }
+        }
+
+        sendButton = findViewById(R.id.sendButton)
+        sendResultLabel = findViewById(R.id.sendText)
+        sendButton.setOnClickListener {
+            exampleDapp.sendTransaction() { result ->
+                sendResultLabel.text = result.toString()
+            }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -87,11 +93,11 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
 
     override fun onStart() {
         super.onStart()
-        Log.d(TAG, "app: Started SDK activity")
+        Logger.log("app: Started SDK activity")
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        Log.d(TAG, "app: Destroyed SDK activity")
+        Logger.log("app: Destroyed SDK activity")
     }
 }
