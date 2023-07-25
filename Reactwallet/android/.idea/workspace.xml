@@ -10,13 +10,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b7c4b70a-5026-490f-9a1e-e88325f19c3a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../MetaMaskAndroidSDK/src/main/java/io/metamask/androidsdk/CommunicationClient.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../MetaMaskAndroidSDK/src/main/java/io/metamask/androidsdk/CommunicationClient.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../MetaMaskAndroidSDK/src/main/java/io/metamask/androidsdk/Ethereum.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../MetaMaskAndroidSDK/src/main/java/io/metamask/androidsdk/Ethereum.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../MetaMaskAndroidSDK/src/main/java/io/metamask/androidsdk/EthereumRequest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../MetaMaskAndroidSDK/src/main/java/io/metamask/androidsdk/EthereumRequest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../MetaMaskAndroidSDK/src/main/java/io/metamask/androidsdk/ExampleDapp.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../MetaMaskAndroidSDK/src/main/java/io/metamask/androidsdk/ExampleDapp.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../MetaMaskAndroidSDK/src/main/java/io/metamask/androidsdk/SessionManager.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../MetaMaskAndroidSDK/src/main/java/io/metamask/androidsdk/SessionManager.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../../README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../../README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../app/src/main/java/com/metamask/android/MainActivity.kt" beforeDir="false" afterPath="$PROJECT_DIR$/../../app/src/main/java/com/metamask/android/MainActivity.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

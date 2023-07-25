@@ -125,9 +125,11 @@ ethereum.sendRequest(transactionRequest) { result ->
 ```
 
 ## Examples
-We have created an [Example](./Example/) dapp as a guide on how to connect to ethereum and make requests. There are three illustrated examples:
-
-You will need to have MetaMask Mobile wallet installed on your target device i.e physical device or emulator, so you can either have it installed from the [Google Play](https://play.google.com/store/apps/details?id=io.metamask), or clone and compile MetaMask Mobile wallet from [source](https://github.com/MetaMask/metamask-mobile) and build to your target device. 
+We have created an `ExampleDapp` class with a few ethereum requests to act as a guide on how to connect to ethereum and make requests. 
 
 ## Requirements
+### Environment
+You will need to have MetaMask Mobile wallet installed on your target device i.e physical device or emulator, so you can either have it installed from the [Google Play](https://play.google.com/store/apps/details?id=io.metamask), or clone and compile MetaMask Mobile wallet from [source](https://github.com/MetaMask/metamask-mobile) and build to your target device. 
+
+### Hardware
 This SDK has an Minimum Android SDK (minSdk) version requirement of 23.

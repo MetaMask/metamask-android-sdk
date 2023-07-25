@@ -58,7 +58,7 @@ class SessionManager(
         store.putValue(sessionConfigJson, sessionConfigKey, sessionConfigFile)
     }
 
-    fun clearSessionConfig() {
+    fun clearSession() {
         store.clearValue(sessionConfigKey, sessionConfigFile)
         makeNewSessionConfig()
     }

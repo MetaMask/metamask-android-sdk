@@ -7,10 +7,6 @@ import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleObserver
-import androidx.lifecycle.LifecycleOwner
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import io.metamask.nativesdk.IMessegeService
@@ -108,6 +104,10 @@ class CommunicationClient(context: Context, callback: EthereumEventCallback)  {
         sessionManager.setSessionDuration(duration)
     }
 
+    fun clearSession() {
+        sessionManager.clearSession()
+    }
+
     private fun handleMessage(message: String) {
         val jsonString = keyExchange.decrypt(message)
         Logger.log("CommClient: Received message: $jsonString")
@@ -118,7 +118,6 @@ class CommunicationClient(context: Context, callback: EthereumEventCallback)  {
                 Logger.log("Connection terminated")
                 unbindService()
                 keyExchange.generateNewKeys()
-                bindService()
             }
             MessageType.PAUSE.value -> {
                 Logger.log("Connection paused")

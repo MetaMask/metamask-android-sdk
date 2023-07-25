@@ -19,10 +19,13 @@ class Ethereum private constructor(private val context: Context): EthereumEventC
 
     companion object {
         private var instance: Ethereum? = null
+        private const val DEFAULT_SESSION_DURATION: Long = 7 * 24 * 3600 // 7 days default
+        private var sessionLifetime: Long = DEFAULT_SESSION_DURATION
 
-        fun getInstance(context: Context): Ethereum {
+        fun getInstance(context: Context, sessionDuration: Long = DEFAULT_SESSION_DURATION): Ethereum {
             if (instance == null) {
                 instance = Ethereum(context)
+                sessionLifetime = sessionDuration
             }
             return instance as Ethereum
         }
@@ -38,8 +41,18 @@ class Ethereum private constructor(private val context: Context): EthereumEventC
         this.chainId = chainId
     }
 
+    fun setSessionDuration(duration: Long) {
+        sessionLifetime = duration
+        communicationClient.setSessionDuration(duration)
+    }
+
+    fun clearSession() {
+        communicationClient.clearSession()
+    }
+
     fun connect(dapp: Dapp, callback: (Any?) -> Unit) {
         Logger.log("Ethereum: connecting...")
+        communicationClient.setSessionDuration(sessionLifetime)
         communicationClient.trackEvent(Event.CONNECTIONREQUEST, null)
         communicationClient.dapp = dapp
         requestAccounts(callback)
