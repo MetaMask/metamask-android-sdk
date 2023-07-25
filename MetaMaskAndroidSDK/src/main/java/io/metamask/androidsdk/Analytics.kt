@@ -22,10 +22,6 @@ class Endpoints {
 
 class Analytics(override var enableDebug: Boolean = true) : Tracker {
 
-    companion object {
-        const val TAG = "MM_ANDROID_SDK"
-    }
-
     private val httpClient: HttpClient = HttpClient()
 
     override fun trackEvent(event: Event, params: MutableMap<String, String>) {
