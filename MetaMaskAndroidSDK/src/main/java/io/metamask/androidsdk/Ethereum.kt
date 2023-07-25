@@ -1,14 +1,12 @@
 package io.metamask.androidsdk
 
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import androidx.lifecycle.Lifecycle
 import io.metamask.androidsdk.EthereumMethod.*
 import java.util.*
 
-class Ethereum private constructor(private val context: Context, private val lifecycle: Lifecycle): EthereumEventCallback {
+class Ethereum private constructor(private val context: Context): EthereumEventCallback {
     var connected = false
 
     var chainId: String? = null
@@ -16,15 +14,15 @@ class Ethereum private constructor(private val context: Context, private val lif
     var selectedAddress: String? = null
         private set
 
-    private val communicationClient = CommunicationClient(context, lifecycle, this)
+    private val communicationClient = CommunicationClient(context, this)
     private var serverBoundServiceStarted = false
 
     companion object {
         private var instance: Ethereum? = null
 
-        fun getInstance(context: Context, lifecycle: Lifecycle): Ethereum {
+        fun getInstance(context: Context): Ethereum {
             if (instance == null) {
-                instance = Ethereum(context, lifecycle)
+                instance = Ethereum(context)
             }
             return instance as Ethereum
         }
@@ -44,7 +42,6 @@ class Ethereum private constructor(private val context: Context, private val lif
         Logger.log("Ethereum: connecting...")
         communicationClient.trackEvent(Event.CONNECTIONREQUEST, null)
         communicationClient.dapp = dapp
-        //bindMetaMaskService()
         requestAccounts(callback)
     }
 

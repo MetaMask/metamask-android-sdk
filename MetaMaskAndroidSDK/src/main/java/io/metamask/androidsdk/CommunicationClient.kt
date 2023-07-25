@@ -9,6 +9,7 @@ import android.os.IBinder
 import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -18,11 +19,11 @@ import org.json.JSONObject
 import kotlinx.serialization.Serializable
 import java.lang.ref.WeakReference
 
-class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: EthereumEventCallback)  {
+class CommunicationClient(context: Context, callback: EthereumEventCallback)  {
     private val appContext = context.applicationContext
 
     val sessionId: String
-    private val keyExchange: KeyExchange
+    private val keyExchange: KeyExchange = KeyExchange()
 
     var dapp: Dapp? = null
     var isServiceConnected = false
@@ -36,27 +37,9 @@ class CommunicationClient(context: Context, lifecycle: Lifecycle, callback: Ethe
     private var requestJobs: MutableList<() -> Unit> = mutableListOf()
     private var submittedRequests: MutableMap<String, SubmittedRequest>  = mutableMapOf()
 
-    private val observer = object : DefaultLifecycleObserver {
-
-        override fun onCreate(owner: LifecycleOwner) {
-            Logger.log("CommClient: onCreate()")
-        }
-
-        override fun onStart(owner: LifecycleOwner) {
-            Logger.log("CommClient: onStart()")
-        }
-
-        override fun onDestroy(owner: LifecycleOwner) {
-            Logger.log("CommClient: onDestroy: Disconnecting...")
-            unbindService()
-        }
-    }
-
     private var sessionManager: SessionManager
 
     init {
-        lifecycle.addObserver(observer)
-        keyExchange = KeyExchange()
         sessionManager = SessionManager(KeyStorage(context))
         sessionId = sessionManager.sessionId
         Logger.log("CommClient: sessionId: $sessionId")

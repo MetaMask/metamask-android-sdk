@@ -1,7 +1,6 @@
 package com.metamask.android
 
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
@@ -11,18 +10,13 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
 import android.widget.TextView
-import androidx.lifecycle.LifecycleObserver
 import com.metamask.android.databinding.ActivityMainBinding
 import io.metamask.androidsdk.*
 
-class MainActivity : AppCompatActivity(), LifecycleObserver {
+class MainActivity : AppCompatActivity() {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
-
-    companion object {
-        const val TAG = "MM_ANDROID_SDK"
-    }
 
     private lateinit var connectButton: Button
     private lateinit var connectResultLabel: TextView
@@ -33,7 +27,9 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
     private lateinit var sendButton: Button
     private lateinit var sendResultLabel: TextView
 
-    private lateinit var exampleDapp: ExampleDapp
+    private val exampleDapp: ExampleDapp by lazy {
+        ExampleDapp(this)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,9 +67,6 @@ class MainActivity : AppCompatActivity(), LifecycleObserver {
                 sendResultLabel.text = result.toString()
             }
         }
-
-        lifecycle.addObserver(this)
-        exampleDapp = ExampleDapp(this, lifecycle)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

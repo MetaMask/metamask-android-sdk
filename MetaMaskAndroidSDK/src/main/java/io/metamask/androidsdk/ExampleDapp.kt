@@ -43,8 +43,8 @@ enum class Network(val chainId: String) {
     }
 }
 
-class ExampleDapp(context: Context, lifecycle: Lifecycle) {
-    val ethereum = Ethereum.getInstance(context, lifecycle)
+class ExampleDapp(context: Context) {
+    val ethereum = Ethereum.getInstance(context)
 
     fun connect(callback: (Any?) -> Unit) {
         val dapp = Dapp("DroidDapp", "https://www.droiddapp.io")
