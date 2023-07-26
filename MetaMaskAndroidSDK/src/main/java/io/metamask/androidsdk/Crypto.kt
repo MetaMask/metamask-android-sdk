@@ -1,11 +1,9 @@
 package io.metamask.androidsdk
 
-import android.os.Build
-import android.util.Log
 import com.crypto.ecies.Ecies
 
 
-public class Crypto {
+internal class Crypto {
     private val ecies = Ecies()
 
     fun generatePrivateKey(): String {

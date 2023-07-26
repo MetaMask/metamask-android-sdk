@@ -7,18 +7,32 @@ import io.metamask.androidsdk.EthereumMethod.*
 import java.util.*
 
 class Ethereum private constructor(private val context: Context): EthereumEventCallback {
-    var connected = false
 
+    // Toggle SDK connection status tracking
+    var enableDebug: Boolean = true
+        set(value) {
+            field = value
+            communicationClient.enableDebug = value
+        }
+
+    // Current chain id
     var chainId: String? = null
         private set
+
+    // Current account address
     var selectedAddress: String? = null
         private set
 
-    private val communicationClient = CommunicationClient(context, this)
+    private var connected = false
     private var serverBoundServiceStarted = false
+    private val communicationClient = CommunicationClient(context, this)
 
     companion object {
         private var instance: Ethereum? = null
+
+        private const val METAMASK_DEEPLINK = "https://metamask.app.link"
+        private const val METAMASK_BIND_DEEPLINK = "$METAMASK_DEEPLINK/bind"
+
         private const val DEFAULT_SESSION_DURATION: Long = 7 * 24 * 3600 // 7 days default
         private var sessionLifetime: Long = DEFAULT_SESSION_DURATION
 
@@ -41,11 +55,13 @@ class Ethereum private constructor(private val context: Context): EthereumEventC
         this.chainId = chainId
     }
 
+    // Set session duration in seconds
     fun setSessionDuration(duration: Long) {
         sessionLifetime = duration
         communicationClient.setSessionDuration(duration)
     }
 
+    // Clear persisted session. Subsequent MetaMask connection request will need approval
     fun clearSession() {
         communicationClient.clearSession()
     }
@@ -98,12 +114,7 @@ class Ethereum private constructor(private val context: Context): EthereumEventC
     }
 
     private fun openMetaMask() {
-        val deeplinkUrl = if (serverBoundServiceStarted) {
-            "https://metamask.app.link"
-        } else {
-            serverBoundServiceStarted = true
-            "https://metamask.app.link/bind"
-        }
+        val deeplinkUrl = METAMASK_BIND_DEEPLINK
 
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deeplinkUrl))
         context.startActivity(intent)

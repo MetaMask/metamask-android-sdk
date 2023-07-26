@@ -15,8 +15,7 @@ import org.json.JSONObject
 import kotlinx.serialization.Serializable
 import java.lang.ref.WeakReference
 
-class CommunicationClient(context: Context, callback: EthereumEventCallback)  {
-    private val appContext = context.applicationContext
+internal class CommunicationClient(private val context: Context, callback: EthereumEventCallback)  {
 
     val sessionId: String
     private val keyExchange: KeyExchange = KeyExchange()
@@ -34,6 +33,12 @@ class CommunicationClient(context: Context, callback: EthereumEventCallback)  {
     private var submittedRequests: MutableMap<String, SubmittedRequest>  = mutableMapOf()
 
     private var sessionManager: SessionManager
+
+    var enableDebug: Boolean = false
+        set(value) {
+        field = value
+        tracker.enableDebug = value
+    }
 
     init {
         sessionManager = SessionManager(KeyStorage(context))
@@ -88,15 +93,14 @@ class CommunicationClient(context: Context, callback: EthereumEventCallback)  {
 
         when(event) {
             Event.CONNECTIONREQUEST -> {
-                params["commlayer"] = "android"
-                params["sdkVersion"] = "0.2.0"
+                params["commlayer"] = SDKInfo.PLATFORM
+                params["sdkVersion"] = SDKInfo.VERSION
                 params["url"] = dapp?.url ?: ""
                 params["title"] = dapp?.name ?: ""
-                params["platform"] = "android"
+                params["platform"] = SDKInfo.PLATFORM
             }
             else -> Unit
         }
-
         tracker.trackEvent(event, params)
     }
 
@@ -388,13 +392,7 @@ class CommunicationClient(context: Context, callback: EthereumEventCallback)  {
     }
 
     private fun sendOriginatorInfo() {
-        val manager = appContext.packageManager
-        // (TODO) this incorrectly gets the app package info not the SDK's
-        val packageInfo = manager.getPackageInfo(appContext.packageName, 0)
-        val apiVersion = packageInfo.versionName
-
-        // (TODO) val apiVersion = BuildConfig::class.java.getField("versionName").get(null) as String
-        val originatorInfo = OriginatorInfo(dapp?.name, dapp?.url, "Android", apiVersion)
+        val originatorInfo = OriginatorInfo(dapp?.name, dapp?.url, SDKInfo.PLATFORM, SDKInfo.VERSION)
         val requestInfo = RequestInfo("originator_info", originatorInfo)
         val requestInfoJson = Gson().toJson(requestInfo)
 
@@ -419,8 +417,8 @@ class CommunicationClient(context: Context, callback: EthereumEventCallback)  {
                 )
             )
 
-        if (appContext != null) {
-            appContext.bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+        if (context != null) {
+            context.bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
         } else {
             Logger.error("App context null!")
         }
@@ -429,7 +427,7 @@ class CommunicationClient(context: Context, callback: EthereumEventCallback)  {
     fun unbindService() {
         if (isServiceConnected) {
             Logger.log("CommClient: Unbinding service")
-            appContext.unbindService(serviceConnection)
+            context.unbindService(serviceConnection)
             isServiceConnected = false
         }
     }

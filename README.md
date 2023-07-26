@@ -34,7 +34,7 @@ val ethereum: Ethereum by lazy {
 // This helps us to monitor any SDK connection issues. 
 //  
 
-let dapp = Dapp(name: "Droid Dapp", url: "https://droiddapp.com")
+val dapp = Dapp(name: "Droid Dapp", url: "https://droiddapp.com")
 
 // This is the same as calling "eth_requestAccounts"
 ethereum.connect(dapp) { result ->
@@ -46,7 +46,7 @@ ethereum.connect(dapp) { result ->
 }
 ```
 
-We log three SDK events: `connectionRequest`, `connected` and `disconnected`. Otherwise no tracking. This helps us to monitor any SDK connection issues. If you wish to disable this, you can do so by setting `MetaMaskSDK.shared.enableDebug = false` or `ethereum.enableDebug = false`.
+We log three SDK events: `connectionRequest`, `connected` and `disconnected`. Otherwise no tracking. This helps us to monitor any SDK connection issues. If you wish to disable this, you can do so by setting `ethereum.enableDebug = false`.
 
 
 ### 4. You can now call any ethereum provider method
@@ -55,7 +55,7 @@ We log three SDK events: `connectionRequest`, `connected` and `disconnected`. Ot
 ```kotlin
 var chainId: String? = null
 
-let chainIdRequest = EthereumRequest(EthereumMethod.ETHCHAINID.value) // or EthereumRequest("eth_chainId")
+val chainIdRequest = EthereumRequest(EthereumMethod.ETHCHAINID.value) // or EthereumRequest("eth_chainId")
 
 ethereum.sendRequest(chainIdRequest) { result ->
     if (result is RequestError) {
@@ -92,10 +92,28 @@ ethereum.sendRequest(getBalanceRequest) { result ->
     }
 }
 ```
+#### Example 3: Sign message
+```kotlin
+val message = "{\"domain\":{\"chainId\":1,\"name\":\"Ether Mail\",\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\",\"version\":\"1\"},\"message\":{\"contents\":\"Hello, Linda!\",\"from\":{\"name\":\"Aliko\",\"wallets\":[\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\",\"0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF\"]},\"to\":[{\"name\":\"Linda\",\"wallets\":[\"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB\",\"0xB0BdaBea57B0BDABeA57b0bdABEA57b0BDabEa57\",\"0xB0B0b0b0b0b0B000000000000000000000000000\"]}]},\"primaryType\":\"Mail\",\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Group\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"members\",\"type\":\"Person[]\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person[]\"},{\"name\":\"contents\",\"type\":\"string\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallets\",\"type\":\"address[]\"}]}}"
 
-#### Example 3: Send transaction
-##### Using parameters dictionary
-If your request parameters is a simple dictionary of string key-value pairs, you can use it directly. Note that the use of `Any` or even `AnyHashable` types is not supported as the type needs to be explicitly known.
+val from = ethereum.selectedAddress ?: ""
+val params: List<String> = listOf(from, message)
+
+val signRequest = EthereumRequest(
+    EthereumMethod.ETHSIGNTYPEDDATAV4.value,
+    params
+)
+
+ethereum.sendRequest(signRequest) { result ->
+    if (result is RequestError) {
+        Log.e(TAG, "Ethereum sign error: ${result.message}")
+    } else {
+        Log.d(TAG, "Ethereum sign result: $result")
+    }
+}
+```
+
+#### Example 4: Send transaction
 
 ```kotlin
 // Create parameters

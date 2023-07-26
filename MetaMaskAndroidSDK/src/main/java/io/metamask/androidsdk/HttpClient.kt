@@ -5,7 +5,7 @@ import okhttp3.*
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.io.IOException
 
-class HttpClient {
+internal class HttpClient {
     private val client = OkHttpClient()
 
     fun newCall(baseUrl: String, parameters: Map<String, String>? = null) {

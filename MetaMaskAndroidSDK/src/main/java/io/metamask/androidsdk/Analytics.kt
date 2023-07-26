@@ -20,7 +20,7 @@ class Endpoints {
     }
 }
 
-class Analytics(override var enableDebug: Boolean = true) : Tracker {
+internal class Analytics(override var enableDebug: Boolean = true) : Tracker {
 
     private val httpClient: HttpClient = HttpClient()
 

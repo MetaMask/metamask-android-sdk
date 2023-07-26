@@ -10,7 +10,7 @@ import java.security.KeyStore
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 
-class KeyStorage(private val context: Context): SecureStorage {
+internal class KeyStorage(private val context: Context): SecureStorage {
 
     private val keyStoreAlias = context.packageName
     private val androidKeyStore = "AndroidKeyStore"

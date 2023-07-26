@@ -1,15 +1,13 @@
 package io.metamask.androidsdk
 
-import kotlinx.serialization.Serializable
 import io.metamask.androidsdk.KeyExchangeMessageType.*
-import kotlinx.serialization.SerialName
 
 data class KeyExchangeMessage(
     val type: String,
     val publicKey: String?
     )
 
-class KeyExchange(private val crypto: Crypto = Crypto()) {
+internal class KeyExchange(private val crypto: Crypto = Crypto()) {
     companion object {
         const val TYPE = "type"
         const val PUBLIC_KEY = "public_key"

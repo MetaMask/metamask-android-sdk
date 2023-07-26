@@ -5,7 +5,7 @@ import com.google.gson.reflect.TypeToken
 import java.lang.reflect.Type
 import java.util.*
 
-class SessionManager(
+internal class SessionManager(
     private val store: SecureStorage,
     private var sessionDuration: Long = 7 * 24 * 3600 // 7 days default
 ) {
