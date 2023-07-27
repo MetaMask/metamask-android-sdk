@@ -6,7 +6,9 @@ import android.net.Uri
 import io.metamask.androidsdk.EthereumMethod.*
 import java.util.*
 
-class Ethereum private constructor(private val context: Context): EthereumEventCallback {
+class Ethereum private constructor(context: Context): EthereumEventCallback {
+
+    private val appContext = context
 
     // Toggle SDK connection status tracking
     var enableDebug: Boolean = true
@@ -24,10 +26,10 @@ class Ethereum private constructor(private val context: Context): EthereumEventC
         private set
 
     private var connected = false
-    private var serverBoundServiceStarted = false
     private val communicationClient = CommunicationClient(context, this)
 
     companion object {
+        @Volatile
         private var instance: Ethereum? = null
 
         private const val METAMASK_DEEPLINK = "https://metamask.app.link"
@@ -37,11 +39,11 @@ class Ethereum private constructor(private val context: Context): EthereumEventC
         private var sessionLifetime: Long = DEFAULT_SESSION_DURATION
 
         fun getInstance(context: Context, sessionDuration: Long = DEFAULT_SESSION_DURATION): Ethereum {
-            if (instance == null) {
-                instance = Ethereum(context)
-                sessionLifetime = sessionDuration
+            sessionLifetime = sessionDuration
+
+            return instance ?: synchronized(this) {
+                instance ?: Ethereum(context).also { instance = it }
             }
-            return instance as Ethereum
         }
     }
 
@@ -76,8 +78,11 @@ class Ethereum private constructor(private val context: Context): EthereumEventC
 
     fun disconnect() {
         Logger.log("Ethereum: disconnecting...")
-        communicationClient.unbindService()
+
         connected = false
+        chainId = null
+        selectedAddress = null
+        communicationClient.unbindService()
     }
 
     private fun requestAccounts(callback: (Any?) -> Unit) {
@@ -117,7 +122,7 @@ class Ethereum private constructor(private val context: Context): EthereumEventC
         val deeplinkUrl = METAMASK_BIND_DEEPLINK
 
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deeplinkUrl))
-        context.startActivity(intent)
+        appContext.startActivity(intent)
     }
 
     private fun requiresAuthorisation(method: String): Boolean {

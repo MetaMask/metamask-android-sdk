@@ -11,8 +11,8 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import io.metamask.nativesdk.IMessegeService
 import io.metamask.nativesdk.IMessegeServiceCallback
-import org.json.JSONObject
 import kotlinx.serialization.Serializable
+import org.json.JSONObject
 import java.lang.ref.WeakReference
 
 internal class CommunicationClient(private val context: Context, callback: EthereumEventCallback)  {
@@ -328,15 +328,15 @@ internal class CommunicationClient(private val context: Context, callback: Ether
 
         val json = JSONObject(message)
 
-        val keyExchangeStep = json.optString(KeyExchange.TYPE, KeyExchangeMessageType.key_exchange_SYN.name)
+        val keyExchangeStep = json.optString(KeyExchange.TYPE, KeyExchangeMessageType.KEY_HANDSHAKE_SYN.name)
         val type = KeyExchangeMessageType.valueOf(keyExchangeStep)
         val theirPublicKey = json.optString(KeyExchange.PUBLIC_KEY)
         val keyExchangeMessage = KeyExchangeMessage(type.name, theirPublicKey)
         val nextStep  = keyExchange.nextKeyExchangeMessage(keyExchangeMessage)
 
         if (
-            type == KeyExchangeMessageType.key_exchange_SYNACK ||
-            type == KeyExchangeMessageType.key_exchange_ACK) {
+            type == KeyExchangeMessageType.KEY_HANDSHAKE_SYNACK ||
+            type == KeyExchangeMessageType.KEY_HANDSHAKE_ACK) {
             keyExchange.complete()
         }
 
@@ -418,7 +418,10 @@ internal class CommunicationClient(private val context: Context, callback: Ether
             )
 
         if (context != null) {
-            context.bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE)
+            context.bindService(
+                serviceIntent,
+                serviceConnection,
+                Context.BIND_NOT_FOREGROUND or Context.BIND_IMPORTANT)
         } else {
             Logger.error("App context null!")
         }
@@ -437,7 +440,7 @@ internal class CommunicationClient(private val context: Context, callback: Ether
 
         val keyExchange = JSONObject().apply {
             put(KeyExchange.PUBLIC_KEY, keyExchange.publicKey)
-            put(KeyExchange.TYPE, KeyExchangeMessageType.key_exchange_SYN.name)
+            put(KeyExchange.TYPE, KeyExchangeMessageType.KEY_HANDSHAKE_SYN.name)
         }
 
         sendKeyExchangeMesage(keyExchange.toString())

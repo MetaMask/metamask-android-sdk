@@ -52,10 +52,10 @@ internal class KeyExchange(private val crypto: Crypto = Crypto()) {
         }
 
         return when(current.type) {
-            key_handshake_start.name -> KeyExchangeMessage(key_exchange_SYN.name, publicKey)
-            key_exchange_SYN.name -> KeyExchangeMessage(key_exchange_SYNACK.name, publicKey)
-            key_exchange_SYNACK.name -> KeyExchangeMessage(key_exchange_ACK.name, publicKey)
-            key_exchange_ACK.name -> null
+            KEY_HANDSHAKE_START.name -> KeyExchangeMessage(KEY_HANDSHAKE_SYN.name, publicKey)
+            KEY_HANDSHAKE_SYN.name -> KeyExchangeMessage(KEY_HANDSHAKE_SYNACK.name, publicKey)
+            KEY_HANDSHAKE_SYNACK.name -> KeyExchangeMessage(KEY_HANDSHAKE_ACK.name, publicKey)
+            KEY_HANDSHAKE_ACK.name -> null
             else -> null
         }
     }
