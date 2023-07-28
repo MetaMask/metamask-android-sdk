@@ -40,7 +40,6 @@ class Ethereum private constructor(context: Context): EthereumEventCallback {
 
         fun getInstance(context: Context, sessionDuration: Long = DEFAULT_SESSION_DURATION): Ethereum {
             sessionLifetime = sessionDuration
-
             return instance ?: synchronized(this) {
                 instance ?: Ethereum(context).also { instance = it }
             }

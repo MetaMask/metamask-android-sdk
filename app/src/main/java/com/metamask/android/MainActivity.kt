@@ -1,6 +1,8 @@
 package com.metamask.android
 
+import android.content.Intent
 import android.os.Bundle
+import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
@@ -49,6 +51,11 @@ class MainActivity : AppCompatActivity() {
         connectButton.setOnClickListener {
             exampleDapp.connect() { result ->
                 connectResultLabel.text = result.toString()
+
+//                if (result !is RequestError) {
+//                    val intent = Intent(this, DappActionsActvity::class.java)
+//                    startActivity(intent)
+//                }
             }
         }
 

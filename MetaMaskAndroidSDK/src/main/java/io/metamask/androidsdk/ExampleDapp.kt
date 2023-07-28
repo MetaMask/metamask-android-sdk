@@ -1,6 +1,8 @@
 package io.metamask.androidsdk
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import androidx.lifecycle.Lifecycle
 import java.util.*
 
@@ -45,16 +47,19 @@ enum class Network(val chainId: String) {
 
 class ExampleDapp(context: Context) {
     val ethereum = Ethereum.getInstance(context)
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     fun connect(callback: (Any?) -> Unit) {
         val dapp = Dapp("DroidDapp", "https://www.droiddapp.io")
 
         ethereum.connect(dapp) { result ->
-            callback(result)
             if (result is RequestError) {
                 Logger.log("Ethereum connection error: ${result.message}")
             } else {
                 Logger.log("Ethereum connection result: $result")
+            }
+            mainHandler.post {
+                callback(result)
             }
         }
     }

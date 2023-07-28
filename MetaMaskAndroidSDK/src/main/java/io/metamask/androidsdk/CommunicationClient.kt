@@ -109,6 +109,7 @@ internal class CommunicationClient(private val context: Context, callback: Ether
     }
 
     fun clearSession() {
+        Logger.log("Clearing current session")
         sessionManager.clearSession()
     }
 
@@ -421,7 +422,7 @@ internal class CommunicationClient(private val context: Context, callback: Ether
             context.bindService(
                 serviceIntent,
                 serviceConnection,
-                Context.BIND_NOT_FOREGROUND or Context.BIND_IMPORTANT)
+                Context.BIND_AUTO_CREATE)
         } else {
             Logger.error("App context null!")
         }
