@@ -77,10 +77,14 @@ class ExampleDapp(context: Context) {
         ethereum.sendRequest(signRequest) { result ->
             if (result is RequestError) {
                 Logger.log("Ethereum sign error: ${result.message}")
-                callback(result.message)
+                mainHandler.post {
+                    callback(result.message)
+                }
             } else {
                 Logger.log("Ethereum sign result: $result")
-                callback(result)
+                mainHandler.post {
+                    callback(result)
+                }
             }
         }
     }
@@ -103,15 +107,15 @@ class ExampleDapp(context: Context) {
         ethereum.sendRequest(transactionRequest) { result ->
             if (result is RequestError) {
                 Logger.log("Ethereum transaction error: ${result.message}")
-                callback(result.message)
+                mainHandler.post {
+                    callback(result.message)
+                }
             } else {
                 Logger.log("Ethereum transaction result: $result")
-                callback(result)
+                mainHandler.post {
+                    callback(result)
+                }
             }
         }
-    }
-
-    fun switchChain(source: Network, destination: Network) {
-
     }
 }
