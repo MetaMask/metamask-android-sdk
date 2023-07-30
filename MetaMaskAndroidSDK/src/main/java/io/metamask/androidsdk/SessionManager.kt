@@ -12,7 +12,7 @@ internal class SessionManager(
     private val sessionConfigKey: String = "SESSION_CONFIG_KEY"
     private val sessionConfigFile: String = "SESSION_CONFIG_FILE"
 
-    val sessionId: String = getSessionConfig().sessionId
+    var sessionId: String = getSessionConfig().sessionId
 
     fun setSessionDuration(duration: Long) {
         Logger.log("SessionManager: setSessionDuration")
@@ -61,6 +61,7 @@ internal class SessionManager(
     fun clearSession() {
         store.clearValue(sessionConfigKey, sessionConfigFile)
         makeNewSessionConfig()
+        sessionId = getSessionConfig().sessionId
     }
 
     private fun makeNewSessionConfig(): SessionConfig {

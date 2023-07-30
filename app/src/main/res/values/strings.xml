@@ -4,10 +4,12 @@
     <!-- Strings used for fragments for navigation -->
     <string name="first_fragment_label">MetaMask Dapp</string>
     <string name="connection_label">Connection Result: </string>
+    <string name="session_label">SessionId: </string>
     <string name="sign_label">Sign Result: </string>
     <string name="send_label">Transaction Result: </string>
     <string name="second_fragment_label">Second Fragment</string>
     <string name="connect">Connect</string>
+    <string name="clear_session">Clear Session</string>
     <string name="sign">Sign Message</string>
     <string name="send">Send Transaction</string>
     <string name="previous">Previous</string>

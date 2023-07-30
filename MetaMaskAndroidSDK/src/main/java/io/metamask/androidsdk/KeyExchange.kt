@@ -16,18 +16,30 @@ internal class KeyExchange(private val crypto: Crypto = Crypto()) {
     private var privateKey: String? = null
     var publicKey: String? = null
     private var theirPublicKey: String? = null
-    var keysExchanged = false
+    private var isKeysExchanged = false
 
     init {
-        generateNewKeys()
+        reset()
     }
 
-    fun generateNewKeys() {
+    private fun setIsKeysExchanged(newValue: Boolean) {
+        synchronized(this) {
+            isKeysExchanged = newValue
+        }
+    }
+
+    fun keysExchanged(): Boolean {
+        synchronized(this) {
+            return isKeysExchanged
+        }
+    }
+
+    fun reset() {
         privateKey = crypto.generatePrivateKey()
         privateKey?.let {
             publicKey = crypto.publicKey(it)
         }
-        keysExchanged = false
+        setIsKeysExchanged(false)
         theirPublicKey = null
     }
 
@@ -43,7 +55,7 @@ internal class KeyExchange(private val crypto: Crypto = Crypto()) {
 
     fun complete() {
         Logger.log("Key exchange complete")
-        keysExchanged = true
+        setIsKeysExchanged(true)
     }
 
     fun nextKeyExchangeMessage(current: KeyExchangeMessage): KeyExchangeMessage? {

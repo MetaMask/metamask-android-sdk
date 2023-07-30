@@ -12,6 +12,8 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
 import android.widget.TextView
+import androidx.activity.viewModels
+import androidx.lifecycle.Observer
 import com.metamask.android.databinding.ActivityMainBinding
 import io.metamask.androidsdk.*
 
@@ -23,15 +25,19 @@ class MainActivity : AppCompatActivity() {
     private lateinit var connectButton: Button
     private lateinit var connectResultLabel: TextView
 
+    private lateinit var clearSessionButton: Button
+    private lateinit var sessionLabel: TextView
+
     private lateinit var signButton: Button
     private lateinit var signResultLabel: TextView
 
     private lateinit var sendButton: Button
     private lateinit var sendResultLabel: TextView
 
-    private val exampleDapp: ExampleDapp by lazy {
-        ExampleDapp(this)
-    }
+    // Obtain EthereumViewModel using viewModels() delegate
+    private val ethereumViewModel: EthereumViewModel by viewModels()
+
+    private lateinit var exampleDapp: ExampleDapp
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,21 +52,43 @@ class MainActivity : AppCompatActivity() {
         appBarConfiguration = AppBarConfiguration(navController.graph)
         setupActionBarWithNavController(navController, appBarConfiguration)
 
+        exampleDapp = ExampleDapp(ethereumViewModel)
+
         connectButton = findViewById(R.id.connectButton)
         connectResultLabel = findViewById(R.id.connectText)
+
+        ethereumViewModel.activeAddress.observe(this) { account ->
+            connectResultLabel.text = account
+        }
+
         connectButton.setOnClickListener {
             exampleDapp.connect() { result ->
                 connectResultLabel.text = result.toString()
 
-//                if (result !is RequestError) {
-//                    val intent = Intent(this, DappActionsActvity::class.java)
-//                    startActivity(intent)
-//                }
+                if (result !is RequestError) {
+                    "SessionId: ${ethereumViewModel.getSessionId()}"
+                        .also { sessionLabel.text = it }
+                }
             }
+        }
+
+        clearSessionButton = findViewById(R.id.clearButton)
+        sessionLabel = findViewById(R.id.sessionText)
+        "SessionId: ${ethereumViewModel.getSessionId()}"
+            .also { sessionLabel.text = it }
+
+        clearSessionButton.setOnClickListener {
+            ethereumViewModel.clearSession()
+            "SessionId: ${ethereumViewModel.getSessionId()}"
+                .also { sessionLabel.text = it }
+            signResultLabel.text = ""
+            connectResultLabel.text = ""
+            sendResultLabel.text = ""
         }
 
         signButton = findViewById(R.id.signButton)
         signResultLabel = findViewById(R.id.signText)
+
         signButton.setOnClickListener {
             exampleDapp.signMessage() { result ->
                 signResultLabel.text = result.toString()

@@ -1,14 +1,35 @@
 package io.metamask.androidsdk
 
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import io.metamask.androidsdk.EthereumMethod.*
+import android.os.Handler
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.MutableLiveData
+import java.lang.ref.WeakReference
 import java.util.*
 
-class Ethereum private constructor(context: Context): EthereumEventCallback {
+class EthereumViewModel(application: Application) : AndroidViewModel(application), EthereumEventCallback {
 
-    private val appContext = context
+    private var connected = false
+    private val mainHandler = Handler()
+    private val appContextRef: WeakReference<Context> = WeakReference(application.applicationContext)
+    private val communicationClient = CommunicationClient(application.applicationContext, this)
+
+    // MutableLiveData for chainId and selectedAddress
+    private val _chainId = MutableLiveData<String>()
+    private val _selectedAddress = MutableLiveData<String>()
+
+    // Expose immutable LiveData for chainId and selectedAddress to observe changes
+    val activeChainId: MutableLiveData<String> get() = _chainId
+    val activeAddress: MutableLiveData<String> get() = _selectedAddress
+
+    // Expose plain variables for developers who prefer not using an observer pattern
+    var chainId = String()
+        private set
+    var selectedAddress = String()
+        private set
 
     // Toggle SDK connection status tracking
     var enableDebug: Boolean = true
@@ -17,43 +38,25 @@ class Ethereum private constructor(context: Context): EthereumEventCallback {
             communicationClient.enableDebug = value
         }
 
-    // Current chain id
-    var chainId: String? = null
-        private set
-
-    // Current account address
-    var selectedAddress: String? = null
-        private set
-
-    private var connected = false
-    private val communicationClient = CommunicationClient(context, this)
-
     companion object {
-        @Volatile
-        private var instance: Ethereum? = null
-
         private const val METAMASK_DEEPLINK = "https://metamask.app.link"
         private const val METAMASK_BIND_DEEPLINK = "$METAMASK_DEEPLINK/bind"
 
         private const val DEFAULT_SESSION_DURATION: Long = 7 * 24 * 3600 // 7 days default
-        private var sessionLifetime: Long = DEFAULT_SESSION_DURATION
-
-        fun getInstance(context: Context, sessionDuration: Long = DEFAULT_SESSION_DURATION): Ethereum {
-            sessionLifetime = sessionDuration
-            return instance ?: synchronized(this) {
-                instance ?: Ethereum(context).also { instance = it }
-            }
-        }
     }
+
+    private var sessionLifetime: Long = DEFAULT_SESSION_DURATION
 
     override fun updateAccount(account: String) {
         Logger.log("Ethereum: Selected account changed")
         selectedAddress = account
+        _selectedAddress.postValue(account)
     }
 
-    override fun updateChainId(chainId: String) {
-        Logger.log("Ethereum: ChainId changed: $chainId")
-        this.chainId = chainId
+    override fun updateChainId(newChainId: String) {
+        Logger.log("Ethereum: ChainId changed: $newChainId")
+        chainId = newChainId
+        _chainId.postValue(newChainId)
     }
 
     // Set session duration in seconds
@@ -64,11 +67,19 @@ class Ethereum private constructor(context: Context): EthereumEventCallback {
 
     // Clear persisted session. Subsequent MetaMask connection request will need approval
     fun clearSession() {
+        connected = false
+        _chainId.value = ""
+        _selectedAddress.value = ""
         communicationClient.clearSession()
+    }
+
+    fun getSessionId(): String {
+        return communicationClient.sessionId
     }
 
     fun connect(dapp: Dapp, callback: (Any?) -> Unit) {
         Logger.log("Ethereum: connecting...")
+        connected = false
         communicationClient.setSessionDuration(sessionLifetime)
         communicationClient.trackEvent(Event.CONNECTIONREQUEST, null)
         communicationClient.dapp = dapp
@@ -79,36 +90,41 @@ class Ethereum private constructor(context: Context): EthereumEventCallback {
         Logger.log("Ethereum: disconnecting...")
 
         connected = false
-        chainId = null
-        selectedAddress = null
+        _chainId.value = ""
+        _selectedAddress.value = ""
         communicationClient.unbindService()
     }
 
     private fun requestAccounts(callback: (Any?) -> Unit) {
         Logger.log("Requesting ethereum accounts")
 
-        connected = true
-
         val accountsRequest = EthereumRequest(
             UUID.randomUUID().toString(),
-            ETHREQUESTACCOUNTS.value,
+            EthereumMethod.ETHREQUESTACCOUNTS.value,
             ""
         )
 
-        sendRequest(accountsRequest, callback)
+        sendRequest(accountsRequest) {
+            connected = true
+            callback(it)
+        }
     }
 
     fun sendRequest(request: EthereumRequest, callback: (Any?) -> Unit) {
         Logger.log("Sending request $request")
-        if (!communicationClient.isServiceConnected) {
-            communicationClient.bindService()
+
+        if (request.method != EthereumMethod.ETHREQUESTACCOUNTS.value && !connected) {
+            requestAccounts {
+                sendRequest(request, callback)
+            }
+            return
         }
 
-        if (!connected && request.method == ETHREQUESTACCOUNTS.value) {
-            return requestAccounts(callback)
+        communicationClient.sendRequest(request) { response ->
+            mainHandler.post {
+                callback(response)
+            }
         }
-
-        communicationClient.sendRequest(request, callback)
 
         val authorise = requiresAuthorisation(request.method)
 
@@ -121,7 +137,8 @@ class Ethereum private constructor(context: Context): EthereumEventCallback {
         val deeplinkUrl = METAMASK_BIND_DEEPLINK
 
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deeplinkUrl))
-        appContext.startActivity(intent)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        appContextRef.get()?.startActivity(intent)
     }
 
     private fun requiresAuthorisation(method: String): Boolean {

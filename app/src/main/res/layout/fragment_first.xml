@@ -27,6 +27,32 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginStart="36dp"
             android:layout_marginEnd="36dp"
+            app:layout_constraintBottom_toTopOf="@id/clearButton"
+            app:layout_constraintHorizontal_bias="0.5"
+            android:layout_marginBottom="12dp"/>
+
+    <Button
+            android:id="@+id/clearButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/clear_session"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="36dp"
+            android:layout_marginEnd="36dp"
+            app:layout_constraintBottom_toTopOf="@id/sessionText"
+            app:layout_constraintHorizontal_bias="0.5"
+            android:layout_marginBottom="0dp"/>
+
+    <TextView
+            android:id="@+id/sessionText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/session_label"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="36dp"
+            android:layout_marginEnd="36dp"
             app:layout_constraintBottom_toTopOf="@id/signButton"
             app:layout_constraintHorizontal_bias="0.5"
             android:layout_marginBottom="12dp"/>
