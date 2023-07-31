@@ -3,6 +3,7 @@ package io.metamask.androidsdk
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import java.util.*
@@ -48,16 +49,21 @@ enum class Network(val chainId: String) {
 
 class ExampleDapp(private val ethereum: EthereumViewModel): AppCompatActivity() {
 
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
     fun connect(callback: (Any?) -> Unit) {
         val dapp = Dapp("DroidDapp", "https://www.droiddapp.io")
 
         ethereum.connect(dapp) { result ->
             if (result is RequestError) {
+                showToast(result.message)
                 Logger.log("Ethereum connection error: ${result.message}")
             } else {
                 Logger.log("Ethereum connection result: $result")
+                callback(result)
             }
-            callback(result)
         }
     }
 
@@ -73,8 +79,8 @@ class ExampleDapp(private val ethereum: EthereumViewModel): AppCompatActivity() 
 
         ethereum.sendRequest(signRequest) { result ->
             if (result is RequestError) {
+                showToast(result.message)
                 Logger.log("Ethereum sign error: ${result.message}")
-                callback(result.message)
             } else {
                 Logger.log("Ethereum sign result: $result")
                 callback(result)
@@ -100,7 +106,7 @@ class ExampleDapp(private val ethereum: EthereumViewModel): AppCompatActivity() 
         ethereum.sendRequest(transactionRequest) { result ->
             if (result is RequestError) {
                 Logger.log("Ethereum transaction error: ${result.message}")
-                callback(result.message)
+                showToast(result.message)
             } else {
                 Logger.log("Ethereum transaction result: $result")
                 callback(result)

@@ -12,6 +12,7 @@
     <string name="clear_session">Clear Session</string>
     <string name="sign">Sign Message</string>
     <string name="send">Send Transaction</string>
+    <string name="switch_chain">Switch Chain</string>
     <string name="previous">Previous</string>
 
     <string name="hello_first_fragment">Hello first fragment</string>

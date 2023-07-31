@@ -9,30 +9,35 @@ internal class HttpClient {
     private val client = OkHttpClient()
 
     fun newCall(baseUrl: String, parameters: Map<String, String>? = null) {
-        val urlBuilder = baseUrl.toHttpUrlOrNull()?.newBuilder()
 
-        parameters?.forEach { (key, value) ->
-            urlBuilder?.addQueryParameter(key, value)
-        }
+        val request: Request
 
-        val url = urlBuilder?.build()
+        if (parameters != null) {
+            val requestBodyBuilder = FormBody.Builder()
 
-        val request = url?.let {
-            Request.Builder()
-                .url(it)
+            for ((key, value) in parameters) {
+                requestBodyBuilder.add(key, value)
+            }
+
+            val requestBody: RequestBody = requestBodyBuilder.build()
+            request = Request.Builder()
+                .url(baseUrl)
+                .post(requestBody)
+                .build()
+        } else {
+            request = Request.Builder()
+                .url(baseUrl)
                 .build()
         }
 
-        if (request != null) {
-            client.newCall(request).enqueue(object: Callback {
-                override fun onFailure(call: Call, e: IOException) {
-                    Log.e(TAG,"HttpClient: ${e.message}")
-                }
+        client.newCall(request).enqueue(object: Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e(TAG,"HttpClient: ${e.message}")
+            }
 
-                override fun onResponse(call: Call, response: Response) {
-                    Log.d(TAG,"HttpClient: ${response}")
-                }
-            })
-        }
+            override fun onResponse(call: Call, response: Response) {
+                Log.d(TAG,"HttpClient: ${response}")
+            }
+        })
     }
 }

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Handler
+import android.os.Looper
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import java.lang.ref.WeakReference
@@ -13,7 +14,7 @@ import java.util.*
 class EthereumViewModel(application: Application) : AndroidViewModel(application), EthereumEventCallback {
 
     private var connected = false
-    private val mainHandler = Handler()
+    private val mainHandler = Handler(Looper.getMainLooper())
     private val appContextRef: WeakReference<Context> = WeakReference(application.applicationContext)
     private val communicationClient = CommunicationClient(application.applicationContext, this)
 
