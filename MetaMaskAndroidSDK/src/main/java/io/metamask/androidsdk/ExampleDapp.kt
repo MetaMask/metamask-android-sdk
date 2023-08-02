@@ -1,11 +1,9 @@
 package io.metamask.androidsdk
 
-import android.content.Context
-import android.os.Handler
-import android.os.Looper
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Lifecycle
+import com.google.android.material.snackbar.Snackbar
 import java.util.*
 
 enum class Network(val chainId: String) {
@@ -47,10 +45,26 @@ enum class Network(val chainId: String) {
     }
 }
 
-class ExampleDapp(private val ethereum: EthereumViewModel): AppCompatActivity() {
+interface RootLayoutProvider {
+    fun getRootLayout(): View
+}
+
+class ExampleDapp(private val ethereum: EthereumViewModel, private val rootLayoutProvider: RootLayoutProvider): AppCompatActivity() {
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun showSnackbarWithAction(message: String, buttonTitle: String, action: () -> Unit) {
+        val snackbar = Snackbar.make(
+            rootLayoutProvider.getRootLayout(),
+            message,
+            Snackbar.LENGTH_LONG
+        )
+        snackbar.setAction(buttonTitle) {
+            action()
+        }
+        snackbar.show()
     }
 
     fun connect(callback: (Any?) -> Unit) {
@@ -109,6 +123,62 @@ class ExampleDapp(private val ethereum: EthereumViewModel): AppCompatActivity() 
                 showToast(result.message)
             } else {
                 Logger.log("Ethereum transaction result: $result")
+                callback(result)
+            }
+        }
+    }
+
+    fun switchChain(callback: (Any?) -> Unit) {
+        val chainId = if (ethereum.chainId == Network.ETHEREUM.chainId) {
+            Network.POLYGON.chainId
+        } else {
+            Network.ETHEREUM.chainId
+        }
+        val switchChainParams: Map<String, String> = mapOf("chainId" to chainId)
+        val switchChainRequest = EthereumRequest(
+            method = EthereumMethod.SWITCHETHEREUMCHAIN.value,
+            params = listOf(switchChainParams)
+        )
+
+        ethereum.sendRequest(switchChainRequest) { result ->
+            if (result is RequestError) {
+                if (result.code == ErrorType.UNRECOGNIZEDCHAINID.code || result.code == ErrorType.SERVERERROR.code) {
+                    val message = "${Network.chainNameFor(chainId)} $chainId has not been added to your MetaMask wallet.Add chain?"
+                    val buttonTitle = "OK"
+                    val action: () -> Unit = {
+                        addEthereumChain(chainId, callback)
+                    }
+                    showSnackbarWithAction(message, buttonTitle, action)
+                } else {
+                    showToast("Switch chain error: ${result.message}")
+                }
+            } else {
+                showToast("Successfully switched to $chainId")
+                callback(chainId)
+            }
+        }
+    }
+
+    fun addEthereumChain(chainId: String, callback: (Any?) -> Unit) {
+        val addChainParams: Map<String, Any> = mapOf(
+            "chainId" to chainId,
+            "chainName" to Network.chainNameFor(chainId),
+            "rpcUrls" to Network.rpcUrls(Network.valueOf(chainId))
+        )
+        val addChainRequest = EthereumRequest(
+            method = EthereumMethod.ADDETHEREUMCHAIN.value,
+            params = listOf(addChainParams)
+        )
+
+        ethereum.sendRequest(addChainRequest) { result ->
+            if (result is RequestError) {
+                showToast("Add chain error: ${result.message}")
+            } else {
+                if (chainId == ethereum.chainId) {
+                    showToast("Successfully switched to ${Network.chainNameFor(chainId)} $chainId")
+                } else {
+                    showToast("Successfully added ${Network.chainNameFor(chainId)} $chainId")
+                }
                 callback(result)
             }
         }

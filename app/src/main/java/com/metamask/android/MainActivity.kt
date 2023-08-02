@@ -1,8 +1,6 @@
 package com.metamask.android
 
-import android.content.Intent
 import android.os.Bundle
-import android.os.Looper
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
@@ -10,14 +8,14 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.viewModels
-import androidx.lifecycle.Observer
 import com.metamask.android.databinding.ActivityMainBinding
 import io.metamask.androidsdk.*
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), RootLayoutProvider {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
@@ -39,6 +37,10 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var exampleDapp: ExampleDapp
 
+    override fun getRootLayout(): View {
+        return findViewById(R.id.toolbar)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Logger.log("app: onCreate")
@@ -52,7 +54,7 @@ class MainActivity : AppCompatActivity() {
         appBarConfiguration = AppBarConfiguration(navController.graph)
         setupActionBarWithNavController(navController, appBarConfiguration)
 
-        exampleDapp = ExampleDapp(ethereumViewModel)
+        exampleDapp = ExampleDapp(ethereumViewModel, this)
 
         connectButton = findViewById(R.id.connectButton)
         connectResultLabel = findViewById(R.id.connectText)

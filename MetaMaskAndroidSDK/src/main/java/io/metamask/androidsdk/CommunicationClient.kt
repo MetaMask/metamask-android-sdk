@@ -160,6 +160,10 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                     } else {
                         handleEvent(dataJson)
                     }
+                } else {
+                    val id = json.optString("id")
+                    val error = json.optString(MessageType.ERROR.value)
+                    handleError(error, id)
                 }
             }
         }
@@ -278,6 +282,8 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         if (error.isEmpty()) {
             return false
         }
+
+        Logger.error("Got error, id: $id, error: $error")
 
         val error: Map<String, Any?> = Gson().fromJson(error, object : TypeToken<Map<String, Any?>>() {}.type)
         val errorCode = error["code"] as? Double ?: -1
