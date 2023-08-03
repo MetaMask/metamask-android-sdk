@@ -6,45 +6,6 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
 import java.util.*
 
-enum class Network(val chainId: String) {
-    GOERLI("0x5"),
-    KOVAN("0x2a"),
-    ETHEREUM("0x1"),
-    POLYGON("0x89"),
-    UNKNOWN("unknown");
-
-    companion object {
-        fun name(network: Network): String {
-            return when(network) {
-                GOERLI -> "Goerli Testnet"
-                KOVAN -> "Kovan Testnet"
-                POLYGON -> "Polygon"
-                ETHEREUM -> "Ethereum"
-                else -> {
-                    "unknown"
-                }
-            }
-        }
-
-        fun rpcUrls(network: Network): List<String> {
-            return when(network) {
-                POLYGON -> listOf("https://polygon-rpc.com")
-                else -> {
-                    listOf()
-                }
-            }
-        }
-
-        fun chainNameFor(chainId: String): String {
-            val network = enumValues<Network>()
-                .toList()
-                .first { it.chainId == chainId }
-
-            return name(network)
-        }
-    }
-}
-
 interface RootLayoutProvider {
     fun getRootLayout(): View
 }
@@ -59,7 +20,7 @@ class ExampleDapp(private val ethereum: EthereumViewModel, private val rootLayou
         val snackbar = Snackbar.make(
             rootLayoutProvider.getRootLayout(),
             message,
-            Snackbar.LENGTH_LONG
+            Snackbar.LENGTH_INDEFINITE
         )
         snackbar.setAction(buttonTitle) {
             action()
@@ -140,10 +101,12 @@ class ExampleDapp(private val ethereum: EthereumViewModel, private val rootLayou
             params = listOf(switchChainParams)
         )
 
+        Logger.log("Switching from chainId: ${ethereum.chainId} to chainId: $chainId")
+
         ethereum.sendRequest(switchChainRequest) { result ->
             if (result is RequestError) {
                 if (result.code == ErrorType.UNRECOGNIZEDCHAINID.code || result.code == ErrorType.SERVERERROR.code) {
-                    val message = "${Network.chainNameFor(chainId)} $chainId has not been added to your MetaMask wallet.Add chain?"
+                    val message = "${Network.chainNameFor(chainId)} $chainId has not been added to your MetaMask wallet. Add chain?"
                     val buttonTitle = "OK"
                     val action: () -> Unit = {
                         addEthereumChain(chainId, callback)
@@ -160,10 +123,12 @@ class ExampleDapp(private val ethereum: EthereumViewModel, private val rootLayou
     }
 
     fun addEthereumChain(chainId: String, callback: (Any?) -> Unit) {
+        Logger.log("Adding chainId: $chainId")
+
         val addChainParams: Map<String, Any> = mapOf(
             "chainId" to chainId,
             "chainName" to Network.chainNameFor(chainId),
-            "rpcUrls" to Network.rpcUrls(Network.valueOf(chainId))
+            "rpcUrls" to Network.rpcUrls(Network.fromChainId(chainId))
         )
         val addChainRequest = EthereumRequest(
             method = EthereumMethod.ADDETHEREUMCHAIN.value,

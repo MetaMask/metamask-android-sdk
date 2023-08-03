@@ -61,10 +61,7 @@ class MainActivity : AppCompatActivity(), RootLayoutProvider {
 
         ethereumViewModel.activeAddress.observe(this) { account ->
             connectResultLabel.text = account
-//            if (account.isNotEmpty()) {
-//                val intent = Intent(this, DappActionsActvity::class.java)
-//                startActivity(intent)
-//            }
+
         }
 
         connectButton.setOnClickListener {

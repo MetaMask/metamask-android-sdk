@@ -10,7 +10,7 @@ You can import the MetaMask Android SDK into your native Android app to enable u
 To add MetaMask Android SDK from Maven as a dependency to your project, add this entry in your `app/build.gradle` file's dependencies block: 
 ```
 dependencies {
-  implementation 'io.metamask.androidsdk:sdk:0.1.0'
+  implementation 'io.metamask.androidsdk:metamasksdk:0.1.0'
 }
 
 ```
@@ -26,9 +26,8 @@ The Ethereum module requires the app context, so you will need to instantiate it
 ```kotlin
 // MainActivity
 
-val ethereum: Ethereum by lazy {
-    Ethereum.getInstance(this)
-}
+// Obtain EthereumViewModel using viewModels() delegate
+val ethereum: EthereumViewModel by viewModels()
 
 // We track three events: connection request, connected, disconnected, otherwise no tracking. 
 // This helps us to monitor any SDK connection issues. 
@@ -94,7 +93,7 @@ ethereum.sendRequest(getBalanceRequest) { result ->
 ```
 #### Example 3: Sign message
 ```kotlin
-val message = "{\"domain\":{\"chainId\":1,\"name\":\"Ether Mail\",\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\",\"version\":\"1\"},\"message\":{\"contents\":\"Hello, Linda!\",\"from\":{\"name\":\"Aliko\",\"wallets\":[\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\",\"0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF\"]},\"to\":[{\"name\":\"Linda\",\"wallets\":[\"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB\",\"0xB0BdaBea57B0BDABeA57b0bdABEA57b0BDabEa57\",\"0xB0B0b0b0b0b0B000000000000000000000000000\"]}]},\"primaryType\":\"Mail\",\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Group\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"members\",\"type\":\"Person[]\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person[]\"},{\"name\":\"contents\",\"type\":\"string\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallets\",\"type\":\"address[]\"}]}}"
+val message = "{\"domain\":{\"chainId\":1,\"name\":\"Ether Mail\",\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\",\"version\":\"1\"},\"message\":{\"contents\":\"Hello, Busa!\",\"from\":{\"name\":\"Kinno\",\"wallets\":[\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\",\"0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF\"]},\"to\":[{\"name\":\"Linda\",\"wallets\":[\"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB\",\"0xB0BdaBea57B0BDABeA57b0bdABEA57b0BDabEa57\",\"0xB0B0b0b0b0b0B000000000000000000000000000\"]}]},\"primaryType\":\"Mail\",\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Group\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"members\",\"type\":\"Person[]\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person[]\"},{\"name\":\"contents\",\"type\":\"string\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallets\",\"type\":\"address[]\"}]}}"
 
 val from = ethereum.selectedAddress ?: ""
 val params: List<String> = listOf(from, message)
@@ -140,6 +139,68 @@ ethereum.sendRequest(transactionRequest) { result ->
         Log.d(TAG, "Ethereum transaction result: $result")
     }
 } 
+```
+
+#### Example 5: Switch chain
+```kotlin
+
+fun switchToChain(chainId: String, callback: (Any?) -> Unit) {
+
+    if (ethereum.chainId == chainId) {
+        // already on requested chain
+        return
+    }
+
+    val switchChainParams: Map<String, String> = mapOf("chainId" to chainId)
+    val switchChainRequest = EthereumRequest(
+        method = EthereumMethod.SWITCHETHEREUMCHAIN.value,
+        params = listOf(switchChainParams)
+    )
+
+    ethereum.sendRequest(switchChainRequest) { result ->
+        if (result is RequestError) {
+            if (result.code == ErrorType.UNRECOGNIZEDCHAINID.code || result.code == ErrorType.SERVERERROR.code) {
+                val message = "$chainId has not been added to your MetaMask wallet. Add chain?"
+                val buttonTitle = "OK"
+                val action: () -> Unit = {
+                    addEthereumChain(chainId, callback)
+                }
+                showSnackbarWithAction(message, buttonTitle, action)
+            } else {
+                showToast("Switch chain error: ${result.message}")
+            }
+        } else {
+            showToast("Successfully switched to $chainId")
+            callback(chainId)
+        }
+    }
+}
+
+fun addEthereumChain(chainId: String, callback: (Any?) -> Unit) {
+
+    val addChainParams: Map<String, Any> = mapOf(
+        "chainId" to chainId,
+        "chainName" to Network.chainNameFor(chainId),
+        "rpcUrls" to listOf("https://polygon-rpc.com")
+    )
+    val addChainRequest = EthereumRequest(
+        method = EthereumMethod.ADDETHEREUMCHAIN.value,
+        params = listOf(addChainParams)
+    )
+
+    ethereum.sendRequest(addChainRequest) { result ->
+        if (result is RequestError) {
+            showToast("Add chain error: ${result.message}")
+        } else {
+            if (chainId == ethereum.chainId) {
+                showToast("Successfully switched to $chainId")
+            } else {
+                showToast("Successfully added $chainId")
+            }
+            callback(result)
+        }
+    }
+}
 ```
 
 ## Examples
