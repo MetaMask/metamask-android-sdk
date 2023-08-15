@@ -16,7 +16,7 @@ import io.metamask.androidsdk.EthereumViewModel
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val screenViewModel: ScreensViewModel by viewModels()
+    private val screensViewModel: ScreensViewModel by viewModels()
     private val ethereumViewModel: EthereumViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Setup(ethereumViewModel, screenViewModel)
+                    Setup(ethereumViewModel, screensViewModel)
                 }
             }
         }
