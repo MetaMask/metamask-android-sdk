@@ -216,8 +216,6 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         when(request?.method) {
             EthereumMethod.GETMETAMASKPROVIDERSTATE.value -> {
                 val result = data.optString("result")
-                Logger.log("metamask_getProviderState response: $result")
-                Logger.log("Result is: $result")
                 val resultJson = JSONObject(result)
                 val accountsJson = resultJson.optString("accounts")
                 val accounts: List<String> = Gson().fromJson(accountsJson, object : TypeToken<List<String>>() {}.type)
@@ -245,7 +243,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                     updateAccount(account)
                     completeRequest(id, account)
                 } else {
-                    Logger.error("CommunicationClient:: Request accounts failure")
+                    Logger.error("CommunicationClient:: Request accounts failure: $result")
                 }
             }
             EthereumMethod.ETHCHAINID.value -> {

@@ -2,6 +2,8 @@ plugins {
     id 'com.android.library'
     id 'org.jetbrains.kotlin.android'
     id 'org.jetbrains.kotlin.plugin.serialization' version '1.5.0'
+    id 'kotlin-kapt'
+    id 'com.google.dagger.hilt.android' version '2.43.2'
 }
 
 android {
@@ -26,11 +28,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '11'
     }
     ndkVersion '25.2.9519653'
     buildToolsVersion '30.0.3'
@@ -39,6 +41,8 @@ android {
 dependencies {
 
     implementation files('libs/ecies.aar')
+    implementation 'com.google.dagger:hilt-android:2.43.2'
+    kapt 'com.google.dagger:hilt-compiler:2.43.2'
     implementation 'com.squareup.okhttp3:okhttp:4.9.2'
     implementation 'androidx.security:security-crypto:1.1.0-alpha06'
     implementation 'com.google.code.gson:gson:2.9.0'

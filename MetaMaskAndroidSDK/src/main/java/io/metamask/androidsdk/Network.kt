@@ -9,7 +9,7 @@ enum class Network(val chainId: String) {
     UNKNOWN("unknown");
 
     companion object {
-        fun name(network: Network): String {
+        fun name(network: Network?): String {
             return when(network) {
                 GOERLI -> "Goerli Testnet"
                 KOVAN -> "Kovan Testnet"

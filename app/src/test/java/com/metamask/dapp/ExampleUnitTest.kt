@@ -1,4 +1,4 @@
-package com.metamask.android
+package com.metamask.dapp
 
 import org.junit.Test
 

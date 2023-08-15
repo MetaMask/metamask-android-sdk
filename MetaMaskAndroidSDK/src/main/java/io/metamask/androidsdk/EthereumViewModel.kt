@@ -1,30 +1,26 @@
 package io.metamask.androidsdk
 
-import android.app.Application
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import java.lang.ref.WeakReference
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.scopes.ViewModelScoped
 import java.util.*
+import javax.inject.Inject
 
-class EthereumViewModel(private val context: Context) : ViewModel(), EthereumEventCallback {
+@HiltViewModel
+class EthereumViewModel @Inject constructor (
+    val applicationRepository: ApplicationRepository
+    ) : ViewModel(), EthereumEventCallback {
 
     private var connected = false
-    private val appContextRef: WeakReference<Context> = WeakReference(context)
-    private val communicationClient = CommunicationClient(context, this)
+    private val communicationClient = CommunicationClient(applicationRepository.context, this)
+    private val _ethereumState: MutableLiveData<EthereumState> = MutableLiveData(EthereumState("", "", ""))
 
-    // MutableLiveData
-    private val _chainId = MutableLiveData<String>()
-    private val _sessionId = MutableLiveData<String>()
-    private val _selectedAddress = MutableLiveData<String>()
-
-    // Expose immutable LiveData for chainId and selectedAddress to observe changes
-    val activeChainId: MutableLiveData<String> get() = _chainId
-    val sessionId: MutableLiveData<String> get() = _sessionId
-    val activeAddress: MutableLiveData<String> get() = _selectedAddress
+    // Ethereum LiveData
+    val ethereumState: LiveData<EthereumState> get() = _ethereumState
 
     // Expose plain variables for developers who prefer not using an observer pattern
     var chainId = String()
@@ -39,6 +35,14 @@ class EthereumViewModel(private val context: Context) : ViewModel(), EthereumEve
             communicationClient.enableDebug = value
         }
 
+    init {
+        _ethereumState.postValue(_ethereumState.value?.copy(
+            selectedAddress = "",
+            chainId = "",
+            sessionId = getSessionId()
+        ))
+    }
+
     companion object {
         private const val METAMASK_DEEPLINK = "https://metamask.app.link"
         private const val METAMASK_BIND_DEEPLINK = "$METAMASK_DEEPLINK/bind"
@@ -51,13 +55,13 @@ class EthereumViewModel(private val context: Context) : ViewModel(), EthereumEve
     override fun updateAccount(account: String) {
         Logger.log("Ethereum: Selected account changed")
         selectedAddress = account
-        _selectedAddress.postValue(account)
+        _ethereumState.postValue(_ethereumState.value?.copy(selectedAddress = account))
     }
 
     override fun updateChainId(newChainId: String) {
         Logger.log("Ethereum: ChainId changed: $newChainId")
         chainId = newChainId
-        _chainId.postValue(newChainId)
+        _ethereumState.postValue(_ethereumState.value?.copy(chainId = newChainId))
     }
 
     // Set session duration in seconds
@@ -69,15 +73,16 @@ class EthereumViewModel(private val context: Context) : ViewModel(), EthereumEve
     // Clear persisted session. Subsequent MetaMask connection request will need approval
     fun clearSession() {
         connected = false
-        _chainId.value = ""
-        _selectedAddress.value = ""
         communicationClient.clearSession()
-        _sessionId.postValue(communicationClient.sessionId)
+        selectedAddress = ""
+        _ethereumState.postValue(_ethereumState.value?.copy(
+            selectedAddress = "",
+            chainId = "",
+            sessionId = getSessionId()
+        ))
     }
 
-    fun getSessionId(): String {
-        return communicationClient.sessionId
-    }
+    fun getSessionId(): String = communicationClient.sessionId
 
     fun connect(dapp: Dapp, callback: (Any?) -> Unit) {
         Logger.log("Ethereum: connecting...")
@@ -92,8 +97,11 @@ class EthereumViewModel(private val context: Context) : ViewModel(), EthereumEve
         Logger.log("Ethereum: disconnecting...")
 
         connected = false
-        _chainId.value = ""
-        _selectedAddress.value = ""
+        selectedAddress = ""
+        _ethereumState.postValue(_ethereumState.value?.copy(
+            selectedAddress = "",
+            chainId = ""
+        ))
         communicationClient.unbindService()
     }
 
@@ -138,7 +146,7 @@ class EthereumViewModel(private val context: Context) : ViewModel(), EthereumEve
 
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deeplinkUrl))
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        appContextRef.get()?.startActivity(intent)
+        applicationRepository.context.startActivity(intent)
     }
 
     private fun requiresAuthorisation(method: String): Boolean {

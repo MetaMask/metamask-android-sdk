@@ -1,25 +1,16 @@
 <resources>
-    <string name="app_name">MetaMaskAndroid</string>
-    <string name="action_settings">Settings</string>
-    <!-- Strings used for fragments for navigation -->
-    <string name="first_fragment_label">MetaMask Dapp</string>
-    <string name="connection_label"> </string>
+    <string name="app_name">MetaMaskAndroidDapp</string>
+    <string name="connection_label">Connection result: </string>
     <string name="session_label">SessionId: </string>
-    <string name="sign_label">Sign Result: </string>
-    <string name="send_label">Transaction Result: </string>
+    <string name="sign_label">Sign result: </string>
+    <string name="send_label">Transaction result: </string>
     <string name="second_fragment_label">Second Fragment</string>
-    <string name="dapp_actions_fragment_label">Dapp Actions</string>
+    <string name="dapp_actions_label">Dapp Actions</string>
     <string name="connect">Connect</string>
+    <string name="disconnect">Disconnect</string>
     <string name="clear_session">Clear Session</string>
     <string name="sign">Sign Message</string>
     <string name="send">Send Transaction</string>
     <string name="switch_chain">Switch Chain</string>
-    <string name="previous">Previous</string>
-
-    <string name="hello_first_fragment">Hello first fragment</string>
-    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
-    <string name="title_activity_dapp_actions_actvity">DappActionsActvity</string>
-    <string name="next">Next</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="add_chain">Add Chain</string>
 </resources>

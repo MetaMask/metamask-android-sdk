@@ -20,21 +20,20 @@ enum class ErrorType(val code: Int) {
 
     companion object {
         fun message(code: Int): String {
-            val error: ErrorType = ErrorType.values().first { it.code == code } ?: UNKNOWNERROR
 
-            when(error) {
-                USERREJECTEDREQUEST -> return "Ethereum Provider User Rejected Request"
-                UNAUTHORISEDREQUEST -> return "Ethereum Provider User Rejected Request"
-                UNSUPPORTEDMETHOD -> return "Ethereum Provider Unsupported Method"
-                DISCONNECTED ->  return "Ethereum Provider Not Connected"
-                CHAINDISCONNECTED -> return "Ethereum Provider Chain Not Connected"
-                UNRECOGNIZEDCHAINID -> return "Unrecognized chain ID. Try adding the chain using addEthereumChain first"
-                INVALIDINPUT -> return "JSON RPC 2.0 Server error"
-                TRANSACTIONREJECTED -> return "Ethereum Transaction Rejected"
-                INVALIDREQUEST -> return "Invalid Request"
-                SERVERERROR -> return "Server error"
-                PARSEERROR -> return "Parse error"
-                else -> return "The request failed"
+            return when(ErrorType.values().first { it.code == code }) {
+                USERREJECTEDREQUEST -> "Ethereum Provider User Rejected Request"
+                UNAUTHORISEDREQUEST -> "Ethereum Provider User Rejected Request"
+                UNSUPPORTEDMETHOD -> "Ethereum Provider Unsupported Method"
+                DISCONNECTED -> "Ethereum Provider Not Connected"
+                CHAINDISCONNECTED -> "Ethereum Provider Chain Not Connected"
+                UNRECOGNIZEDCHAINID -> "Unrecognized chain ID. Try adding the chain using addEthereumChain first"
+                INVALIDINPUT -> "JSON RPC 2.0 Server error"
+                TRANSACTIONREJECTED -> "Ethereum Transaction Rejected"
+                INVALIDREQUEST -> "Invalid Request"
+                SERVERERROR -> "Server error"
+                PARSEERROR -> "Parse error"
+                else -> "The request failed"
             }
         }
     }
