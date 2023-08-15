@@ -3,11 +3,12 @@
     <string name="action_settings">Settings</string>
     <!-- Strings used for fragments for navigation -->
     <string name="first_fragment_label">MetaMask Dapp</string>
-    <string name="connection_label">Connection Result: </string>
+    <string name="connection_label"> </string>
     <string name="session_label">SessionId: </string>
     <string name="sign_label">Sign Result: </string>
     <string name="send_label">Transaction Result: </string>
     <string name="second_fragment_label">Second Fragment</string>
+    <string name="dapp_actions_fragment_label">Dapp Actions</string>
     <string name="connect">Connect</string>
     <string name="clear_session">Clear Session</string>
     <string name="sign">Sign Message</string>
@@ -19,4 +20,6 @@
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
     <string name="title_activity_dapp_actions_actvity">DappActionsActvity</string>
     <string name="next">Next</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

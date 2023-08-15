@@ -1,5 +1,9 @@
 package io.metamask.androidsdk
 
+import android.content.Context
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -11,8 +15,10 @@ interface RootLayoutProvider {
 }
 
 class ExampleDapp(private val ethereum: EthereumViewModel, private val rootLayoutProvider: RootLayoutProvider): AppCompatActivity() {
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private fun showToast(message: String) {
+        Logger.log("ExampleDapp: showToast message - $message")
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
@@ -32,18 +38,20 @@ class ExampleDapp(private val ethereum: EthereumViewModel, private val rootLayou
         val dapp = Dapp("DroidDapp", "https://www.droiddapp.io")
 
         ethereum.connect(dapp) { result ->
-            if (result is RequestError) {
-                showToast(result.message)
-                Logger.log("Ethereum connection error: ${result.message}")
-            } else {
-                Logger.log("Ethereum connection result: $result")
-                callback(result)
+            mainHandler.post {
+                if (result is RequestError) {
+                    Logger.log("Ethereum connection error: ${result.message}")
+                    showToast(result.message)
+                } else {
+                    Logger.log("Ethereum connection result: $result")
+                    callback(result)
+                }
             }
         }
     }
 
     fun signMessage(callback: (Any?) -> Unit) {
-        val message = "{\"domain\":{\"chainId\":1,\"name\":\"Ether Mail\",\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\",\"version\":\"1\"},\"message\":{\"contents\":\"Hello, Linda!\",\"from\":{\"name\":\"Aliko\",\"wallets\":[\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\",\"0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF\"]},\"to\":[{\"name\":\"Linda\",\"wallets\":[\"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB\",\"0xB0BdaBea57B0BDABeA57b0bdABEA57b0BDabEa57\",\"0xB0B0b0b0b0b0B000000000000000000000000000\"]}]},\"primaryType\":\"Mail\",\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Group\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"members\",\"type\":\"Person[]\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person[]\"},{\"name\":\"contents\",\"type\":\"string\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallets\",\"type\":\"address[]\"}]}}"
+        val message = "{\"domain\":{\"chainId\":1,\"name\":\"Ether Mail\",\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\",\"version\":\"1\"},\"message\":{\"contents\":\"Hello, Busa!\",\"from\":{\"name\":\"Kinno\",\"wallets\":[\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\",\"0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF\"]},\"to\":[{\"name\":\"Busa\",\"wallets\":[\"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB\",\"0xB0BdaBea57B0BDABeA57b0bdABEA57b0BDabEa57\",\"0xB0B0b0b0b0b0B000000000000000000000000000\"]}]},\"primaryType\":\"Mail\",\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Group\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"members\",\"type\":\"Person[]\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person[]\"},{\"name\":\"contents\",\"type\":\"string\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallets\",\"type\":\"address[]\"}]}}"
         val params: List<String> = listOf(ethereum.selectedAddress, message)
 
         val signRequest = EthereumRequest(
@@ -53,12 +61,14 @@ class ExampleDapp(private val ethereum: EthereumViewModel, private val rootLayou
         )
 
         ethereum.sendRequest(signRequest) { result ->
-            if (result is RequestError) {
-                showToast(result.message)
-                Logger.log("Ethereum sign error: ${result.message}")
-            } else {
-                Logger.log("Ethereum sign result: $result")
-                callback(result)
+            mainHandler.post {
+                if (result is RequestError) {
+                    //showToast(result.message)
+                    Logger.log("Ethereum sign error: ${result.message}")
+                } else {
+                    Logger.log("Ethereum sign result: $result")
+                    callback(result)
+                }
             }
         }
     }
@@ -79,12 +89,14 @@ class ExampleDapp(private val ethereum: EthereumViewModel, private val rootLayou
         )
 
         ethereum.sendRequest(transactionRequest) { result ->
-            if (result is RequestError) {
-                Logger.log("Ethereum transaction error: ${result.message}")
-                showToast(result.message)
-            } else {
-                Logger.log("Ethereum transaction result: $result")
-                callback(result)
+            mainHandler.post {
+                if (result is RequestError) {
+                    Logger.log("Ethereum transaction error: ${result.message}")
+                    showToast(result.message)
+                } else {
+                    Logger.log("Ethereum transaction result: $result")
+                    callback(result)
+                }
             }
         }
     }
@@ -104,20 +116,22 @@ class ExampleDapp(private val ethereum: EthereumViewModel, private val rootLayou
         Logger.log("Switching from chainId: ${ethereum.chainId} to chainId: $chainId")
 
         ethereum.sendRequest(switchChainRequest) { result ->
-            if (result is RequestError) {
-                if (result.code == ErrorType.UNRECOGNIZEDCHAINID.code || result.code == ErrorType.SERVERERROR.code) {
-                    val message = "${Network.chainNameFor(chainId)} $chainId has not been added to your MetaMask wallet. Add chain?"
-                    val buttonTitle = "OK"
-                    val action: () -> Unit = {
-                        addEthereumChain(chainId, callback)
+            mainHandler.post {
+                if (result is RequestError) {
+                    if (result.code == ErrorType.UNRECOGNIZEDCHAINID.code || result.code == ErrorType.SERVERERROR.code) {
+                        val message = "${Network.chainNameFor(chainId)} $chainId has not been added to your MetaMask wallet. Add chain?"
+                        val buttonTitle = "OK"
+                        val action: () -> Unit = {
+                            addEthereumChain(chainId, callback)
+                        }
+                        showSnackbarWithAction(message, buttonTitle, action)
+                    } else {
+                        showToast("Switch chain error: ${result.message}")
                     }
-                    showSnackbarWithAction(message, buttonTitle, action)
                 } else {
-                    showToast("Switch chain error: ${result.message}")
+                    showToast("Successfully switched to $chainId")
+                    callback(chainId)
                 }
-            } else {
-                showToast("Successfully switched to $chainId")
-                callback(chainId)
             }
         }
     }
@@ -136,15 +150,17 @@ class ExampleDapp(private val ethereum: EthereumViewModel, private val rootLayou
         )
 
         ethereum.sendRequest(addChainRequest) { result ->
-            if (result is RequestError) {
-                showToast("Add chain error: ${result.message}")
-            } else {
-                if (chainId == ethereum.chainId) {
-                    showToast("Successfully switched to ${Network.chainNameFor(chainId)} $chainId")
+            mainHandler.post {
+                if (result is RequestError) {
+                    showToast("Add chain error: ${result.message}")
                 } else {
-                    showToast("Successfully added ${Network.chainNameFor(chainId)} $chainId")
+                    if (chainId == ethereum.chainId) {
+                        showToast("Successfully switched to ${Network.chainNameFor(chainId)} $chainId")
+                    } else {
+                        showToast("Successfully added ${Network.chainNameFor(chainId)} $chainId")
+                    }
+                    callback(result)
                 }
-                callback(result)
             }
         }
     }

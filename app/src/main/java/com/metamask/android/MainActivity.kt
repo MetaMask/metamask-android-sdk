@@ -8,38 +8,30 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View
-import android.widget.Button
-import android.widget.TextView
-import androidx.activity.viewModels
 import com.metamask.android.databinding.ActivityMainBinding
 import io.metamask.androidsdk.*
 
-class MainActivity : AppCompatActivity(), RootLayoutProvider {
+class MainActivity : AppCompatActivity() {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
 
-    private lateinit var connectButton: Button
-    private lateinit var connectResultLabel: TextView
+   // private lateinit var connectButton: Button
+    //private lateinit var connectResultLabel: TextView
 
-    private lateinit var clearSessionButton: Button
-    private lateinit var sessionLabel: TextView
+//    private lateinit var clearSessionButton: Button
+//    private lateinit var sessionLabel: TextView
 
-    private lateinit var signButton: Button
-    private lateinit var signResultLabel: TextView
-
-    private lateinit var sendButton: Button
-    private lateinit var sendResultLabel: TextView
+//    private lateinit var signButton: Button
+//    private lateinit var signResultLabel: TextView
+//
+//    private lateinit var sendButton: Button
+//    private lateinit var sendResultLabel: TextView
 
     // Obtain EthereumViewModel using viewModels() delegate
-    private val ethereumViewModel: EthereumViewModel by viewModels()
+   // private val ethereumViewModel: EthereumViewModel by viewModels()
 
-    private lateinit var exampleDapp: ExampleDapp
-
-    override fun getRootLayout(): View {
-        return findViewById(R.id.toolbar)
-    }
+    //private lateinit var exampleDapp: ExampleDapp
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,57 +46,55 @@ class MainActivity : AppCompatActivity(), RootLayoutProvider {
         appBarConfiguration = AppBarConfiguration(navController.graph)
         setupActionBarWithNavController(navController, appBarConfiguration)
 
-        exampleDapp = ExampleDapp(ethereumViewModel, this)
+        //exampleDapp = ExampleDapp(ethereumViewModel, this)
 
-        connectButton = findViewById(R.id.connectButton)
-        connectResultLabel = findViewById(R.id.connectText)
+//        connectButton = findViewById(R.id.connectButton)
+//        connectResultLabel = findViewById(R.id.connectText)
+//
+//        ethereumViewModel.activeAddress.observe(this) { account ->
+//            connectResultLabel.text = account
+//        }
+//
+//        connectButton.setOnClickListener {
+//            navigateToDappActionsFragment()
+////            exampleDapp.connect() { result ->
+////                if (result !is RequestError) {
+////                    connectResultLabel.text = result.toString()
+////                    "SessionId: ${ethereumViewModel.getSessionId()}"
+////                        .also { sessionLabel.text = it }
+////                    navigateToDappActionsFragment()
+////                }
+////            }
+//        }
+//
+//        clearSessionButton = findViewById(R.id.clearButton)
+//        sessionLabel = findViewById(R.id.sessionText)
+//        "SessionId: ${ethereumViewModel.getSessionId()}"
+//            .also { sessionLabel.text = it }
+//
+//        clearSessionButton.setOnClickListener {
+//            ethereumViewModel.clearSession()
+//            "SessionId: ${ethereumViewModel.getSessionId()}"
+//                .also { sessionLabel.text = it }
+//            connectResultLabel.text = ""
+//        }
 
-        ethereumViewModel.activeAddress.observe(this) { account ->
-            connectResultLabel.text = account
-
-        }
-
-        connectButton.setOnClickListener {
-            exampleDapp.connect() { result ->
-                connectResultLabel.text = result.toString()
-
-                if (result !is RequestError) {
-                    "SessionId: ${ethereumViewModel.getSessionId()}"
-                        .also { sessionLabel.text = it }
-                }
-            }
-        }
-
-        clearSessionButton = findViewById(R.id.clearButton)
-        sessionLabel = findViewById(R.id.sessionText)
-        "SessionId: ${ethereumViewModel.getSessionId()}"
-            .also { sessionLabel.text = it }
-
-        clearSessionButton.setOnClickListener {
-            ethereumViewModel.clearSession()
-            "SessionId: ${ethereumViewModel.getSessionId()}"
-                .also { sessionLabel.text = it }
-            signResultLabel.text = ""
-            connectResultLabel.text = ""
-            sendResultLabel.text = ""
-        }
-
-        signButton = findViewById(R.id.signButton)
-        signResultLabel = findViewById(R.id.signText)
-
-        signButton.setOnClickListener {
-            exampleDapp.signMessage() { result ->
-                signResultLabel.text = result.toString()
-            }
-        }
-
-        sendButton = findViewById(R.id.sendButton)
-        sendResultLabel = findViewById(R.id.sendText)
-        sendButton.setOnClickListener {
-            exampleDapp.sendTransaction() { result ->
-                sendResultLabel.text = result.toString()
-            }
-        }
+//        signButton = findViewById(R.id.signButton)
+//        signResultLabel = findViewById(R.id.signText)
+//
+//        signButton.setOnClickListener {
+//            exampleDapp.signMessage() { result ->
+//                signResultLabel.text = result.toString()
+//            }
+//        }
+//
+//        sendButton = findViewById(R.id.sendButton)
+//        sendResultLabel = findViewById(R.id.sendText)
+//        sendButton.setOnClickListener {
+//            exampleDapp.sendTransaction() { result ->
+//                sendResultLabel.text = result.toString()
+//            }
+//        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

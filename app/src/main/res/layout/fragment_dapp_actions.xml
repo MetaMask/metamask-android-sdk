@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        tools:context=".DappActions">
+    <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+        <Button
+                android:id="@+id/signButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/sign"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginStart="36dp"
+                android:layout_marginEnd="36dp"
+                app:layout_constraintBottom_toTopOf="@id/sendButton"
+                app:layout_constraintHorizontal_bias="0.5"
+                android:layout_marginBottom="12dp"/>
+
+        <Button
+                android:id="@+id/sendButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/send"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:layout_marginStart="36dp"
+                android:layout_marginEnd="36dp"
+                app:layout_constraintBottom_toTopOf="@id/switchChainButton"
+                app:layout_constraintHorizontal_bias="0.5"
+                android:layout_marginBottom="12dp"/>
+
+        <Button
+                android:id="@+id/switchChainButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="@string/switch_chain"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:layout_marginStart="36dp"
+                android:layout_marginEnd="36dp"
+                android:layout_marginBottom="36dp" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</FrameLayout>

@@ -14,6 +14,9 @@
         <action
             android:id="@+id/action_FirstFragment_to_SecondFragment"
             app:destination="@id/SecondFragment" />
+        <action
+                android:id="@+id/action_FirstFragment_to_DappActionsFragment"
+                app:destination="@id/DappActions" />
     </fragment>
     <fragment
         android:id="@+id/SecondFragment"
@@ -24,5 +27,43 @@
         <action
             android:id="@+id/action_SecondFragment_to_FirstFragment"
             app:destination="@id/FirstFragment" />
+    </fragment>
+
+    <fragment
+            android:id="@+id/DappActions"
+            android:name="com.metamask.android.DappActions"
+            android:label="@string/dapp_actions_fragment_label"
+            tools:layout="@layout/fragment_dapp_actions">
+
+        <action
+                android:id="@+id/action_DappActions_to_SignFragment"
+                app:destination="@id/SignFragment" />
+        <action
+                android:id="@+id/action_DappActions_to_SendTransactionFragment"
+                app:destination="@id/SendTransactionFragment" />
+        <action
+                android:id="@+id/action_DappActions_to_SwitchChainFragment"
+                app:destination="@id/SwitchChainFragment" />
+    </fragment>
+
+    <fragment
+            android:id="@+id/SignFragment"
+            android:name="com.metamask.android.SignMessageFragment"
+            android:label="@string/sign"
+            tools:layout="@layout/fragment_sign_message">
+    </fragment>
+
+    <fragment
+            android:id="@+id/SendTransactionFragment"
+            android:name="com.metamask.android.SendTransactionFragment"
+            android:label="@string/send"
+            tools:layout="@layout/fragment_send_transaction">
+    </fragment>
+
+    <fragment
+            android:id="@+id/SwitchChainFragment"
+            android:name="com.metamask.android.SwitchChainFragment"
+            android:label="@string/switch_chain"
+            tools:layout="@layout/fragment_switch_chain">
     </fragment>
 </navigation>

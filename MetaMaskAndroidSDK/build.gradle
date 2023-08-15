@@ -6,11 +6,11 @@ plugins {
 
 android {
     namespace 'io.metamask.androidsdk'
-    compileSdk 32
+    compileSdk 33
 
     defaultConfig {
         minSdk 23
-        targetSdk 32
+        targetSdk 33
 
         ext.versionCode = 1
         ext.versionName = "0.1.0"

@@ -4,26 +4,26 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Handler
-import android.os.Looper
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
 import java.lang.ref.WeakReference
 import java.util.*
 
-class EthereumViewModel(application: Application) : AndroidViewModel(application), EthereumEventCallback {
+class EthereumViewModel(private val context: Context) : ViewModel(), EthereumEventCallback {
 
     private var connected = false
-    private val mainHandler = Handler(Looper.getMainLooper())
-    private val appContextRef: WeakReference<Context> = WeakReference(application.applicationContext)
-    private val communicationClient = CommunicationClient(application.applicationContext, this)
+    private val appContextRef: WeakReference<Context> = WeakReference(context)
+    private val communicationClient = CommunicationClient(context, this)
 
-    // MutableLiveData for chainId and selectedAddress
+    // MutableLiveData
     private val _chainId = MutableLiveData<String>()
+    private val _sessionId = MutableLiveData<String>()
     private val _selectedAddress = MutableLiveData<String>()
 
     // Expose immutable LiveData for chainId and selectedAddress to observe changes
     val activeChainId: MutableLiveData<String> get() = _chainId
+    val sessionId: MutableLiveData<String> get() = _sessionId
     val activeAddress: MutableLiveData<String> get() = _selectedAddress
 
     // Expose plain variables for developers who prefer not using an observer pattern
@@ -72,6 +72,7 @@ class EthereumViewModel(application: Application) : AndroidViewModel(application
         _chainId.value = ""
         _selectedAddress.value = ""
         communicationClient.clearSession()
+        _sessionId.postValue(communicationClient.sessionId)
     }
 
     fun getSessionId(): String {
@@ -122,9 +123,7 @@ class EthereumViewModel(application: Application) : AndroidViewModel(application
         }
 
         communicationClient.sendRequest(request) { response ->
-            mainHandler.post {
-                callback(response)
-            }
+            callback(response)
         }
 
         val authorise = requiresAuthorisation(request.method)

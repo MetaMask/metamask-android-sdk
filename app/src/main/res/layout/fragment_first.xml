@@ -27,12 +27,12 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginStart="36dp"
             android:layout_marginEnd="36dp"
-            app:layout_constraintBottom_toTopOf="@id/clearButton"
+            app:layout_constraintBottom_toTopOf="@id/clearSessionButton"
             app:layout_constraintHorizontal_bias="0.5"
             android:layout_marginBottom="12dp"/>
 
     <Button
-            android:id="@+id/clearButton"
+            android:id="@+id/clearSessionButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="@string/clear_session"
@@ -53,59 +53,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_marginStart="36dp"
             android:layout_marginEnd="36dp"
-            app:layout_constraintBottom_toTopOf="@id/signButton"
-            app:layout_constraintHorizontal_bias="0.5"
-            android:layout_marginBottom="12dp"/>
-
-    <Button
-            android:id="@+id/signButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="@string/sign"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginStart="36dp"
-            android:layout_marginEnd="36dp"
-            app:layout_constraintBottom_toTopOf="@id/signText"
-            app:layout_constraintHorizontal_bias="0.5"
-            android:layout_marginBottom="0dp"/>
-
-    <TextView
-            android:id="@+id/signText"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="@string/sign_label"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginStart="36dp"
-            android:layout_marginEnd="36dp"
-            app:layout_constraintBottom_toTopOf="@id/sendButton"
-            app:layout_constraintHorizontal_bias="0.5"
-            android:layout_marginBottom="12dp"/>
-
-    <Button
-            android:id="@+id/sendButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="@string/send"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginStart="36dp"
-            android:layout_marginEnd="36dp"
-            app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintBottom_toTopOf="@id/sendText"
-            android:layout_marginBottom="0dp"/>
-
-    <TextView
-            android:id="@+id/sendText"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="@string/send_label"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintBottom_toBottomOf="parent"
-            android:layout_marginStart="36dp"
-            android:layout_marginEnd="36dp"
-            android:layout_marginBottom="36dp" />
+            app:layout_constraintHorizontal_bias="0.5"
+            android:layout_marginBottom="36dp"/>
 </androidx.constraintlayout.widget.ConstraintLayout>
