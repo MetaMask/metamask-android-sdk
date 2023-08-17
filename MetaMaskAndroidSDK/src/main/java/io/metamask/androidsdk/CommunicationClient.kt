@@ -32,10 +32,12 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
 
     private var requestJobs: MutableList<() -> Unit> = mutableListOf()
     private var submittedRequests: MutableMap<String, SubmittedRequest>  = mutableMapOf()
+    private var queuedRequests: MutableMap<String, SubmittedRequest>  = mutableMapOf()
 
     private var sessionManager: SessionManager
 
     private var isMetaMaskReady = false
+    private var sentOriginatorInfo = false
 
     var enableDebug: Boolean = false
         set(value) {
@@ -143,7 +145,8 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                     if (id.isNotEmpty()) {
                         handleResponse(id, dataJson)
                     } else if (dataJson.optString(MessageType.ERROR.value).isNotEmpty()) {
-                        Logger.error("CommunicationClient:: Got error $dataJson")
+                        handleError(dataJson.optString(MessageType.ERROR.value), "")
+                        sentOriginatorInfo = false // connection request rejected
                     } else {
                         handleEvent(dataJson)
                     }
@@ -165,9 +168,15 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
     }
 
-    private fun addRequestJob(job: () -> Unit) {
-        Logger.log("CommunicationClient:: Queued job")
+    private fun queueRequestJob(job: () -> Unit) {
         requestJobs.add(job)
+        Logger.log("CommunicationClient:: Queued job")
+    }
+
+    private fun clearPendingRequests() {
+        queuedRequests = mutableMapOf()
+        requestJobs = mutableListOf()
+        submittedRequests = mutableMapOf()
     }
 
     private fun handleResponse(id: String, data: JSONObject) {
@@ -262,17 +271,23 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             return false
         }
 
-        Logger.error("Got error, id: $id, error: $error")
+        val requestId: String = id.ifEmpty {
+            queuedRequests.entries.find { it.value.request.method == EthereumMethod.ETH_REQUEST_ACCOUNTS.value }?.key ?: ""
+        }
 
         val error: Map<String, Any?> = Gson().fromJson(error, object : TypeToken<Map<String, Any?>>() {}.type)
         val errorCode = error["code"] as? Double ?: -1
         val code = errorCode.toInt()
         val message = error["message"] as? String ?: ErrorType.message(code)
-        completeRequest(id, RequestError(code, message))
+        completeRequest(requestId, RequestError(code, message))
         return true
     }
 
     private fun completeRequest(id: String, result: Any) {
+        if (queuedRequests[id] != null) {
+            queuedRequests[id]?.callback?.invoke(result)
+            queuedRequests.remove(id)
+        }
         submittedRequests[id]?.callback?.invoke(result)
         submittedRequests.remove(id)
     }
@@ -302,13 +317,13 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     }
 
     private fun updateAccount(account: String) {
-        Logger.log("CommunicationClient:: Received account event: $account")
+        Logger.log("CommunicationClient:: Received account changed event: $account")
         val callback = ethereumEventCallbackRef.get()
         callback?.updateAccount(account)
     }
 
     private fun updateChainId(chainId: String) {
-        Logger.log("CommunicationClient:: Received chain event: $chainId")
+        Logger.log("CommunicationClient:: Received chain changed event: $chainId")
         val callback = ethereumEventCallbackRef.get()
         callback?.updateChainId(chainId)
     }
@@ -347,25 +362,43 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         if (keyExchange.keysExchanged()) {
             messageService?.sendMessage(message)
         } else {
-            addRequestJob { messageService?.sendMessage(message) }
+            Logger.log("CommunicationClient::sendMessage keys not exchanged, queueing job")
+            queueRequestJob { messageService?.sendMessage(message) }
         }
     }
 
     fun sendRequest(request: EthereumRequest, callback: (Any?) -> Unit) {
+        if (request.method == EthereumMethod.GET_METAMASK_PROVIDER_STATE.value) {
+            clearPendingRequests()
+        }
+
         if (!isServiceConnected) {
-            Logger.log("CommunicationClient:: sendRequest - no longer connected to metamask, binding service first")
-            addRequestJob { processRequest(request, callback) }
+            Logger.log("CommunicationClient:: sendRequest - not yet connected to metamask, binding service first")
+            queuedRequests[request.id] = SubmittedRequest(request, callback)
+            queueRequestJob { processRequest(request, callback) }
             bindService()
         } else if (!keyExchange.keysExchanged()) {
             Logger.log("CommunicationClient:: sendRequest - keys not yet exchanged")
-            addRequestJob { processRequest(request, callback) }
+            queuedRequests[request.id] = SubmittedRequest(request, callback)
+            queueRequestJob { processRequest(request, callback) }
             initiateKeyExchange()
         } else {
-            processRequest(request, callback)
+            if (isMetaMaskReady) {
+                processRequest(request, callback)
+            } else {
+                Logger.log("CommunicationClient::sendRequest - MetaMask is not ready, queueing request")
+                queueRequestJob { processRequest(request, callback) }
+                sendOriginatorInfo()
+            }
         }
     }
 
     private fun processRequest(request: EthereumRequest, callback: (Any?) -> Unit) {
+        Logger.log("CommunicationClient:: sending request $request")
+        if (queuedRequests[request.id] != null) {
+            queuedRequests.remove(request.id)
+        }
+
         val requestJson = Gson().toJson(request)
 
         val payload = keyExchange.encrypt(requestJson)
@@ -377,6 +410,9 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     }
 
     private fun sendOriginatorInfo() {
+        if (sentOriginatorInfo) { return }
+        sentOriginatorInfo = true
+
         val originatorInfo = OriginatorInfo(dapp?.name, dapp?.url, SDKInfo.PLATFORM, SDKInfo.VERSION)
         val requestInfo = RequestInfo("originator_info", originatorInfo)
         val requestInfoJson = Gson().toJson(requestInfo)

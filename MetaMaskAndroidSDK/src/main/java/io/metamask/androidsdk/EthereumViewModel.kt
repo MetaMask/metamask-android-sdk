@@ -53,7 +53,7 @@ class EthereumViewModel @Inject constructor (
     private var sessionLifetime: Long = DEFAULT_SESSION_DURATION
 
     override fun updateAccount(account: String) {
-        Logger.log("Ethereum: Selected account changed")
+        Logger.log("Ethereum:: Selected account changed")
         selectedAddress = account
         _ethereumState.postValue(
             _ethereumState.value?.copy(selectedAddress = account)
@@ -61,7 +61,7 @@ class EthereumViewModel @Inject constructor (
     }
 
     override fun updateChainId(newChainId: String) {
-        Logger.log("Ethereum: ChainId changed: $newChainId")
+        Logger.log("Ethereum:: ChainId changed: $newChainId")
         chainId = newChainId
         _ethereumState.postValue(
             _ethereumState.value?.copy(chainId = newChainId)
@@ -91,7 +91,7 @@ class EthereumViewModel @Inject constructor (
     fun getSessionId(): String = communicationClient.sessionId
 
     fun connect(dapp: Dapp, callback: ((Any?) -> Unit)? = null) {
-        Logger.log("Ethereum: connecting...")
+        Logger.log("Ethereum:: connecting...")
         connectRequestSent = true
         communicationClient.setSessionDuration(sessionLifetime)
         communicationClient.trackEvent(Event.CONNECTIONREQUEST, null)
@@ -101,7 +101,7 @@ class EthereumViewModel @Inject constructor (
     }
 
     fun disconnect() {
-        Logger.log("Ethereum: disconnecting...")
+        Logger.log("Ethereum:: disconnecting...")
 
         connectRequestSent = false
         selectedAddress = ""
@@ -115,7 +115,7 @@ class EthereumViewModel @Inject constructor (
     }
 
     private fun requestAccounts(callback: ((Any?) -> Unit)? = null) {
-        Logger.log("Requesting ethereum accounts")
+        Logger.log("Ethereum:: Requesting ethereum accounts")
 
         val providerStateRequest = EthereumRequest(
             UUID.randomUUID().toString(),
@@ -135,7 +135,7 @@ class EthereumViewModel @Inject constructor (
     }
 
     fun sendRequest(request: EthereumRequest, callback: ((Any?) -> Unit)? = null) {
-        Logger.log("Sending request $request")
+        Logger.log("Ethereum:: Sending request $request")
 
         if (!connectRequestSent) {
             requestAccounts {

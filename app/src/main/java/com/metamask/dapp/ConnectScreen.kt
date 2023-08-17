@@ -60,6 +60,7 @@ fun ConnectScreen(
             // Clear session button
             DappButton(buttonText = stringResource(R.string.clear_session)) {
                 onClearSession()
+                errorMessage = null
             }
 
             Spacer(modifier = Modifier.height(4.dp))

@@ -15,8 +15,6 @@ internal class SessionManager(
     var sessionId: String = getSessionConfig().sessionId
 
     fun setSessionDuration(duration: Long) {
-        Logger.log("SessionManager: setSessionDuration")
-
         sessionDuration = duration
         val sessionId = getSessionConfig().sessionId
         val expiryDate = System.currentTimeMillis() + sessionDuration * 1000
@@ -25,8 +23,6 @@ internal class SessionManager(
     }
 
     private fun getSessionConfig(reset: Boolean = false): SessionConfig {
-        Logger.log("SessionManager: getSessionConfig")
-
         if (reset) {
             store.clearValue(sessionConfigKey, sessionConfigFile)
             return makeNewSessionConfig()
@@ -52,8 +48,6 @@ internal class SessionManager(
     }
 
     private fun saveSessionConfig(sessionConfig: SessionConfig) {
-        Logger.log("SessionManager: saveSessionConfig")
-
         val sessionConfigJson = Gson().toJson(sessionConfig)
         store.putValue(sessionConfigJson, sessionConfigKey, sessionConfigFile)
     }
@@ -65,7 +59,6 @@ internal class SessionManager(
     }
 
     private fun makeNewSessionConfig(): SessionConfig {
-        Logger.log("SessionManager: makeNewSessionConfig")
         val sessionId = UUID.randomUUID().toString()
         val expiryDate = System.currentTimeMillis() + sessionDuration * 1000
         val sessionConfig = SessionConfig(sessionId, expiryDate)

@@ -38,16 +38,12 @@ internal class KeyStorage(private val context: Context): SecureStorage {
     }
 
     private fun loadSecretKey() {
-        Logger.log("KeyStorage: Loading secret")
-
         keyStore = KeyStore.getInstance(androidKeyStore)
         keyStore.load(null)
         secretKey = secretKeyEntry?.secretKey ?: generateSecretKey()
     }
 
     private fun generateSecretKey(): SecretKey {
-        Logger.log("KeyStorage: Generating secret key")
-
         val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, androidKeyStore)
         val keyGenParameterSpec = KeyGenParameterSpec.Builder(
             keyStoreAlias,

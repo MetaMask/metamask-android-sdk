@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.sp
 fun DappLabel(
     text: String,
     color: Color = Color.White,
-    fontSize: TextUnit = 12.sp,
+    fontSize: TextUnit = 14.sp,
     modifier: Modifier = Modifier.padding(bottom = 12.dp)
 ) {
     Text(
