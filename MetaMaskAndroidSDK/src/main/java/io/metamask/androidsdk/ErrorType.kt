@@ -21,7 +21,7 @@ enum class ErrorType(val code: Int) {
     companion object {
         fun message(code: Int): String {
 
-            return when(ErrorType.values().first { it.code == code }) {
+            return when(ErrorType.values().firstOrNull { it.code == code }) {
                 USERREJECTEDREQUEST -> "Ethereum Provider User Rejected Request"
                 UNAUTHORISEDREQUEST -> "Ethereum Provider User Rejected Request"
                 UNSUPPORTEDMETHOD -> "Ethereum Provider Unsupported Method"

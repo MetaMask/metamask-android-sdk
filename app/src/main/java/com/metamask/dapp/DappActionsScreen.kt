@@ -33,32 +33,23 @@ fun DappActionsScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             // Sign message button
-            DappButton(
-                buttonText = stringResource(R.string.sign),
-                onClick = {
-                    onSignMessage()
-                }
-            )
+            DappButton(buttonText = stringResource(R.string.sign)) {
+                onSignMessage()
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
             // Send transaction button
-            DappButton(
-                buttonText = stringResource(R.string.send),
-                onClick = {
-                    onSendTransaction()
-                }
-            )
+            DappButton(buttonText = stringResource(R.string.send)) {
+                onSendTransaction()
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
             // Switch chain button
-            DappButton(
-                buttonText = stringResource(R.string.switch_chain),
-                onClick = {
-                    onSwitchChain()
-                }
-            )
+            DappButton(buttonText = stringResource(R.string.switch_chain)) {
+                onSwitchChain()
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
         }

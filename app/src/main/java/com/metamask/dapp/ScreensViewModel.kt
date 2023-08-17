@@ -1,7 +1,5 @@
 package com.metamask.dapp
 
-import android.os.Handler
-import android.os.Looper
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -11,9 +9,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ScreensViewModel @Inject constructor(
-    val ethereumViewModel: EthereumViewModel
+    private val ethereumViewModel: EthereumViewModel
     ): ViewModel() {
-    private val mainHandler = Handler(Looper.getMainLooper())
 
     private val _currentScreen = mutableStateOf(DappScreen.CONNECT)
     val currentScreen: State<DappScreen> = _currentScreen
@@ -71,7 +68,7 @@ class ScreensViewModel @Inject constructor(
         amount: String,
         from: String,
         to: String,
-        callback: (Any?) -> Unit,
+        onSuccess: (Any?) -> Unit,
         onError: (message: String) -> Unit
     ) {
         val params: MutableMap<String, Any> = mutableMapOf(
@@ -92,7 +89,7 @@ class ScreensViewModel @Inject constructor(
                 onError(result.message)
             } else {
                 Logger.log("Ethereum transaction result: $result")
-                callback(result)
+                onSuccess(result)
             }
         }
     }
@@ -109,34 +106,32 @@ class ScreensViewModel @Inject constructor(
         )
 
         ethereumViewModel.sendRequest(switchChainRequest) { result ->
-            mainHandler.post {
-                if (result is RequestError) {
-                    if (result.code == ErrorType.UNRECOGNIZEDCHAINID.code || result.code == ErrorType.SERVERERROR.code) {
-                        val message = "${Network.chainNameFor(chainId)} ($chainId) has not been added to your MetaMask wallet. Add chain?"
+            if (result is RequestError) {
+                if (result.code == ErrorType.UNRECOGNIZEDCHAINID.code || result.code == ErrorType.SERVERERROR.code) {
+                    val message = "${Network.chainNameFor(chainId)} ($chainId) has not been added to your MetaMask wallet. Add chain?"
 
-                        val action: () -> Unit = {
-                            addEthereumChain(
-                                chainId,
-                                onSuccess = { result ->
-                                    onSuccess(result)
-                                },
-                                onError = { error ->
-                                    onError(error, null)
-                                }
-                            )
-                        }
-                        onError(message, action)
-                    } else {
-                        onError("Switch chain error: ${result.message}", null)
+                    val action: () -> Unit = {
+                        addEthereumChain(
+                            chainId,
+                            onSuccess = { result ->
+                                onSuccess(result)
+                            },
+                            onError = { error ->
+                                onError(error, null)
+                            }
+                        )
                     }
+                    onError(message, action)
                 } else {
-                    onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
+                    onError("Switch chain error: ${result.message}", null)
                 }
+            } else {
+                onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
             }
         }
     }
 
-    fun addEthereumChain(
+    private fun addEthereumChain(
         chainId: String,
         onSuccess: (message: String) -> Unit,
         onError: (message: String) -> Unit
@@ -154,15 +149,13 @@ class ScreensViewModel @Inject constructor(
         )
 
         ethereumViewModel.sendRequest(addChainRequest) { result ->
-            mainHandler.post {
-                if (result is RequestError) {
-                    onError("Add chain error: ${result.message}")
+            if (result is RequestError) {
+                onError("Add chain error: ${result.message}")
+            } else {
+                if (chainId == ethereumViewModel.chainId) {
+                    onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
                 } else {
-                    if (chainId == ethereumViewModel.chainId) {
-                        onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} $chainId")
-                    } else {
-                        onSuccess("Successfully added ${Network.chainNameFor(chainId)} $chainId")
-                    }
+                    onSuccess("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
                 }
             }
         }

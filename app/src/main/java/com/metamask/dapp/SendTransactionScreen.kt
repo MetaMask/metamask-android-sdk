@@ -29,14 +29,14 @@ import java.util.*
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun SendTransaction(
+fun SendTransactionScreen(
     navController: NavController,
     ethereumState: EthereumState,
     sendTransaction: (
         amount: String,
         from: String,
         to: String,
-        callback: (Any?) -> Unit,
+        onSuccess: (Any?) -> Unit,
         onError: (message: String) -> Unit
     ) -> Unit
 ) {
@@ -183,9 +183,7 @@ fun SendTransaction(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            DappButton(
-                buttonText = stringResource(R.string.send)
-            ) {
+            DappButton(buttonText = stringResource(R.string.send)) {
                 sendTransaction(amount, from, to,
                     { result ->
                         sendResult = result as String
@@ -211,7 +209,7 @@ fun SendTransaction(
 @Preview
 @Composable
 fun PreviewSendTransaction() {
-    SendTransaction(
+    SendTransactionScreen(
         rememberNavController(),
         ethereumState = EthereumState("", "", ""),
         sendTransaction = { _, _, _, _, _ -> }

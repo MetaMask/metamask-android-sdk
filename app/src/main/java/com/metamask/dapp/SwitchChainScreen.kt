@@ -17,7 +17,7 @@ import io.metamask.androidsdk.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SwitchChain(
+fun SwitchChainScreen(
     navController: NavController,
     ethereumState: EthereumState,
     switchChain: (
@@ -26,15 +26,29 @@ fun SwitchChain(
         onError: (message: String, action: (() -> Unit)?) -> Unit
     ) -> Unit
 ) {
-    val networks: List<Network> = enumValues<Network>()
-        .toList()
-        .filter { it.chainId != ethereumState.chainId && it != Network.UNKNOWN }
+    var networks by remember { mutableStateOf(
+        enumValues<Network>()
+            .toList()
+            .filter { it.chainId != ethereumState.chainId }
+    ) }
 
     var expanded by remember { mutableStateOf(false) }
-    var targetNetwork by remember { mutableStateOf(networks[0]) }
+    var targetNetwork = networks[0]
 
     var snackbarData by remember { mutableStateOf<SnackbarData?>(null) }
     var resultMessage by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(ethereumState.chainId) {
+        // Collect the ethereumState.chainId whenever it changes
+        // and update the networks list accordingly
+        networks = enumValues<Network>()
+            .toList()
+            .filter { it.chainId != ethereumState.chainId }
+
+        if( networks.firstOrNull() != null) {
+            targetNetwork = networks[0]
+        }
+    }
 
     Surface {
         AppTopBar(navController)
@@ -101,25 +115,24 @@ fun SwitchChain(
             Spacer(modifier = Modifier.height(24.dp))
 
             DappButton(
-                onClick = {
-                    if(snackbarData?.action != null) {
-                        snackbarData?.action?.invoke()
-                    } else {
-                        switchChain(
-                            targetNetwork.chainId,  { message ->
-                                resultMessage = message
-                                snackbarData = null
-                            }, { error, action ->
-                                snackbarData = SnackbarData(error, action)
-                                resultMessage = null
-                            }
-                        )
-                    }
-                },
                 buttonText = if(snackbarData?.action != null)
                 { stringResource(R.string.add_chain) }
                 else { stringResource(R.string.switch_chain) }
-            )
+            ) {
+                if(snackbarData?.action != null) {
+                    snackbarData?.action?.invoke()
+                } else {
+                    switchChain(
+                        targetNetwork.chainId,  { message ->
+                            resultMessage = message
+                            snackbarData = null
+                        }, { error, action ->
+                            snackbarData = SnackbarData(error, action)
+                            resultMessage = null
+                        }
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(4.dp))
 
@@ -137,7 +150,7 @@ fun SwitchChain(
 @Preview
 @Composable
 fun PreviewSwitchChain() {
-    SwitchChain(
+    SwitchChainScreen(
         rememberNavController(),
         ethereumState = EthereumState("", "", ""),
         switchChain = { _, _, _ -> }

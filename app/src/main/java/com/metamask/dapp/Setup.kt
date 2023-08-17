@@ -38,22 +38,23 @@ fun Setup(ethereumViewModel: EthereumViewModel, screensViewModel: ScreensViewMod
             )
         }
         composable(SIGN_MESSAGE.name) {
-            SignMessage(
+            SignMessageScreen(
                 navController,
+                ethereumState = ethereumState,
                 signMessage = { message, callback, onError ->
                     screensViewModel.signMessage(message, callback, onError)
                 })
         }
         composable(SEND_TRANSACTION.name) {
-            SendTransaction(
+            SendTransactionScreen(
                 navController,
                 ethereumState = ethereumState,
-                sendTransaction = { amount, from, to, callback, onError ->
-                    screensViewModel.sendTransaction(amount, from, to, callback, onError)
+                sendTransaction = { amount, from, to, onSuccess, onError ->
+                    screensViewModel.sendTransaction(amount, from, to, onSuccess, onError)
                 })
         }
         composable(SWITCH_CHAIN.name) {
-            SwitchChain(
+            SwitchChainScreen(
                 navController,
                 ethereumState = ethereumState,
                 switchChain = { chainId, onSuccess, onError ->
