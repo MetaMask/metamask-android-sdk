@@ -2,7 +2,6 @@ package io.metamask.androidsdk
 
 import android.util.Log
 import okhttp3.*
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.io.IOException
 
 internal class HttpClient {
@@ -32,11 +31,11 @@ internal class HttpClient {
 
         client.newCall(request).enqueue(object: Callback {
             override fun onFailure(call: Call, e: IOException) {
-                Log.e(TAG,"HttpClient: ${e.message}")
+                Log.e(TAG,"HttpClient: error ${e.message}")
             }
 
             override fun onResponse(call: Call, response: Response) {
-                Log.d(TAG,"HttpClient: ${response}")
+
             }
         })
     }

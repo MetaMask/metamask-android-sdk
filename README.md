@@ -73,7 +73,7 @@ We log three SDK events: `connectionRequest`, `connected` and `disconnected`. Ot
 ```kotlin
 var chainId: String? = null
 
-val chainIdRequest = EthereumRequest(EthereumMethod.ETHCHAINID.value) // or EthereumRequest("eth_chainId")
+val chainIdRequest = EthereumRequest(EthereumMethod.ETH_CHAIN_ID.value) // or EthereumRequest("eth_chainId")
 
 ethereum.sendRequest(chainIdRequest) { result ->
     if (result is RequestError) {
@@ -117,7 +117,7 @@ val from = ethereum.selectedAddress ?: ""
 val params: List<String> = listOf(from, message)
 
 val signRequest = EthereumRequest(
-    EthereumMethod.ETHSIGNTYPEDDATAV4.value,
+    EthereumMethod.ETH_SIGN_TYPED_DATA_V4.value,
     params
 )
 
@@ -145,7 +145,7 @@ val params: Map<String, Any> = mapOf(
 
 // Create request
 val transactionRequest = EthereumRequest(
-    EthereumMethod.ETHSENDTRANSACTION.value,
+    EthereumMethod.ETH_SEND_TRANSACTION.value,
     listOf(params)
 )
 
@@ -171,7 +171,7 @@ fun switchToChain(chainId: String, callback: (Any?) -> Unit) {
 
     val switchChainParams: Map<String, String> = mapOf("chainId" to chainId)
     val switchChainRequest = EthereumRequest(
-        method = EthereumMethod.SWITCHETHEREUMCHAIN.value,
+        method = EthereumMethod.SWITCH_ETHEREUM_CHAIN.value,
         params = listOf(switchChainParams)
     )
 
@@ -181,7 +181,7 @@ fun switchToChain(chainId: String, callback: (Any?) -> Unit) {
                 val message = "$chainId has not been added to your MetaMask wallet. Add chain?"
                 val buttonTitle = "OK"
                 val action: () -> Unit = {
-                    addEthereumChain(chainId, callback)
+                    ADD_ETHEREUM_CHAIN(chainId, callback)
                 }
                 showSnackbarWithAction(message, buttonTitle, action)
             } else {
@@ -194,7 +194,7 @@ fun switchToChain(chainId: String, callback: (Any?) -> Unit) {
     }
 }
 
-fun addEthereumChain(chainId: String, callback: (Any?) -> Unit) {
+fun ADD_ETHEREUM_CHAIN(chainId: String, callback: (Any?) -> Unit) {
 
     val addChainParams: Map<String, Any> = mapOf(
         "chainId" to chainId,
@@ -202,7 +202,7 @@ fun addEthereumChain(chainId: String, callback: (Any?) -> Unit) {
         "rpcUrls" to listOf("https://polygon-rpc.com")
     )
     val addChainRequest = EthereumRequest(
-        method = EthereumMethod.ADDETHEREUMCHAIN.value,
+        method = EthereumMethod.ADD_ETHEREUM_CHAIN.value,
         params = listOf(addChainParams)
     )
 

@@ -12,17 +12,17 @@ import javax.inject.Inject
 
 @HiltViewModel
 class EthereumViewModel @Inject constructor (
-    val applicationRepository: ApplicationRepository
+    private val applicationRepository: ApplicationRepository
     ) : ViewModel(), EthereumEventCallback {
 
-    private var connectResquestSent = false
+    private var connectRequestSent = false
     private val communicationClient = CommunicationClient(applicationRepository.context, this)
     private val _ethereumState: MutableLiveData<EthereumState> = MutableLiveData(EthereumState("", "", ""))
 
     // Ethereum LiveData
     val ethereumState: LiveData<EthereumState> get() = _ethereumState
 
-    // Expose plain variables for developers who prefer not using an observer pattern
+    // Expose plain variables for developers who prefer not using observing love data
     var chainId = String()
         private set
     var selectedAddress = String()
@@ -55,19 +55,17 @@ class EthereumViewModel @Inject constructor (
     override fun updateAccount(account: String) {
         Logger.log("Ethereum: Selected account changed")
         selectedAddress = account
-        _ethereumState.postValue(_ethereumState.value?.copy(
-            selectedAddress = account,
-            chainId = chainId,
-            sessionId = getSessionId()))
+        _ethereumState.postValue(
+            _ethereumState.value?.copy(selectedAddress = account)
+        )
     }
 
     override fun updateChainId(newChainId: String) {
         Logger.log("Ethereum: ChainId changed: $newChainId")
         chainId = newChainId
-        _ethereumState.postValue(_ethereumState.value?.copy(
-            selectedAddress = selectedAddress,
-            chainId = newChainId,
-            sessionId = getSessionId()))
+        _ethereumState.postValue(
+            _ethereumState.value?.copy(chainId = newChainId)
+        )
     }
 
     // Set session duration in seconds
@@ -78,21 +76,23 @@ class EthereumViewModel @Inject constructor (
 
     // Clear persisted session. Subsequent MetaMask connection request will need approval
     fun clearSession() {
-        connectResquestSent = false
+        connectRequestSent = false
         communicationClient.clearSession()
         selectedAddress = ""
-        _ethereumState.postValue(_ethereumState.value?.copy(
-            selectedAddress = "",
-            chainId = "",
-            sessionId = getSessionId()
-        ))
+        _ethereumState.postValue(
+            _ethereumState.value?.copy(
+                selectedAddress = "",
+                chainId = "",
+                sessionId = getSessionId()
+            )
+        )
     }
 
     fun getSessionId(): String = communicationClient.sessionId
 
     fun connect(dapp: Dapp, callback: ((Any?) -> Unit)? = null) {
         Logger.log("Ethereum: connecting...")
-        connectResquestSent = true
+        connectRequestSent = true
         communicationClient.setSessionDuration(sessionLifetime)
         communicationClient.trackEvent(Event.CONNECTIONREQUEST, null)
         communicationClient.dapp = dapp
@@ -103,12 +103,14 @@ class EthereumViewModel @Inject constructor (
     fun disconnect() {
         Logger.log("Ethereum: disconnecting...")
 
-        connectResquestSent = false
+        connectRequestSent = false
         selectedAddress = ""
-        _ethereumState.postValue(_ethereumState.value?.copy(
-            selectedAddress = "",
-            chainId = ""
-        ))
+        _ethereumState.postValue(
+            _ethereumState.value?.copy(
+                selectedAddress = "",
+                chainId = ""
+            )
+        )
         communicationClient.unbindService()
     }
 
@@ -117,14 +119,14 @@ class EthereumViewModel @Inject constructor (
 
         val providerStateRequest = EthereumRequest(
             UUID.randomUUID().toString(),
-            EthereumMethod.GETMETAMASKPROVIDERSTATE.value,
+            EthereumMethod.GET_METAMASK_PROVIDER_STATE.value,
             ""
         )
         sendRequest(providerStateRequest)
 
         val accountsRequest = EthereumRequest(
             UUID.randomUUID().toString(),
-            EthereumMethod.ETHREQUESTACCOUNTS.value,
+            EthereumMethod.ETH_REQUEST_ACCOUNTS.value,
             ""
         )
         sendRequest(accountsRequest) {
@@ -135,7 +137,7 @@ class EthereumViewModel @Inject constructor (
     fun sendRequest(request: EthereumRequest, callback: ((Any?) -> Unit)? = null) {
         Logger.log("Sending request $request")
 
-        if (!connectResquestSent) {
+        if (!connectRequestSent) {
             requestAccounts {
                 sendRequest(request, callback)
             }
@@ -165,7 +167,7 @@ class EthereumViewModel @Inject constructor (
         return if (EthereumMethod.hasMethod(method)) {
             EthereumMethod.requiresAuthorisation(method)
         } else {
-            when(connectResquestSent) {
+            when(connectRequestSent) {
                 true -> false
                 else -> true
             }

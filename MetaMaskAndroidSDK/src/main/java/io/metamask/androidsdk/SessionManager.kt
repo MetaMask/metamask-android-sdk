@@ -18,13 +18,13 @@ internal class SessionManager(
         Logger.log("SessionManager: setSessionDuration")
 
         sessionDuration = duration
-        var sessionId = getSessionConfig().sessionId
+        val sessionId = getSessionConfig().sessionId
         val expiryDate = System.currentTimeMillis() + sessionDuration * 1000
         val sessionConfig = SessionConfig(sessionId, expiryDate)
         saveSessionConfig(sessionConfig)
     }
 
-    fun getSessionConfig(reset: Boolean = false): SessionConfig {
+    private fun getSessionConfig(reset: Boolean = false): SessionConfig {
         Logger.log("SessionManager: getSessionConfig")
 
         if (reset) {

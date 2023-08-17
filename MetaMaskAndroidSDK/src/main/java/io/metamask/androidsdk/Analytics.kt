@@ -1,7 +1,5 @@
 package io.metamask.androidsdk
 
-import android.util.Log
-
 enum class Event(val value: String) {
     CONNECTIONREQUEST("sdk_connect_request_started"),
     CONNECTED("sdk_connection_established"),
@@ -15,7 +13,7 @@ interface Tracker {
 
 class Endpoints {
     companion object {
-        const val BASE_URL = "https://metamask-sdk-socket.metafi.codefi.network"
+        private const val BASE_URL = "https://metamask-sdk-socket.metafi.codefi.network"
         const val ANALYTICS = "$BASE_URL/debug"
     }
 }

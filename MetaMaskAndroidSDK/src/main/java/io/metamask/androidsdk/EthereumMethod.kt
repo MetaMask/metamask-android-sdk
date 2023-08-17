@@ -1,44 +1,38 @@
 package io.metamask.androidsdk
 
-import com.google.gson.TypeAdapter
-import com.google.gson.annotations.SerializedName
-import com.google.gson.stream.JsonReader
-import com.google.gson.stream.JsonToken
-import com.google.gson.stream.JsonWriter
-
 enum class EthereumMethod(val value: String) {
-    ETHSIGN("eth_sign"),
-    WEB3SHA("web3_sha3"),
-    ETHCALL("eth_call"),
-    ETHCHAINID("eth_chainId"),
-    ETHGETCODE("eth_getCode"),
-    ETHACCOUNTS("eth_accounts"),
-    ETHGASPRICE("eth_gasPrice"),
-    PERSONALSIGN("personal_sign"),
-    ETHGETBALANCE("eth_getBalance"),
-    WATCHASSET("wallet_watchAsset"),
-    ETHBLOCKNUMBER("eth_blockNumber"),
-    ETHESTIMATEGAS("eth_estimateGas"),
-    ETHGETSTORAGEAT("eth_getStorageAt"),
-    ETHSIGNTYPEDDATA("eth_signTypedData"),
-    ETHGETBLOCKBYHASH("eth_getBlockByHash"),
-    WEB3CLIENTVERSION("web3_clientVersion"),
-    ETHREQUESTACCOUNTS("eth_requestAccounts"),
-    ETHSIGNTRANSACTION("eth_signTransaction"),
-    ETHSENDTRANSACTION("eth_sendTransaction"),
-    ETHSIGNTYPEDDATAV3("eth_signTypedData_v3"),
-    ETHSIGNTYPEDDATAV4("eth_signTypedData_v4"),
-    ADDETHEREUMCHAIN("wallet_addEthereumChain"),
-    METAMASKCHAINCHANGED("metamask_chainChanged"),
-    ETHSENDRAWTRANSACTION("eth_sendRawTransaction"),
-    SWITCHETHEREUMCHAIN("wallet_switchEthereumChain"),
-    ETHGETTRANSACTIONCOUNT("eth_getTransactionCount"),
-    METAMASKACCOUNTSCHANGED("metamask_accountsChanged"),
-    ETHGETTRANSACTIONBYHASH("eth_getTransactionByHash"),
-    ETHGETTRANSACTIONRECEIPT("eth_getTransactionReceipt"),
-    GETMETAMASKPROVIDERSTATE("metamask_getProviderState"),
-    ETHGETBLOCKTRANSACTIONCOUNTBYHASH("eth_getBlockTransactionCountByHash"),
-    ETHGETBLOCKTRANSACTIONCOUNTBYNUMBER("eth_getBlockTransactionCountByNumber"),
+    ETH_SIGN("eth_sign"),
+    WEB3_SHA("web3_sha3"),
+    ETH_CALL("eth_call"),
+    ETH_CHAIN_ID("eth_chainId"),
+    ETH_GET_CODE("eth_getCode"),
+    ETH_ACCOUNTS("eth_accounts"),
+    ETH_GAS_PRICE("eth_gasPrice"),
+    PERSONAL_SIGN("personal_sign"),
+    ETH_GET_BALANCE("eth_getBalance"),
+    WATCH_ASSET("wallet_WATCH_ASSET"),
+    ETH_BLOCK_NUMBER("eth_blockNumber"),
+    ETH_ESTIMATE_GAS("eth_estimateGas"),
+    ETH_GET_STORAGE_AT("eth_getStorageAt"),
+    ETH_SIGN_TYPED_DATA("eth_signTypedData"),
+    ETH_GET_BLOCK_BY_HASH("eth_getBlockByHash"),
+    WEB3_CLIENT_VERSION("web3_clientVersion"),
+    ETH_REQUEST_ACCOUNTS("eth_requestAccounts"),
+    ETH_SIGN_TRANSACTION("ETH_SIGN_TRANSACTION"),
+    ETH_SEND_TRANSACTION("eth_sendTransaction"),
+    ETH_SIGN_TYPED_DATA_V3("eth_signTypedData_v3"),
+    ETH_SIGN_TYPED_DATA_V4("eth_signTypedData_v4"),
+    ADD_ETHEREUM_CHAIN("wallet_ADD_ETHEREUM_CHAIN"),
+    METAMASK_CHAIN_CHANGED("metamask_chainChanged"),
+    ETH_SEND_RAW_TRANSACTION("eth_sendRawTransaction"),
+    SWITCH_ETHEREUM_CHAIN("wallet_SWITCH_ETHEREUM_CHAIN"),
+    ETH_GET_TRANSACTION_COUNT("eth_getTransactionCount"),
+    METAMASK_ACCOUNTS_CHANGED("metamask_accountsChanged"),
+    ETH_GET_TRANSACTION_BY_HASH("eth_getTransactionByHash"),
+    ETH_GET_TRANSACTION_RECEIPT("eth_getTransactionReceipt"),
+    GET_METAMASK_PROVIDER_STATE("metamask_getProviderState"),
+    ETH_GET_BLOCK_TRANSACTION_COUNT_BY_HASH("eth_getBlockTransactionCountByHash"),
+    ETH_GET_BLOCK_TRANSACTION_COUNT_BY_NUMBER("eth_getBlockTransactionCountByNumber"),
     UNKNOWN("unknown");
 
     companion object {
@@ -49,45 +43,24 @@ enum class EthereumMethod(val value: String) {
                 .contains(method)
         }
 
-        fun requiresAuthorisation(method: EthereumMethod): Boolean {
-            val authorisationMethods: List<EthereumMethod> = listOf(
-                ETHSIGN, WATCHASSET, PERSONALSIGN,
-                ADDETHEREUMCHAIN, SWITCHETHEREUMCHAIN,
-                ETHSENDTRANSACTION, ETHREQUESTACCOUNTS,
-                ETHSIGNTYPEDDATA, ETHSIGNTYPEDDATAV3, ETHSIGNTYPEDDATAV4
-            )
-            return authorisationMethods.contains(method)
-        }
-
         fun requiresAuthorisation(method: String): Boolean {
             val authorisationMethods: List<String> = listOf(
-                ETHSIGN, WATCHASSET, PERSONALSIGN,
-                ADDETHEREUMCHAIN, SWITCHETHEREUMCHAIN,
-                ETHSENDTRANSACTION, ETHREQUESTACCOUNTS,
-                ETHSIGNTYPEDDATA, ETHSIGNTYPEDDATAV3, ETHSIGNTYPEDDATAV4
+                ETH_SIGN, WATCH_ASSET, PERSONAL_SIGN,
+                ADD_ETHEREUM_CHAIN, SWITCH_ETHEREUM_CHAIN,
+                ETH_SEND_TRANSACTION, ETH_REQUEST_ACCOUNTS,
+                ETH_SIGN_TYPED_DATA, ETH_SIGN_TYPED_DATA_V3, ETH_SIGN_TYPED_DATA_V4
             ).map { it.value }
 
             return authorisationMethods.contains(method)
         }
 
-        fun isResultMethod(method: EthereumMethod): Boolean {
-            val resultMethods: List<EthereumMethod> = listOf(
-                ETHSIGN, ETHCHAINID, PERSONALSIGN,
-                ADDETHEREUMCHAIN, SWITCHETHEREUMCHAIN,
-                ETHSIGNTRANSACTION, ETHSENDTRANSACTION,
-                WATCHASSET, ETHREQUESTACCOUNTS, GETMETAMASKPROVIDERSTATE,
-                ETHSIGNTYPEDDATA, ETHSIGNTYPEDDATAV3, ETHSIGNTYPEDDATAV4,
-            )
-            return resultMethods.contains(method)
-        }
-
         fun isResultMethod(method: String): Boolean {
             val resultMethods: List<String> = listOf(
-                ETHSIGN, ETHCHAINID, PERSONALSIGN,
-                ADDETHEREUMCHAIN, SWITCHETHEREUMCHAIN,
-                ETHSIGNTRANSACTION, ETHSENDTRANSACTION,
-                WATCHASSET, ETHREQUESTACCOUNTS, GETMETAMASKPROVIDERSTATE,
-                ETHSIGNTYPEDDATA, ETHSIGNTYPEDDATAV3, ETHSIGNTYPEDDATAV4,
+                ETH_SIGN, ETH_CHAIN_ID, PERSONAL_SIGN,
+                ADD_ETHEREUM_CHAIN, SWITCH_ETHEREUM_CHAIN,
+                ETH_SIGN_TRANSACTION, ETH_SEND_TRANSACTION,
+                WATCH_ASSET, ETH_REQUEST_ACCOUNTS, GET_METAMASK_PROVIDER_STATE,
+                ETH_SIGN_TYPED_DATA, ETH_SIGN_TYPED_DATA_V3, ETH_SIGN_TYPED_DATA_V4,
             ).map { it.value }
             return resultMethods.contains(method)
         }

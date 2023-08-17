@@ -5,9 +5,7 @@ enum class MessageType(val value: String) {
     TYPE("type"),
     DATA("data"),
     ERROR("error"),
-    PAUSE("pause"),
     READY("ready"),
     KEYS_EXCHANGED("keys_exchanged"),
     TERMINATE("terminate"),
-    WALLET_INFO("wallet_info")
 }

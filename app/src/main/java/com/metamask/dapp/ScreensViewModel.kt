@@ -49,7 +49,7 @@ class ScreensViewModel @Inject constructor(
 
         val signRequest = EthereumRequest(
             UUID.randomUUID().toString(),
-            EthereumMethod.ETHSIGNTYPEDDATAV4.value,
+            EthereumMethod.ETH_SIGN_TYPED_DATA_V4.value,
             params
         )
 
@@ -79,7 +79,7 @@ class ScreensViewModel @Inject constructor(
 
         val transactionRequest = EthereumRequest(
             UUID.randomUUID().toString(),
-            EthereumMethod.ETHSENDTRANSACTION.value,
+            EthereumMethod.ETH_SEND_TRANSACTION.value,
             listOf(params)
         )
 
@@ -101,13 +101,13 @@ class ScreensViewModel @Inject constructor(
     ) {
         val switchChainParams: Map<String, String> = mapOf("chainId" to chainId)
         val switchChainRequest = EthereumRequest(
-            method = EthereumMethod.SWITCHETHEREUMCHAIN.value,
+            method = EthereumMethod.SWITCH_ETHEREUM_CHAIN.value,
             params = listOf(switchChainParams)
         )
 
         ethereumViewModel.sendRequest(switchChainRequest) { result ->
             if (result is RequestError) {
-                if (result.code == ErrorType.UNRECOGNIZEDCHAINID.code || result.code == ErrorType.SERVERERROR.code) {
+                if (result.code == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.code == ErrorType.SERVER_ERROR.code) {
                     val message = "${Network.chainNameFor(chainId)} ($chainId) has not been added to your MetaMask wallet. Add chain?"
 
                     val action: () -> Unit = {
@@ -144,7 +144,7 @@ class ScreensViewModel @Inject constructor(
             "rpcUrls" to Network.rpcUrls(Network.fromChainId(chainId))
         )
         val addChainRequest = EthereumRequest(
-            method = EthereumMethod.ADDETHEREUMCHAIN.value,
+            method = EthereumMethod.ADD_ETHEREUM_CHAIN.value,
             params = listOf(addChainParams)
         )
 

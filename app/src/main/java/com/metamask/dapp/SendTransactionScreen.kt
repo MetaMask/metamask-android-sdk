@@ -43,7 +43,7 @@ fun SendTransactionScreen(
     var amount by remember { mutableStateOf("0x01") }
     var from by remember { mutableStateOf(ethereumState.selectedAddress) }
     var to by remember { mutableStateOf("0x0000000000000000000000000000000000000000") }
-    var sendResult by remember { mutableStateOf<String>("") }
+    var sendResult by remember { mutableStateOf("") }
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
