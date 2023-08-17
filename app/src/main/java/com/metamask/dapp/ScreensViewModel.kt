@@ -42,7 +42,7 @@ class ScreensViewModel @Inject constructor(
 
     fun signMessage(
         message: String,
-        callback: (Any?) -> Unit,
+        onSuccess: (Any?) -> Unit,
         onError: (message: String) -> Unit
     ) {
         val params: List<String> = listOf(ethereumViewModel.selectedAddress, message)
@@ -59,7 +59,7 @@ class ScreensViewModel @Inject constructor(
                 Logger.log("Ethereum sign error: ${result.message}")
             } else {
                 Logger.log("Ethereum sign result: $result")
-                callback(result)
+                onSuccess(result)
             }
         }
     }

@@ -41,8 +41,8 @@ fun Setup(ethereumViewModel: EthereumViewModel, screensViewModel: ScreensViewMod
             SignMessageScreen(
                 navController,
                 ethereumState = ethereumState,
-                signMessage = { message, callback, onError ->
-                    screensViewModel.signMessage(message, callback, onError)
+                signMessage = { message, onSuccess, onError ->
+                    screensViewModel.signMessage(message, onSuccess, onError)
                 })
         }
         composable(SEND_TRANSACTION.name) {

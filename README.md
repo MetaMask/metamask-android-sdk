@@ -46,7 +46,7 @@ The Ethereum module requires the app context, so you will need to instantiate it
 // MainActivity
 
 // Obtain EthereumViewModel using viewModels()
-val ethereum: EthereumViewModel by viewModels()
+val ethereumViewModel: EthereumViewModel by viewModels()
 
 // We track three events: connection request, connected, disconnected, otherwise no tracking. 
 // This helps us to monitor any SDK connection issues. 
@@ -55,7 +55,7 @@ val ethereum: EthereumViewModel by viewModels()
 val dapp = Dapp(name: "Droid Dapp", url: "https://droiddapp.com")
 
 // This is the same as calling "eth_requestAccounts"
-ethereum.connect(dapp) { result ->
+ethereumViewModel.connect(dapp) { result ->
     if (result is RequestError) {
         Log.e(TAG, "Ethereum connection error: ${result.message}")
     } else {
@@ -64,7 +64,7 @@ ethereum.connect(dapp) { result ->
 }
 ```
 
-We log three SDK events: `connectionRequest`, `connected` and `disconnected`. Otherwise no tracking. This helps us to monitor any SDK connection issues. If you wish to disable this, you can do so by setting `ethereum.enableDebug = false`.
+We log three SDK events: `connectionRequest`, `connected` and `disconnected`. Otherwise no tracking. This helps us to monitor any SDK connection issues. If you wish to disable this, you can do so by setting `ethereumViewModel.enableDebug = false`.
 
 
 ### 4. You can now call any ethereum provider method
@@ -75,7 +75,7 @@ var chainId: String? = null
 
 val chainIdRequest = EthereumRequest(EthereumMethod.ETH_CHAIN_ID.value) // or EthereumRequest("eth_chainId")
 
-ethereum.sendRequest(chainIdRequest) { result ->
+ethereumViewModel.sendRequest(chainIdRequest) { result ->
     if (result is RequestError) {
         // handle error
     } else {
@@ -90,7 +90,7 @@ var balance: String? = null
 
 // Create parameters
 val params: List<String> = listOf(
-    ethereum.selectedAddress, 
+    ethereumViewModel.selectedAddress, 
     "latest" // "latest", "earliest" or "pending" (optional)
     )
 
@@ -101,7 +101,7 @@ let getBalanceRequest = EthereumRequest(
     params)
 
 // Make request
-ethereum.sendRequest(getBalanceRequest) { result ->
+ethereumViewModel.sendRequest(getBalanceRequest) { result ->
     if (result is RequestError) {
         // handle error
     } else {
@@ -111,9 +111,9 @@ ethereum.sendRequest(getBalanceRequest) { result ->
 ```
 #### Example 3: Sign message
 ```kotlin
-val message = "{\"domain\":{\"chainId\":\"${ethereum.chainId}\",\"name\":\"Ether Mail\",\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\",\"version\":\"1\"},\"message\":{\"contents\":\"Hello, Busa!\",\"from\":{\"name\":\"Kinno\",\"wallets\":[\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\",\"0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF\"]},\"to\":[{\"name\":\"Busa\",\"wallets\":[\"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB\",\"0xB0BdaBea57B0BDABeA57b0bdABEA57b0BDabEa57\",\"0xB0B0b0b0b0b0B000000000000000000000000000\"]}]},\"primaryType\":\"Mail\",\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Group\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"members\",\"type\":\"Person[]\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person[]\"},{\"name\":\"contents\",\"type\":\"string\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallets\",\"type\":\"address[]\"}]}}"
+val message = "{\"domain\":{\"chainId\":\"${ethereumViewModel.chainId}\",\"name\":\"Ether Mail\",\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\",\"version\":\"1\"},\"message\":{\"contents\":\"Hello, Busa!\",\"from\":{\"name\":\"Kinno\",\"wallets\":[\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\",\"0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF\"]},\"to\":[{\"name\":\"Busa\",\"wallets\":[\"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB\",\"0xB0BdaBea57B0BDABeA57b0bdABEA57b0BDabEa57\",\"0xB0B0b0b0b0b0B000000000000000000000000000\"]}]},\"primaryType\":\"Mail\",\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Group\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"members\",\"type\":\"Person[]\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person[]\"},{\"name\":\"contents\",\"type\":\"string\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallets\",\"type\":\"address[]\"}]}}"
 
-val from = ethereum.selectedAddress ?: ""
+val from = ethereumViewModel.selectedAddress
 val params: List<String> = listOf(from, message)
 
 val signRequest = EthereumRequest(
@@ -121,7 +121,7 @@ val signRequest = EthereumRequest(
     params
 )
 
-ethereum.sendRequest(signRequest) { result ->
+ethereumViewModel.sendRequest(signRequest) { result ->
     if (result is RequestError) {
         Log.e(TAG, "Ethereum sign error: ${result.message}")
     } else {
@@ -134,7 +134,7 @@ ethereum.sendRequest(signRequest) { result ->
 
 ```kotlin
 // Create parameters
-val from = ethereum.selectedAddress ?: ""
+val from = ethereumViewModel.
 val to = "0x0000000000000000000000000000000000000000"
 val amount = "0x01"
 val params: Map<String, Any> = mapOf(
@@ -150,7 +150,7 @@ val transactionRequest = EthereumRequest(
 )
 
 // Make a transaction request
-ethereum.sendRequest(transactionRequest) { result ->
+ethereumViewModel.sendRequest(transactionRequest) { result ->
     if (result is RequestError) {
         // handle error
     } else {
@@ -162,60 +162,69 @@ ethereum.sendRequest(transactionRequest) { result ->
 #### Example 5: Switch chain
 ```kotlin
 
-fun switchToChain(chainId: String, callback: (Any?) -> Unit) {
-
-    if (ethereum.chainId == chainId) {
-        // already on requested chain
-        return
-    }
-
+fun switchChain(
+    chainId: String,
+    onSuccess: (message: String) -> Unit,
+    onError: (message: String, action: (() -> Unit)?) -> Unit
+) {
     val switchChainParams: Map<String, String> = mapOf("chainId" to chainId)
     val switchChainRequest = EthereumRequest(
         method = EthereumMethod.SWITCH_ETHEREUM_CHAIN.value,
         params = listOf(switchChainParams)
     )
 
-    ethereum.sendRequest(switchChainRequest) { result ->
+    ethereumViewModel.sendRequest(switchChainRequest) { result ->
         if (result is RequestError) {
-            if (result.code == ErrorType.UNRECOGNIZEDCHAINID.code || result.code == ErrorType.SERVERERROR.code) {
-                val message = "$chainId has not been added to your MetaMask wallet. Add chain?"
-                val buttonTitle = "OK"
+            if (result.code == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.code == ErrorType.SERVER_ERROR.code) {
+                val message = "${Network.chainNameFor(chainId)} ($chainId) has not been added to your MetaMask wallet. Add chain?"
+
                 val action: () -> Unit = {
-                    ADD_ETHEREUM_CHAIN(chainId, callback)
+                    addEthereumChain(
+                        chainId,
+                        onSuccess = { result ->
+                            onSuccess(result)
+                        },
+                        onError = { error ->
+                            onError(error, null)
+                        }
+                    )
                 }
-                showSnackbarWithAction(message, buttonTitle, action)
+                onError(message, action)
             } else {
-                showToast("Switch chain error: ${result.message}")
+                onError("Switch chain error: ${result.message}", null)
             }
         } else {
-            showToast("Successfully switched to $chainId")
-            callback(chainId)
+            onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
         }
     }
 }
 
-fun ADD_ETHEREUM_CHAIN(chainId: String, callback: (Any?) -> Unit) {
+private fun addEthereumChain(
+    chainId: String,
+    onSuccess: (message: String) -> Unit,
+    onError: (message: String) -> Unit
+) {
+    Logger.log("Adding chainId: $chainId")
 
     val addChainParams: Map<String, Any> = mapOf(
         "chainId" to chainId,
         "chainName" to Network.chainNameFor(chainId),
-        "rpcUrls" to listOf("https://polygon-rpc.com")
+        "rpcUrls" to Network.rpcUrls(Network.fromChainId(chainId))
     )
     val addChainRequest = EthereumRequest(
         method = EthereumMethod.ADD_ETHEREUM_CHAIN.value,
         params = listOf(addChainParams)
     )
 
-    ethereum.sendRequest(addChainRequest) { result ->
+    ethereumViewModel.sendRequest(addChainRequest) { result ->
         if (result is RequestError) {
-            showToast("Add chain error: ${result.message}")
+            onError("Add chain error: ${result.message}")
         } else {
-            if (chainId == ethereum.chainId) {
-                showToast("Successfully switched to $chainId")
+            if (chainId == ethereumViewModel.chainId) {
+                onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
             } else {
-                showToast("Successfully added $chainId")
+                onSuccess("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
             }
-            callback(result)
         }
     }
 }
