@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.sp
 fun Heading(title: String) {
     Text(
         text = title,
-        style = MaterialTheme.typography.headlineLarge,
+        style = MaterialTheme.typography.headlineSmall,
         modifier = Modifier
             .padding(16.dp)
 

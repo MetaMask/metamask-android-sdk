@@ -195,7 +195,7 @@ fun SendTransactionScreen(
                 )
             }
 
-            Text(
+            DappLabel(
                 text =  errorMessage ?: sendResult,
                 color = if (errorMessage != null) { Color.Red } else { Color.Unspecified },
                 modifier = Modifier.padding(bottom = 36.dp)

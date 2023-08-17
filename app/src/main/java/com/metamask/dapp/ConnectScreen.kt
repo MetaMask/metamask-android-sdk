@@ -38,42 +38,33 @@ fun ConnectScreen(
 
             // Connect button
             if (connected) {
-                DappButton(
-                    buttonText = stringResource(R.string.disconnect),
-                    onClick = {
-                        onDisconnect()
-                    }
-                )
+                DappButton(buttonText = stringResource(R.string.disconnect)) {
+                    onDisconnect()
+                }
             } else {
-                DappButton(
-                    buttonText = stringResource(R.string.connect),
-                    onClick = {
-                        onConnect(Dapp("Droiddapp", "https://droiddapp.io")) { error ->
-                            errorMessage = error
-                        }
+                DappButton(buttonText = stringResource(R.string.connect)) {
+                    onConnect(Dapp("Droiddapp", "https://droiddapp.io")) { error ->
+                        errorMessage = error
                     }
-                )
+                }
             }
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            Text(
+            DappLabel(
                 text = errorMessage ?: ethereumState.selectedAddress,
                 color = if (errorMessage != null) { Color.Red } else { Color.Unspecified },
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
             // Clear session button
-            DappButton(
-                buttonText = stringResource(R.string.clear_session),
-                onClick = {
-                    onClearSession()
-                }
-            )
+            DappButton(buttonText = stringResource(R.string.clear_session)) {
+                onClearSession()
+            }
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            Text(
+            DappLabel(
                 text = ethereumState.sessionId,
                 modifier = Modifier.padding(bottom = bottomMargin)
             )

@@ -136,7 +136,7 @@ fun SwitchChainScreen(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            Text(
+            DappLabel(
                 text = resultMessage ?: snackbarData?.message ?: "",
                 color = if (snackbarData?.action != null) { Color.Red } else { Color.Unspecified },
                 modifier = Modifier.padding(bottom = 36.dp)

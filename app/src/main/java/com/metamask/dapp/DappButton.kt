@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.sp
 fun DappButton(
     buttonText: String,
     buttonHeight: Dp = 48.dp,
-    buttonBackgroundColor: Color = Color.Blue,
+    buttonBackgroundColor: Color = Color(40, 124, 204),
     buttonTextColor: Color = Color.White,
     onClick: () -> Unit
 ) {
@@ -32,7 +32,7 @@ fun DappButton(
     ) {
         Text(
             text = buttonText,
-            fontSize = 18.sp,
+            fontSize = 14.sp,
             color = Color.White,
         )
     }
@@ -40,7 +40,7 @@ fun DappButton(
 
 @Preview
 @Composable
-fun PreviewButtonWithCaption() {
+fun PreviewDappButton() {
     DappButton(
         buttonText = "Connect",
         onClick = {}

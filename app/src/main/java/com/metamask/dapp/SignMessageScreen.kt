@@ -67,7 +67,7 @@ fun SignMessageScreen(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            Text(
+            DappLabel(
                 text = errorMessage ?: signResult,
                 color = if (errorMessage != null) { Color.Red } else { Color.Unspecified },
                 modifier = Modifier.padding(bottom = 36.dp)
