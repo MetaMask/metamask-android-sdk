@@ -10,7 +10,7 @@ You can import the MetaMask Android SDK into your native Android app to enable u
 To add MetaMask Android SDK from Maven as a dependency to your project, add this entry in your `app/build.gradle` file's dependencies block: 
 ```
 dependencies {
-  implementation 'io.metamask.androidsdk:sdk:0.1.0'
+  implementation 'io.metamask.androidsdk:metamask-android-sdk:0.1.0'
 }
 
 ```
@@ -20,24 +20,42 @@ And then sync your project with the gradle settings. Once the syncing has comple
 ```
 import io.metamask.androidsdk
 ```
+We use Hilt for Dagger dependency injection, so you will need to add the corresponding dependencies in your `app/build.gradle`:
+
+```
+plugins {
+    id 'kotlin-kapt'
+    id 'dagger.hilt.android.plugin'
+}
+
+dependencies {
+    // dagger-hilt
+    implementation 'com.google.dagger:hilt-android:2.43.2'
+    kapt 'com.google.dagger:hilt-compiler:2.43.2'
+    
+    // viewmodel-related
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1'
+}
+```
+Refer to the example app for more details on how we set up a Jetpack Compose project to work with the SDK.
 
 ### 3. Connect your Dapp
 The Ethereum module requires the app context, so you will need to instantiate it from an Activity or a module that injects a context.
 ```kotlin
 // MainActivity
 
-val ethereum: Ethereum by lazy {
-    Ethereum.getInstance(this)
-}
+// Obtain EthereumViewModel using viewModels()
+val ethereumViewModel: EthereumViewModel by viewModels()
 
 // We track three events: connection request, connected, disconnected, otherwise no tracking. 
 // This helps us to monitor any SDK connection issues. 
 //  
 
-let dapp = Dapp(name: "Droid Dapp", url: "https://droiddapp.com")
+val dapp = Dapp(name: "Droid Dapp", url: "https://droiddapp.com")
 
 // This is the same as calling "eth_requestAccounts"
-ethereum.connect(dapp) { result ->
+ethereumViewModel.connect(dapp) { result ->
     if (result is RequestError) {
         Log.e(TAG, "Ethereum connection error: ${result.message}")
     } else {
@@ -46,7 +64,7 @@ ethereum.connect(dapp) { result ->
 }
 ```
 
-We log three SDK events: `connectionRequest`, `connected` and `disconnected`. Otherwise no tracking. This helps us to monitor any SDK connection issues. If you wish to disable this, you can do so by setting `MetaMaskSDK.shared.enableDebug = false` or `ethereum.enableDebug = false`.
+We log three SDK events: `connectionRequest`, `connected` and `disconnected`. Otherwise no tracking. This helps us to monitor any SDK connection issues. If you wish to disable this, you can do so by setting `ethereumViewModel.enableDebug = false`.
 
 
 ### 4. You can now call any ethereum provider method
@@ -55,9 +73,9 @@ We log three SDK events: `connectionRequest`, `connected` and `disconnected`. Ot
 ```kotlin
 var chainId: String? = null
 
-let chainIdRequest = EthereumRequest(EthereumMethod.ETHCHAINID.value) // or EthereumRequest("eth_chainId")
+val chainIdRequest = EthereumRequest(EthereumMethod.ETH_CHAIN_ID.value) // or EthereumRequest("eth_chainId")
 
-ethereum.sendRequest(chainIdRequest) { result ->
+ethereumViewModel.sendRequest(chainIdRequest) { result ->
     if (result is RequestError) {
         // handle error
     } else {
@@ -66,14 +84,13 @@ ethereum.sendRequest(chainIdRequest) { result ->
 }
 ```
 
-
 #### Example 2: Get account balance
 ```kotlin
 var balance: String? = null
 
 // Create parameters
 val params: List<String> = listOf(
-    ethereum.selectedAddress, 
+    ethereumViewModel.selectedAddress, 
     "latest" // "latest", "earliest" or "pending" (optional)
     )
 
@@ -84,7 +101,7 @@ let getBalanceRequest = EthereumRequest(
     params)
 
 // Make request
-ethereum.sendRequest(getBalanceRequest) { result ->
+ethereumViewModel.sendRequest(getBalanceRequest) { result ->
     if (result is RequestError) {
         // handle error
     } else {
@@ -92,14 +109,32 @@ ethereum.sendRequest(getBalanceRequest) { result ->
     }
 }
 ```
+#### Example 3: Sign message
+```kotlin
+val message = "{\"domain\":{\"chainId\":\"${ethereumViewModel.chainId}\",\"name\":\"Ether Mail\",\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\",\"version\":\"1\"},\"message\":{\"contents\":\"Hello, Busa!\",\"from\":{\"name\":\"Kinno\",\"wallets\":[\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\",\"0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF\"]},\"to\":[{\"name\":\"Busa\",\"wallets\":[\"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB\",\"0xB0BdaBea57B0BDABeA57b0bdABEA57b0BDabEa57\",\"0xB0B0b0b0b0b0B000000000000000000000000000\"]}]},\"primaryType\":\"Mail\",\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Group\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"members\",\"type\":\"Person[]\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person[]\"},{\"name\":\"contents\",\"type\":\"string\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallets\",\"type\":\"address[]\"}]}}"
 
-#### Example 3: Send transaction
-##### Using parameters dictionary
-If your request parameters is a simple dictionary of string key-value pairs, you can use it directly. Note that the use of `Any` or even `AnyHashable` types is not supported as the type needs to be explicitly known.
+val from = ethereumViewModel.selectedAddress
+val params: List<String> = listOf(from, message)
+
+val signRequest = EthereumRequest(
+    EthereumMethod.ETH_SIGN_TYPED_DATA_V4.value,
+    params
+)
+
+ethereumViewModel.sendRequest(signRequest) { result ->
+    if (result is RequestError) {
+        Log.e(TAG, "Ethereum sign error: ${result.message}")
+    } else {
+        Log.d(TAG, "Ethereum sign result: $result")
+    }
+}
+```
+
+#### Example 4: Send transaction
 
 ```kotlin
 // Create parameters
-val from = ethereum.selectedAddress ?: ""
+val from = ethereumViewModel.
 val to = "0x0000000000000000000000000000000000000000"
 val amount = "0x01"
 val params: Map<String, Any> = mapOf(
@@ -110,18 +145,89 @@ val params: Map<String, Any> = mapOf(
 
 // Create request
 val transactionRequest = EthereumRequest(
-    EthereumMethod.ETHSENDTRANSACTION.value,
+    EthereumMethod.ETH_SEND_TRANSACTION.value,
     listOf(params)
 )
 
 // Make a transaction request
-ethereum.sendRequest(transactionRequest) { result ->
+ethereumViewModel.sendRequest(transactionRequest) { result ->
     if (result is RequestError) {
         // handle error
     } else {
         Log.d(TAG, "Ethereum transaction result: $result")
     }
 } 
+```
+
+#### Example 5: Switch chain
+```kotlin
+
+fun switchChain(
+    chainId: String,
+    onSuccess: (message: String) -> Unit,
+    onError: (message: String, action: (() -> Unit)?) -> Unit
+) {
+    val switchChainParams: Map<String, String> = mapOf("chainId" to chainId)
+    val switchChainRequest = EthereumRequest(
+        method = EthereumMethod.SWITCH_ETHEREUM_CHAIN.value,
+        params = listOf(switchChainParams)
+    )
+
+    ethereumViewModel.sendRequest(switchChainRequest) { result ->
+        if (result is RequestError) {
+            if (result.code == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.code == ErrorType.SERVER_ERROR.code) {
+                val message = "${Network.chainNameFor(chainId)} ($chainId) has not been added to your MetaMask wallet. Add chain?"
+
+                val action: () -> Unit = {
+                    addEthereumChain(
+                        chainId,
+                        onSuccess = { result ->
+                            onSuccess(result)
+                        },
+                        onError = { error ->
+                            onError(error, null)
+                        }
+                    )
+                }
+                onError(message, action)
+            } else {
+                onError("Switch chain error: ${result.message}", null)
+            }
+        } else {
+            onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
+        }
+    }
+}
+
+private fun addEthereumChain(
+    chainId: String,
+    onSuccess: (message: String) -> Unit,
+    onError: (message: String) -> Unit
+) {
+    Logger.log("Adding chainId: $chainId")
+
+    val addChainParams: Map<String, Any> = mapOf(
+        "chainId" to chainId,
+        "chainName" to Network.chainNameFor(chainId),
+        "rpcUrls" to Network.rpcUrls(Network.fromChainId(chainId))
+    )
+    val addChainRequest = EthereumRequest(
+        method = EthereumMethod.ADD_ETHEREUM_CHAIN.value,
+        params = listOf(addChainParams)
+    )
+
+    ethereumViewModel.sendRequest(addChainRequest) { result ->
+        if (result is RequestError) {
+            onError("Add chain error: ${result.message}")
+        } else {
+            if (chainId == ethereumViewModel.chainId) {
+                onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
+            } else {
+                onSuccess("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
+            }
+        }
+    }
+}
 ```
 
 ## Examples

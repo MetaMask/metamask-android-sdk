@@ -12,6 +12,6 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "MetaMaskAndroid"
+rootProject.name = "MetaMaskAndroidDapp"
 include ':app'
-include ':MetaMaskAndroidSDK'
+include ':metamask-android-sdk'
