@@ -4,6 +4,7 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.serialization' version '1.5.0'
     id 'kotlin-kapt'
     id 'com.google.dagger.hilt.android' version '2.43.2'
+    id 'maven-publish'
 }
 
 android {
@@ -54,4 +55,25 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'io.metamask.androidsdk'
+            artifactId = 'metamask-android-sdk'
+            version = '0.1.0'
+
+            pom {
+                name = 'MetaMask Android SDK'
+                description = 'The MetaMask Android SDK enables developers to connect their native Android apps to the Ethereum blockchain via the MetaMask Mobile wallet, effectively enabling the creation of Android native decentralised applications (Dapps).'
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = "metamask-android-sdk"
+            //url = uri('https://github.com/MetaMask/metamask-android-sdk')
+        }
+    }
 }

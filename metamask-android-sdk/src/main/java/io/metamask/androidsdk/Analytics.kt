@@ -1,4 +1,8 @@
+
+
+
 package io.metamask.androidsdk
+
 
 enum class Event(val value: String) {
     CONNECTIONREQUEST("sdk_connect_request_started"),
