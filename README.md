@@ -234,6 +234,9 @@ private fun addEthereumChain(
 We have created an `ExampleDapp` class with a few ethereum requests to act as a guide on how to connect to ethereum and make requests. 
 
 ## Requirements
+### MetaMask Mobile
+This SDK requires MetaMask Mobile version 7.6.0 or higher.
+
 ### Environment
 You will need to have MetaMask Mobile wallet installed on your target device i.e physical device or emulator, so you can either have it installed from the [Google Play](https://play.google.com/store/apps/details?id=io.metamask), or clone and compile MetaMask Mobile wallet from [source](https://github.com/MetaMask/metamask-mobile) and build to your target device. 
 

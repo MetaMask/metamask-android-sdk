@@ -73,7 +73,6 @@ publishing {
     repositories {
         maven {
             name = "metamask-android-sdk"
-            //url = uri('https://github.com/MetaMask/metamask-android-sdk')
         }
     }
 }
