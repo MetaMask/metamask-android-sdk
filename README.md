@@ -2,7 +2,7 @@
 The MetaMask Android SDK enables developers to connect their native Android apps to the Ethereum blockchain via the MetaMask Mobile wallet, effectively enabling the creation of Android native decentralised applications (Dapps).
 
 ## Getting Started
-You can import the MetaMask Android SDK into your native Android app to enable users to easily connect with their MetaMask Mobile wallet. Refer to the [MetaMask API Reference](https://docs.metamask.io/wallet/reference/provider-api) to see all the ethereum RPC methods supported.
+You can import the MetaMask Android SDK into your native Android app to enable users to easily connect with their MetaMask Mobile wallet. Refer to the [MetaMask API Reference](https://docs.metamask.io/wallet/reference/provider-api) for more information.
 
 ### 1. Install
 
@@ -246,5 +246,5 @@ You will need to have MetaMask Mobile wallet installed on your target device i.e
 This SDK has an Minimum Android SDK (minSdk) version requirement of 23.
 
 ## Resources
-Refer to the [MetaMask API Reference](https://docs.metamask.io/wallet/reference/provider-api) to see all the ethereum RPC methods supported.
+Refer to the [MetaMask API Reference](https://docs.metamask.io/wallet/reference/provider-api) for more information.
 
