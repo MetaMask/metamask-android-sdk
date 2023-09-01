@@ -7,7 +7,7 @@ data class KeyExchangeMessage(
     val publicKey: String?
     )
 
-internal class KeyExchange(private val crypto: Crypto = Crypto()) {
+class KeyExchange(private val crypto: Crypto = Crypto()) {
     companion object {
         const val TYPE = "type"
         const val PUBLIC_KEY = "public_key"

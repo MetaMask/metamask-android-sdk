@@ -46,7 +46,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     }
 
     init {
-        sessionManager = SessionManager(KeyStorage(context))
+        sessionManager = SessionManager.getInstance(KeyStorage(context))
         sessionId = sessionManager.sessionId
     }
 
@@ -107,7 +107,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     }
 
     fun setSessionDuration(duration: Long) {
-        sessionManager.setSessionDuration(duration)
+        sessionManager.sessionDuration = duration
     }
 
     fun clearSession() {

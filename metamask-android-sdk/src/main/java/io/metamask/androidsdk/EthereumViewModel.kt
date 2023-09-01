@@ -78,6 +78,7 @@ class EthereumViewModel @Inject constructor (
         connectRequestSent = false
         communicationClient.clearSession()
         selectedAddress = ""
+        chainId = ""
         _ethereumState.postValue(
             _ethereumState.value?.copy(
                 selectedAddress = "",
