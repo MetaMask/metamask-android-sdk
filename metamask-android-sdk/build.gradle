@@ -22,26 +22,31 @@ android {
         consumerProguardFiles 'consumer-rules.pro'
     }
 
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = '17'
+        jvmTarget = "11"
+    }
+    kapt {
+        javacOptions {
+            // Set Java version for KAPT explicitly
+            option("-source", "11")
+            option("-target", "11")
+        }
     }
     ndkVersion '25.2.9519653'
     buildToolsVersion '30.0.3'
 }
 
+kotlin {
+    jvmToolchain(11)
+}
+
 dependencies {
 
-    compileOnly(files("libs/ecies.aar"))
+    implementation(files("libs/ecies.aar"))
     implementation 'com.google.dagger:hilt-android:2.43.2'
     kapt 'com.google.dagger:hilt-compiler:2.43.2'
     implementation 'com.squareup.okhttp3:okhttp:4.9.2'

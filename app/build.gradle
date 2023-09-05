@@ -22,18 +22,19 @@ android {
         }
     }
 
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = '11'
+        jvmTarget = "11"
+    }
+    kapt {
+        javacOptions {
+            // Set Java version for KAPT explicitly
+            option("-source", "11")
+            option("-target", "11")
+        }
     }
     buildFeatures {
         compose true
@@ -46,6 +47,10 @@ android {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
         }
     }
+}
+
+kotlin {
+    jvmToolchain(11)
 }
 
 dependencies {
