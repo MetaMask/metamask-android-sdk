@@ -45,8 +45,7 @@ kotlin {
 }
 
 dependencies {
-
-    implementation(files("libs/ecies.aar"))
+    implementation project(':ecies')
     implementation 'com.google.dagger:hilt-android:2.43.2'
     kapt 'com.google.dagger:hilt-compiler:2.43.2'
     implementation 'com.squareup.okhttp3:okhttp:4.9.2'
