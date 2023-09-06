@@ -233,7 +233,7 @@ private fun addEthereumChain(
 ```
 
 ## Examples
-We have created an `ExampleDapp` class with a few ethereum requests to act as a guide on how to connect to ethereum and make requests. 
+See the [app](./app/) directory for an example dapp integrating the SDK, to act as a guide on how to connect to ethereum and make requests. 
 
 ## Requirements
 ### MetaMask Mobile
