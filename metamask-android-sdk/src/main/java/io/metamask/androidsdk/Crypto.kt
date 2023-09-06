@@ -1,6 +1,6 @@
 package io.metamask.androidsdk
 
-import com.crypto.ecies.Ecies
+import io.metamask.ecies.Ecies
 
 
 internal class Crypto {

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MetaMaskAndroidDapp</string>
+    <string name="app_name">MetaMaskAndroidSDKClient</string>
     <string name="connection_label">Connection result: </string>
     <string name="session_label">SessionId: </string>
     <string name="sign_label">Sign result: </string>

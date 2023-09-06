@@ -18,30 +18,34 @@ android {
         ext.versionCode = 1
         ext.versionName = "0.1.0"
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        consumerProguardFiles "consumer-rules.pro"
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        consumerProguardFiles 'consumer-rules.pro'
     }
 
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = '11'
+        jvmTarget = "11"
+    }
+    kapt {
+        javacOptions {
+            // Set Java version for KAPT explicitly
+            option("-source", "11")
+            option("-target", "11")
+        }
     }
     ndkVersion '25.2.9519653'
     buildToolsVersion '30.0.3'
 }
 
-dependencies {
+kotlin {
+    jvmToolchain(11)
+}
 
-    implementation files('libs/ecies.aar')
+dependencies {
+    implementation project(':ecies')
     implementation 'com.google.dagger:hilt-android:2.43.2'
     kapt 'com.google.dagger:hilt-compiler:2.43.2'
     implementation 'com.squareup.okhttp3:okhttp:4.9.2'
@@ -57,22 +61,13 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }
 
-publishing {
-    publications {
-        maven(MavenPublication) {
-            groupId = 'io.metamask.androidsdk'
-            artifactId = 'metamask-android-sdk'
-            version = '0.1.0'
-
-            pom {
-                name = 'MetaMask Android SDK'
-                description = 'The MetaMask Android SDK enables developers to connect their native Android apps to the Ethereum blockchain via the MetaMask Mobile wallet, effectively enabling the creation of Android native decentralised applications (Dapps).'
-            }
-        }
-    }
-    repositories {
-        maven {
-            name = "metamask-android-sdk"
-        }
-    }
+ext {
+    PUBLISH_GROUP_ID = 'io.metamask.androidsdk'
+    PUBLISH_VERSION = '0.1.0'
+    PUBLISH_ARTIFACT_ID = 'metamask-android-sdk'
 }
+
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+apply plugin: 'org.jetbrains.dokka'
+apply from: "${rootProject.projectDir}/scripts/publish-module.gradle"

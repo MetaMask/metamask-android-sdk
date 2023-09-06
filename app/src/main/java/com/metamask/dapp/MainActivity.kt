@@ -9,7 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.metamask.dapp.ui.theme.MetaMaskAndroidDappTheme
+import com.metamask.dapp.ui.theme.MetaMaskAndroidSDKClientTheme
 import dagger.hilt.android.AndroidEntryPoint
 import io.metamask.androidsdk.EthereumViewModel
 
@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            MetaMaskAndroidDappTheme {
+            MetaMaskAndroidSDKClientTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -44,7 +44,7 @@ fun Greeting(name: String) {
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
-    MetaMaskAndroidDappTheme {
+    MetaMaskAndroidSDKClientTheme {
         Greeting("Android")
     }
 }
