@@ -1,9 +1,9 @@
 package com.metamask.dapp
 
-enum class DappScreen(value: String) {
-    CONNECT("connect"),
-    ACTIONS("actions"),
-    SIGN_MESSAGE("sign_message"),
-    SEND_TRANSACTION("send_transaction"),
-    SWITCH_CHAIN("switch_chain")
+enum class DappScreen {
+    CONNECT,
+    ACTIONS,
+    SIGN_MESSAGE,
+    SEND_TRANSACTION,
+    SWITCH_CHAIN
 }

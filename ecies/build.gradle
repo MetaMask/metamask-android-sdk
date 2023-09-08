@@ -37,7 +37,6 @@ android {
 }
 
 dependencies {
-
     implementation 'androidx.core:core-ktx:1.9.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
@@ -45,3 +44,14 @@ dependencies {
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }
+
+ext {
+    PUBLISH_GROUP_ID = 'io.metamask.ecies'
+    PUBLISH_VERSION = '1.0.0'
+    PUBLISH_ARTIFACT_ID = 'ecies'
+}
+
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+apply plugin: 'org.jetbrains.dokka'
+apply from: "${rootProject.projectDir}/scripts/ecies-publish-module.gradle"

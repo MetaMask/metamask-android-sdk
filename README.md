@@ -18,11 +18,26 @@ And then sync your project with the gradle settings. Once the syncing has comple
 
 <b>Please note that this SDK requires MetaMask Mobile version 7.6.0 or higher</b>.
 
-### 2. Import the SDK
+### 2. Setup your app
+#### 2.1 Gradle settings
+We use Hilt for Dagger dependency injection, so you will need to add the corresponding dependencies.
+
+In the project's root `build.gradle`, 
 ```
-import io.metamask.androidsdk
+buildscript {
+    // other setup here
+    
+    dependencies {
+        classpath 'com.google.dagger:hilt-android-gradle-plugin:2.43.2'
+    }
+}
+plugins {
+    // other setup here
+    id 'com.google.dagger.hilt.android' version '2.43.2' apply false
+}
 ```
-We use Hilt for Dagger dependency injection, so you will need to add the corresponding dependencies in your `app/build.gradle`:
+
+And then in your `app/build.gradle`:
 
 ```
 plugins {
@@ -40,9 +55,77 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1'
 }
 ```
+#### 2.2 ViewModel Module Dependencies Injection
+Since we use Hilt dependency injection, you will also need to create a module defining ethereum viewmodel injection. This is a single instance that will be shared across various view models and will survive configuration changes.
+
+```
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+import io.metamask.androidsdk.ApplicationRepository
+import io.metamask.androidsdk.EthereumViewModel
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object EthereumViewModelModule {
+
+    @Provides
+    @Singleton
+    fun provideEthereumViewModel(repository: ApplicationRepository): EthereumViewModel {
+        return EthereumViewModel(repository)
+    }
+}
+```
+
+#### 2.3 Setup Application Class
+If you don't have an application class, you need to create one.
+```
+import android.app.Application
+import dagger.hilt.android.HiltAndroidApp
+
+@HiltAndroidApp
+class DappApplication : Application() {}
+```
+Then update `android:name` in the `AndroidManifest.xml` to this application class.
+
+```
+<manifest>
+    <application
+        android:name=".DappApplication"
+        ...
+    </application>
+</manifest>
+
+```
+#### 2.4 Add `@AndroidEntryPoint` to your Activity and Fragment
+As a final step, if you need to inject your dependencies in an activity, you need to add `@AndroidEntryPoint` in your activity class. However, if you need to inject your dependencies in a fragment, then you need to add `@AndroidEntryPoint` in both the fragment and the activity that hosts the fragment.
+
+```
+@AndroidEntryPoint
+class MainActivity : ComponentActivity() {
+   // ...
+}
+```
+
+```
+@AndroidEntryPoint
+class LoginFragment : Fragment() {
+   // ...
+}
+```
+
 Refer to the example app for more details on how we set up a Jetpack Compose project to work with the SDK.
 
-### 3. Connect your Dapp
+### 3. Import the SDK
+Now you can import the SDK and start using it.
+```
+import io.metamask.androidsdk.EthereumViewModel
+// other imports as necessary
+```
+
+### 4. Connect your Dapp
 The Ethereum module requires the app context, so you will need to instantiate it from an Activity or a module that injects a context.
 ```kotlin
 // MainActivity
@@ -69,7 +152,7 @@ ethereumViewModel.connect(dapp) { result ->
 We log three SDK events: `connectionRequest`, `connected` and `disconnected`. Otherwise no tracking. This helps us to monitor any SDK connection issues. If you wish to disable this, you can do so by setting `ethereumViewModel.enableDebug = false`.
 
 
-### 4. You can now call any ethereum provider method
+### 5. You can now call any ethereum provider method
 
 #### Example 1: Get Chain ID
 ```kotlin
@@ -247,4 +330,3 @@ This SDK has an Minimum Android SDK (minSdk) version requirement of 23.
 
 ## Resources
 Refer to the [MetaMask API Reference](https://docs.metamask.io/wallet/reference/provider-api) for more information.
-
