@@ -50,7 +50,7 @@ afterEvaluate {
 
                 pom {
                     name = PUBLISH_ARTIFACT_ID
-                    description = 'MetaMask SDK for Android'
+                    description = 'MetaMask Ecies Encryption'
                     url = 'https://github.com/MetaMask/metamask-android-sdk'
                     licenses {
                         license {

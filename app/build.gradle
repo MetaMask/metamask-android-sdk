@@ -54,8 +54,7 @@ kotlin {
 }
 
 dependencies {
-
-    implementation project(path: ':metamask-android-sdk')
+    implementation project(':metamask-android-sdk')
     implementation 'androidx.compose.material:material:1.0.4'
     implementation 'com.google.android.material:material:1.9.0'
     implementation "androidx.navigation:navigation-compose:2.5.0"
