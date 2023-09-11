@@ -146,4 +146,9 @@ class EthereumViewModelTest {
         val afterResetSessionId = ethereumViewModel.getSessionId()
         assertNotEquals(beforeResetSessionId, afterResetSessionId)
     }
+
+    @Test
+    fun testSendRequest() {
+
+    }
 }

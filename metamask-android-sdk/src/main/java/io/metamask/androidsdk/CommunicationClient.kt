@@ -15,7 +15,12 @@ import kotlinx.serialization.Serializable
 import org.json.JSONObject
 import java.lang.ref.WeakReference
 
-internal class CommunicationClient(context: Context, callback: EthereumEventCallback)  {
+internal class CommunicationClient(
+    context: Context,
+    callback: EthereumEventCallback,
+    serviceConnection: ServiceConnection,
+    messageServiceCallback: IMessegeServiceCallback
+)  {
 
     var sessionId: String
     private val keyExchange: KeyExchange = KeyExchange()
