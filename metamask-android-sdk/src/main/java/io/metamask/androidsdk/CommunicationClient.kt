@@ -76,9 +76,9 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     }
 
     private val messageServiceCallback: IMessegeServiceCallback = object : IMessegeServiceCallback.Stub() {
-        override fun onMessageReceived(message: Bundle) {
-            val keyExchange = message.getString(KEY_EXCHANGE)
-            val message = message.getString(MESSAGE)
+        override fun onMessageReceived(bundle: Bundle) {
+            val keyExchange = bundle.getString(KEY_EXCHANGE)
+            val message = bundle.getString(MESSAGE)
 
             if (keyExchange != null) {
                 handleKeyExchange(keyExchange)
@@ -89,21 +89,21 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     }
 
     fun trackEvent(event: Event, params: MutableMap<String, String>?) {
-        val params: MutableMap<String, String> = params ?: mutableMapOf(
+        val parameters: MutableMap<String, String> = params ?: mutableMapOf(
             "id" to sessionId
         )
 
         when(event) {
             Event.CONNECTIONREQUEST -> {
-                params["commlayer"] = SDKInfo.PLATFORM
-                params["sdkVersion"] = SDKInfo.VERSION
-                params["url"] = dapp?.url ?: ""
-                params["title"] = dapp?.name ?: ""
-                params["platform"] = SDKInfo.PLATFORM
+                parameters["commlayer"] = SDKInfo.PLATFORM
+                parameters["sdkVersion"] = SDKInfo.VERSION
+                parameters["url"] = dapp?.url ?: ""
+                parameters["title"] = dapp?.name ?: ""
+                parameters["platform"] = SDKInfo.PLATFORM
             }
             else -> Unit
         }
-        tracker.trackEvent(event, params)
+        tracker.trackEvent(event, parameters)
     }
 
     fun setSessionDuration(duration: Long) {
@@ -118,6 +118,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
 
     private fun handleMessage(message: String) {
         val jsonString = keyExchange.decrypt(message)
+        Logger.log("CommunicationClient:: Got message: $jsonString")
         val json = JSONObject(jsonString)
 
         when (json.optString(MessageType.TYPE.value)) {
@@ -187,15 +188,27 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
 
         val request = submittedRequests[id]?.request
+        Logger.log("CommunicationClient:: Response for request ${request?.method}")
         val isResultMethod = EthereumMethod.isResultMethod(request?.method ?: "")
 
         if (!isResultMethod) {
             val resultJson = data.optString("result")
 
             if (resultJson.isNotEmpty()) {
-                val result: Map<String, Any?> = Gson().fromJson(resultJson, object : TypeToken<Map<String, Any?>>() {}.type)
-                submittedRequests[id]?.callback?.invoke(result)
-                completeRequest(id, result)
+                var result: Map<String, Any?>? = Gson().fromJson(resultJson, object : TypeToken<Map<String, Any?>>() {}.type)
+                if (result != null) {
+                    submittedRequests[id]?.callback?.invoke(result)
+                    completeRequest(id, result)
+                } else {
+                    val accounts: List<String>? = Gson().fromJson(resultJson, object : TypeToken<List<String>>() {}.type)
+                    Logger.log("CommunicationClient:: Accounts: $accounts")
+                    val account = accounts?.firstOrNull()
+                    if (account != null) {
+                        submittedRequests[id]?.callback?.invoke(account)
+                        completeRequest(id, account)
+                    }
+                }
+
             } else {
                 val result: Map<String, Serializable> = Gson().fromJson(data.toString(), object : TypeToken<Map<String, Serializable>>() {}.type)
                 completeRequest(id, result)
@@ -275,10 +288,10 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             queuedRequests.entries.find { it.value.request.method == EthereumMethod.ETH_REQUEST_ACCOUNTS.value }?.key ?: ""
         }
 
-        val error: Map<String, Any?> = Gson().fromJson(error, object : TypeToken<Map<String, Any?>>() {}.type)
-        val errorCode = error["code"] as? Double ?: -1
+        val errorMap: Map<String, Any?> = Gson().fromJson(error, object : TypeToken<Map<String, Any?>>() {}.type)
+        val errorCode = errorMap["code"] as? Double ?: -1
         val code = errorCode.toInt()
-        val message = error["message"] as? String ?: ErrorType.message(code)
+        val message = errorMap["message"] as? String ?: ErrorType.message(code)
         completeRequest(requestId, RequestError(code, message))
         return true
     }
@@ -355,15 +368,15 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     }
 
     private fun sendMessage(message: String) {
-        val message = Bundle().apply {
+        val bundle = Bundle().apply {
             putString(MESSAGE, message)
         }
 
         if (keyExchange.keysExchanged()) {
-            messageService?.sendMessage(message)
+            messageService?.sendMessage(bundle)
         } else {
             Logger.log("CommunicationClient::sendMessage keys not exchanged, queueing job")
-            queueRequestJob { messageService?.sendMessage(message) }
+            queueRequestJob { messageService?.sendMessage(bundle) }
         }
     }
 
@@ -469,9 +482,9 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
 
     private fun sendKeyExchangeMesage(message: String) {
         Logger.log("Sending key exchange $message")
-        val message = Bundle().apply {
+        val bundle = Bundle().apply {
             putString(KEY_EXCHANGE, message)
         }
-        messageService?.sendMessage(message)
+        messageService?.sendMessage(bundle)
     }
 }
