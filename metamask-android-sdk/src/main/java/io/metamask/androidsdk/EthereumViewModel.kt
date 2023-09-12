@@ -93,7 +93,7 @@ class EthereumViewModel @Inject constructor (
         Logger.log("Ethereum:: connecting...")
         connectRequestSent = true
         communicationClient.setSessionDuration(sessionLifetime)
-        communicationClient.trackEvent(Event.CONNECTIONREQUEST, null)
+        communicationClient.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
         communicationClient.dapp = dapp
 
         requestAccounts(callback)
@@ -121,15 +121,40 @@ class EthereumViewModel @Inject constructor (
             EthereumMethod.GET_METAMASK_PROVIDER_STATE.value,
             ""
         )
-        sendRequest(providerStateRequest)
+        sendRequest(providerStateRequest) { result ->
+            Logger.log("Ethereum:: Provider request")
+            if (result is RequestError) {
+                Logger.error("Ethereum:: Provider Connection request failed ${result.message}")
+                communicationClient.trackEvent(Event.SDK_CONNECTION_FAILED, null)
+
+                if (result.code == ErrorType.USER_REJECTED_REQUEST.code) {
+                    Logger.error("Ethereum:: Provider Connection request rejected")
+                    communicationClient.trackEvent(Event.SDK_CONNECTION_REJECTED, null)
+                }
+            } else {
+                communicationClient.trackEvent(Event.SDK_CONNECTION_ACCEPTED, null)
+            }
+        }
 
         val accountsRequest = EthereumRequest(
             UUID.randomUUID().toString(),
             EthereumMethod.ETH_REQUEST_ACCOUNTS.value,
             ""
         )
-        sendRequest(accountsRequest) {
-            callback?.invoke(it)
+        sendRequest(accountsRequest) { result ->
+            if (result is RequestError) {
+                communicationClient.trackEvent(Event.SDK_CONNECTION_FAILED, null)
+
+                if (
+                    result.code == ErrorType.USER_REJECTED_REQUEST.code ||
+                    result.code == ErrorType.UNAUTHORISED_REQUEST.code
+                ) {
+                    communicationClient.trackEvent(Event.SDK_CONNECTION_REJECTED, null)
+                }
+            } else {
+                communicationClient.trackEvent(Event.SDK_CONNECTION_ACCEPTED, null)
+            }
+            callback?.invoke(result)
         }
     }
 
