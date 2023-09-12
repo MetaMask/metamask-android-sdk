@@ -3,7 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.android'
     id 'org.jetbrains.kotlin.plugin.serialization' version '1.5.0'
     id 'kotlin-kapt'
-    id 'com.google.dagger.hilt.android' version '2.43.2'
+    id 'com.google.dagger.hilt.android' version "$hilt_version"
     id 'maven-publish'
 }
 
@@ -16,7 +16,7 @@ android {
         targetSdk 33
 
         ext.versionCode = 1
-        ext.versionName = "0.1.0"
+        ext.versionName = "0.1.1"
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         consumerProguardFiles 'consumer-rules.pro'
@@ -45,9 +45,9 @@ kotlin {
 }
 
 dependencies {
-    implementation 'io.metamask.ecies:ecies:1.0.0'
-    implementation 'com.google.dagger:hilt-android:2.43.2'
-    kapt 'com.google.dagger:hilt-compiler:2.43.2'
+    implementation 'io.metamask.ecies:ecies:1.0.1'
+    implementation "com.google.dagger:hilt-android:$hilt_version"
+    kapt "com.google.dagger:hilt-compiler:$hilt_version"
     implementation 'com.squareup.okhttp3:okhttp:4.9.2'
     implementation 'androidx.security:security-crypto:1.1.0-alpha06'
     implementation 'com.google.code.gson:gson:2.9.0'
@@ -63,7 +63,7 @@ dependencies {
 
 ext {
     PUBLISH_GROUP_ID = 'io.metamask.androidsdk'
-    PUBLISH_VERSION = '0.1.0'
+    PUBLISH_VERSION = '0.1.1'
     PUBLISH_ARTIFACT_ID = 'metamask-android-sdk'
 }
 

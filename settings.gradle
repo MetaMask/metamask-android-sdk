@@ -16,4 +16,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "MetaMaskAndroidSDKClient"
 include ':app'
-include ':ecies', ':metamask-android-sdk'
+include ':metamask-android-sdk'

@@ -13,7 +13,7 @@ if (secretPropsFile.exists()) {
     ext["signing.password"] = System.getenv('SIGNING_PASSWORD')
     ext["signing.key"] = System.getenv('SIGNING_KEY')
     ext["snapshot"] = System.getenv('SNAPSHOT')
-    ext["rootVersionName"] = '0.1.0'
+    ext["rootVersionName"] = '0.1.1'
 }
 
 // Set up Sonatype repository
