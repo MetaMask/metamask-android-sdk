@@ -10,7 +10,7 @@ You can import the MetaMask Android SDK into your native Android app to enable u
 To add MetaMask Android SDK from Maven as a dependency to your project, add this entry in your `app/build.gradle` file's dependencies block: 
 ```
 dependencies {
-  implementation 'io.metamask.androidsdk:metamask-android-sdk:0.1.1'
+  implementation 'io.metamask.androidsdk:metamask-android-sdk:0.1.2'
 }
 
 ```

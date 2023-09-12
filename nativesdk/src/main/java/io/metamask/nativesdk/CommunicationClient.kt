@@ -37,7 +37,7 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
         override fun onServiceDisconnected(name: ComponentName?) {
             if (name.toString().contains("io.metamask.nativesdk.MessageService")) {
                 Logger.error("CommunicationClient:: Dapp disconnected $name")
-                trackEvent(Event.DISCONNECTED)
+                trackEvent(Event.SDK_DISCONNECTED)
             } else {
                 Logger.error("CommunicationClient:: Metamask disconnected $name")
                 messageService = null

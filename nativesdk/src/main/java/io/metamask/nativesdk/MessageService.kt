@@ -109,7 +109,7 @@ class MessageService : Service(), MetaMaskConnectionStatusCallback {
     override fun onMetaMaskDisconnect() {
         Logger.log("MessageService:: onMetaMaskDisconnect")
         setIsMetaMaskBoundServiceConnected(false)
-        trackEvent(Event.DISCONNECTED, SessionManager.getInstance().sessionId)
+        trackEvent(Event.SDK_DISCONNECTED, SessionManager.getInstance().sessionId)
     }
 
     private val binder = object : IMessegeService.Stub() {
@@ -307,7 +307,7 @@ class MessageService : Service(), MetaMaskConnectionStatusCallback {
         Logger.log("Clients connected, sending CLIENTS_CONNECTED with originator info")
         sentOriginatorInfo = true
         broadcastEvent(EventType.CLIENTS_CONNECTED, dappOriginatorInfo ?: "")
-        trackEvent(Event.CONNECTED, sessionId)
+        trackEvent(Event.SDK_CONNECTION_ESTABLISHED, sessionId)
         resumeQueuedJobs()
     }
 

@@ -63,7 +63,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             messageService = null
             isServiceConnected = false
             Log.e(TAG,"CommunicationClient:: Service disconnected $name")
-            trackEvent(Event.DISCONNECTED, null)
+            trackEvent(Event.SDK_DISCONNECTED, null)
         }
 
         override fun onBindingDied(name: ComponentName?) {
@@ -94,7 +94,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         )
 
         when(event) {
-            Event.CONNECTIONREQUEST -> {
+            Event.SDK_CONNECTION_REQUEST_STARTED -> {
                 parameters["commlayer"] = SDKInfo.PLATFORM
                 parameters["sdkVersion"] = SDKInfo.VERSION
                 parameters["url"] = dapp?.url ?: ""
