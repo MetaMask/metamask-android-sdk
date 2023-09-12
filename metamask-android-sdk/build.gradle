@@ -45,7 +45,7 @@ kotlin {
 }
 
 dependencies {
-    implementation 'io.metamask.ecies:ecies:1.0.0'
+    implementation 'io.metamask.ecies:ecies:1.0.1'
     implementation 'com.google.dagger:hilt-android:2.43.2'
     kapt 'com.google.dagger:hilt-compiler:2.43.2'
     implementation 'com.squareup.okhttp3:okhttp:4.9.2'
@@ -63,7 +63,7 @@ dependencies {
 
 ext {
     PUBLISH_GROUP_ID = 'io.metamask.androidsdk'
-    PUBLISH_VERSION = '0.1.0'
+    PUBLISH_VERSION = '0.1.1'
     PUBLISH_ARTIFACT_ID = 'metamask-android-sdk'
 }
 
