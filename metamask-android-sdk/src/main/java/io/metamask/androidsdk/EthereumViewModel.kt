@@ -132,7 +132,7 @@ class EthereumViewModel @Inject constructor (
                     communicationClient.trackEvent(Event.SDK_CONNECTION_REJECTED, null)
                 }
             } else {
-                communicationClient.trackEvent(Event.SDK_CONNECTION_ACCEPTED, null)
+                communicationClient.trackEvent(Event.SDK_CONNECTION_AUTHORIZED, null)
             }
         }
 
@@ -152,7 +152,7 @@ class EthereumViewModel @Inject constructor (
                     communicationClient.trackEvent(Event.SDK_CONNECTION_REJECTED, null)
                 }
             } else {
-                communicationClient.trackEvent(Event.SDK_CONNECTION_ACCEPTED, null)
+                communicationClient.trackEvent(Event.SDK_CONNECTION_AUTHORIZED, null)
             }
             callback?.invoke(result)
         }
