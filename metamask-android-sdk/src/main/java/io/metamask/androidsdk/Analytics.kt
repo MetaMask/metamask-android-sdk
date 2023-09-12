@@ -7,7 +7,7 @@ package io.metamask.androidsdk
 enum class Event(val value: String) {
     SDK_CONNECTION_REQUEST_STARTED("sdk_connect_request_started"),
     SDK_CONNECTION_ESTABLISHED("sdk_connection_established"),
-    SDK_CONNECTION_ACCEPTED("sdk_connection_accepted"),
+    SDK_CONNECTION_AUTHORIZED("sdk_connection_authorized"),
     SDK_CONNECTION_REJECTED("sdk_connection_rejected"),
     SDK_CONNECTION_FAILED("sdk_connection_failed"),
     SDK_DISCONNECTED("sdk_disconnected")
