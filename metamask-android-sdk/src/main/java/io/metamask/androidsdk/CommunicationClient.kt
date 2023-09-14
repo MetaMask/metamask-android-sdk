@@ -1,45 +1,32 @@
 package io.metamask.androidsdk
 
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
-import android.content.ServiceConnection
 import android.os.Bundle
-import android.os.IBinder
-import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import io.metamask.nativesdk.IMessegeService
-import io.metamask.nativesdk.IMessegeServiceCallback
 import kotlinx.serialization.Serializable
 import org.json.JSONObject
 import java.lang.ref.WeakReference
+import javax.inject.Provider
 
-internal class CommunicationClient(
-    context: Context,
-    callback: EthereumEventCallback,
-    serviceConnection: ServiceConnection,
-    messageServiceCallback: IMessegeServiceCallback
-)  {
+class CommunicationClient(
+    private val tracker: Tracker,
+    private val keyExchange: KeyExchange,
+    callback: Provider<EthereumEventCallback>,
+    private val sessionManager: SessionManager,
+    private val remoteServiceConnection: RemoteServiceConnection
+): RemoteMessageServiceCallback  {
 
     var sessionId: String
-    private val keyExchange: KeyExchange = KeyExchange()
 
     var dapp: Dapp? = null
-    var isServiceConnected = false
-        private set
-
-    private val tracker: Tracker = Analytics()
-
-    private var messageService: IMessegeService? = null
-    private val appContextRef: WeakReference<Context> = WeakReference(context)
-    private val ethereumEventCallbackRef: WeakReference<EthereumEventCallback> = WeakReference(callback)
+    private val ethereumEventCallback: EthereumEventCallback by lazy {
+        callback.get()
+    }
+    //private val ethereumEventCallbackRef: WeakReference<EthereumEventCallback> = WeakReference(callback)
 
     private var requestJobs: MutableList<() -> Unit> = mutableListOf()
     private var submittedRequests: MutableMap<String, SubmittedRequest>  = mutableMapOf()
     private var queuedRequests: MutableMap<String, SubmittedRequest>  = mutableMapOf()
-
-    private var sessionManager: SessionManager
 
     private var isMetaMaskReady = false
     private var sentOriginatorInfo = false
@@ -51,46 +38,7 @@ internal class CommunicationClient(
     }
 
     init {
-        sessionManager = SessionManager.getInstance(KeyStorage(context))
         sessionId = sessionManager.sessionId
-    }
-
-    private val serviceConnection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            messageService = IMessegeService.Stub.asInterface(service)
-            messageService?.registerCallback(messageServiceCallback)
-            isServiceConnected = true
-            Log.d(TAG,"CommunicationClient:: Service connected $name")
-            initiateKeyExchange()
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-            messageService = null
-            isServiceConnected = false
-            Log.e(TAG,"CommunicationClient:: Service disconnected $name")
-            trackEvent(Event.DISCONNECTED, null)
-        }
-
-        override fun onBindingDied(name: ComponentName?) {
-            Logger.log("CommunicationClient:: binding died: $name")
-        }
-
-        override fun onNullBinding(name: ComponentName?) {
-            Logger.log("CommunicationClient:: null binding: $name")
-        }
-    }
-
-    private val messageServiceCallback: IMessegeServiceCallback = object : IMessegeServiceCallback.Stub() {
-        override fun onMessageReceived(bundle: Bundle) {
-            val keyExchange = bundle.getString(KEY_EXCHANGE)
-            val message = bundle.getString(MESSAGE)
-
-            if (keyExchange != null) {
-                handleKeyExchange(keyExchange)
-            } else if (message != null) {
-                handleMessage(message)
-            }
-        }
     }
 
     fun trackEvent(event: Event, params: MutableMap<String, String>?) {
@@ -99,7 +47,7 @@ internal class CommunicationClient(
         )
 
         when(event) {
-            Event.CONNECTIONREQUEST -> {
+            Event.SDK_CONNECTION_REQUEST_STARTED -> {
                 parameters["commlayer"] = SDKInfo.PLATFORM
                 parameters["sdkVersion"] = SDKInfo.VERSION
                 parameters["url"] = dapp?.url ?: ""
@@ -129,7 +77,7 @@ internal class CommunicationClient(
         when (json.optString(MessageType.TYPE.value)) {
             MessageType.TERMINATE.value -> {
                 Logger.log("CommunicationClient:: Connection terminated by MetaMask")
-                unbindService()
+                remoteServiceConnection.unbindService()
                 keyExchange.reset()
             }
             MessageType.KEYS_EXCHANGED.value -> {
@@ -336,14 +284,23 @@ internal class CommunicationClient(
 
     private fun updateAccount(account: String) {
         Logger.log("CommunicationClient:: Received account changed event: $account")
-        val callback = ethereumEventCallbackRef.get()
-        callback?.updateAccount(account)
+        ethereumEventCallback.updateAccount(account)
     }
 
     private fun updateChainId(chainId: String) {
         Logger.log("CommunicationClient:: Received chain changed event: $chainId")
-        val callback = ethereumEventCallbackRef.get()
-        callback?.updateChainId(chainId)
+        ethereumEventCallback.updateChainId(chainId)
+    }
+
+    override fun handleRemoteMessage(bundle: Bundle) {
+        val keyExchange = bundle.getString(KEY_EXCHANGE)
+        val message = bundle.getString(MESSAGE)
+
+        if (keyExchange != null) {
+            handleKeyExchange(keyExchange)
+        } else if (message != null) {
+            handleMessage(message)
+        }
     }
 
     private fun handleKeyExchange(message: String) {
@@ -378,10 +335,10 @@ internal class CommunicationClient(
         }
 
         if (keyExchange.keysExchanged()) {
-            messageService?.sendMessage(bundle)
+            remoteServiceConnection.sendMessage(bundle)
         } else {
             Logger.log("CommunicationClient::sendMessage keys not exchanged, queueing job")
-            queueRequestJob { messageService?.sendMessage(bundle) }
+            queueRequestJob { remoteServiceConnection.sendMessage(bundle) }
         }
     }
 
@@ -390,11 +347,11 @@ internal class CommunicationClient(
             clearPendingRequests()
         }
 
-        if (!isServiceConnected) {
+        if (!remoteServiceConnection.isServiceConnected) {
             Logger.log("CommunicationClient:: sendRequest - not yet connected to metamask, binding service first")
             queuedRequests[request.id] = SubmittedRequest(request, callback)
             queueRequestJob { processRequest(request, callback) }
-            bindService()
+            remoteServiceConnection.bindService()
         } else if (!keyExchange.keysExchanged()) {
             Logger.log("CommunicationClient:: sendRequest - keys not yet exchanged")
             queuedRequests[request.id] = SubmittedRequest(request, callback)
@@ -445,36 +402,7 @@ internal class CommunicationClient(
         sendMessage(messageJson)
     }
 
-    private fun bindService() {
-        Logger.log("CommunicationClient:: Binding service")
-
-        val serviceIntent = Intent()
-            .setComponent(
-                ComponentName(
-                    "io.metamask",
-                    "io.metamask.nativesdk.MessageService"
-                )
-            )
-
-        if (appContextRef.get() != null) {
-            appContextRef.get()?.bindService(
-                serviceIntent,
-                serviceConnection,
-                Context.BIND_AUTO_CREATE)
-        } else {
-            Logger.error("App context null!")
-        }
-    }
-
-    fun unbindService() {
-        if (isServiceConnected) {
-            Logger.log("CommunicationClient:: Unbinding service")
-            appContextRef.get()?.unbindService(serviceConnection)
-            isServiceConnected = false
-        }
-    }
-
-    fun initiateKeyExchange() {
+    override fun initiateKeyExchange() {
         Logger.log("CommunicationClient:: Initiating key exchange")
 
         val keyExchange = JSONObject().apply {
@@ -490,6 +418,6 @@ internal class CommunicationClient(
         val bundle = Bundle().apply {
             putString(KEY_EXCHANGE, message)
         }
-        messageService?.sendMessage(bundle)
+        remoteServiceConnection.sendMessage(bundle)
     }
 }

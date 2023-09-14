@@ -5,7 +5,7 @@ import com.google.gson.reflect.TypeToken
 import java.lang.reflect.Type
 import java.util.*
 
-internal class SessionManager private constructor(
+class SessionManager private constructor(
     private var store: SecureStorage,
     sessionLength: Long
 ) {
