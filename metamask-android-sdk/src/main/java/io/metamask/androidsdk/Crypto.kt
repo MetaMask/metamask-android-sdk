@@ -3,7 +3,7 @@ package io.metamask.androidsdk
 import io.metamask.ecies.Ecies
 
 
-internal class Crypto {
+class Crypto {
     private val ecies = Ecies()
 
     fun generatePrivateKey(): String {

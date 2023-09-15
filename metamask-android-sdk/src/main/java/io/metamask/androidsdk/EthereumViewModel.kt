@@ -11,11 +11,11 @@ import javax.inject.Inject
 
 @HiltViewModel
 class EthereumViewModel @Inject constructor (
-    private val applicationRepository: ApplicationRepository
+    private val applicationRepository: ApplicationRepository,
+    private val communicationClient: CommunicationClient
     ) : ViewModel(), EthereumEventCallback {
 
     private var connectRequestSent = false
-    private val communicationClient = CommunicationClient(applicationRepository.context, this)
     private val _ethereumState: MutableLiveData<EthereumState> = MutableLiveData(EthereumState("", "", ""))
 
     // Ethereum LiveData
@@ -78,6 +78,7 @@ class EthereumViewModel @Inject constructor (
         connectRequestSent = false
         communicationClient.clearSession()
         selectedAddress = ""
+        chainId = ""
         _ethereumState.postValue(
             _ethereumState.value?.copy(
                 selectedAddress = "",
@@ -110,7 +111,6 @@ class EthereumViewModel @Inject constructor (
                 chainId = ""
             )
         )
-        communicationClient.unbindService()
     }
 
     private fun requestAccounts(callback: ((Any?) -> Unit)? = null) {

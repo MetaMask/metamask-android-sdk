@@ -5,24 +5,38 @@ import com.google.gson.reflect.TypeToken
 import java.lang.reflect.Type
 import java.util.*
 
-internal class SessionManager(
-    private val store: SecureStorage,
-    private var sessionDuration: Long = 7 * 24 * 3600 // 7 days default
+class SessionManager private constructor(
+    private var store: SecureStorage,
+    sessionLength: Long
 ) {
+    companion object {
+        private var instance: SessionManager? = null
+
+        fun getInstance(storage: SecureStorage, sessionLength: Long = 7 * 24 * 3600): SessionManager {
+            if (instance == null) {
+                instance = SessionManager(storage, sessionLength)
+            }
+            instance?.store = storage
+            instance?.sessionDuration = sessionLength
+            return instance as SessionManager
+        }
+    }
+
+    var sessionDuration: Long = sessionLength
+        set(value) {
+            field = value
+            var sessionConfig = getSessionConfig()
+            val expiryDate = expiryDate(value)
+            val newSessionConfig = SessionConfig(sessionConfig.sessionId, expiryDate)
+            saveSessionConfig(newSessionConfig)
+        }
+
     private val sessionConfigKey: String = "SESSION_CONFIG_KEY"
     private val sessionConfigFile: String = "SESSION_CONFIG_FILE"
 
     var sessionId: String = getSessionConfig().sessionId
 
-    fun setSessionDuration(duration: Long) {
-        sessionDuration = duration
-        val sessionId = getSessionConfig().sessionId
-        val expiryDate = System.currentTimeMillis() + sessionDuration * 1000
-        val sessionConfig = SessionConfig(sessionId, expiryDate)
-        saveSessionConfig(sessionConfig)
-    }
-
-    private fun getSessionConfig(reset: Boolean = false): SessionConfig {
+    fun getSessionConfig(reset: Boolean = false): SessionConfig {
         if (reset) {
             store.clearValue(sessionConfigKey, sessionConfigFile)
             return makeNewSessionConfig()
@@ -54,15 +68,19 @@ internal class SessionManager(
 
     fun clearSession() {
         store.clearValue(sessionConfigKey, sessionConfigFile)
-        makeNewSessionConfig()
-        sessionId = getSessionConfig().sessionId
+        val newSessionConfig = makeNewSessionConfig()
+        sessionId = newSessionConfig.sessionId
     }
 
     private fun makeNewSessionConfig(): SessionConfig {
-        val sessionId = UUID.randomUUID().toString()
-        val expiryDate = System.currentTimeMillis() + sessionDuration * 1000
-        val sessionConfig = SessionConfig(sessionId, expiryDate)
+        val sessionID = UUID.randomUUID().toString()
+        val expDate = expiryDate(sessionDuration)
+        val sessionConfig = SessionConfig(sessionID, expDate)
         saveSessionConfig(sessionConfig)
         return sessionConfig
+    }
+
+    private fun expiryDate(sessionDuration: Long): Long {
+        return System.currentTimeMillis() + sessionDuration * 1000
     }
 }
