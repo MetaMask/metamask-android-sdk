@@ -55,7 +55,7 @@ class RemoteServiceConnection(
         messageService?.sendMessage(bundle)
     }
 
-    fun bindService() {
+    fun connect() {
         Logger.log("RemoteServiceConnection:: Binding service")
         val serviceIntent = Intent()
             .setComponent(
@@ -75,7 +75,7 @@ class RemoteServiceConnection(
         }
     }
 
-    fun unbindService() {
+    fun disconnect() {
         if (isServiceConnected) {
             Logger.log("RemoteServiceConnection:: Unbinding service")
             appContextRef.get()?.unbindService(this)

@@ -77,7 +77,7 @@ class CommunicationClient(
         when (json.optString(MessageType.TYPE.value)) {
             MessageType.TERMINATE.value -> {
                 Logger.log("CommunicationClient:: Connection terminated by MetaMask")
-                remoteServiceConnection.unbindService()
+                remoteServiceConnection.disconnect()
                 keyExchange.reset()
             }
             MessageType.KEYS_EXCHANGED.value -> {
@@ -351,12 +351,12 @@ class CommunicationClient(
             Logger.log("CommunicationClient:: sendRequest - not yet connected to metamask, binding service first")
             queuedRequests[request.id] = SubmittedRequest(request, callback)
             queueRequestJob { processRequest(request, callback) }
-            remoteServiceConnection.bindService()
+            remoteServiceConnection.connect()
         } else if (!keyExchange.keysExchanged()) {
             Logger.log("CommunicationClient:: sendRequest - keys not yet exchanged")
             queuedRequests[request.id] = SubmittedRequest(request, callback)
             queueRequestJob { processRequest(request, callback) }
-            initiateKeyExchange()
+            initiateKeyHandshake()
         } else {
             if (isMetaMaskReady) {
                 processRequest(request, callback)
@@ -402,7 +402,7 @@ class CommunicationClient(
         sendMessage(messageJson)
     }
 
-    override fun initiateKeyExchange() {
+    override fun initiateKeyHandshake() {
         Logger.log("CommunicationClient:: Initiating key exchange")
 
         val keyExchange = JSONObject().apply {

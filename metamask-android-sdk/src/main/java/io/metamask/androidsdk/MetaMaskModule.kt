@@ -53,7 +53,13 @@ object MetaMaskModule {
         remoteServiceConnection: RemoteServiceConnection,
         callback: Provider<EthereumEventCallback>
     ): CommunicationClient {
-        return CommunicationClient(tracker, keyExchange, callback, sessionManager, remoteServiceConnection)
+        return CommunicationClient(
+            tracker,
+            keyExchange,
+            callback,
+            sessionManager,
+            remoteServiceConnection
+        )
     }
 
     @Provides
@@ -70,8 +76,8 @@ object MetaMaskModule {
 @InstallIn(SingletonComponent::class)
 abstract class AbstractMetaMaskModule {
     @Binds
-    abstract fun bindEthereumEventCallback(viewModel: EthereumViewModel): EthereumEventCallback
+    abstract fun bindEthereumEventCallback(callback: EthereumViewModel): EthereumEventCallback
 
     @Binds
-    abstract fun bindRemoteMessageServiceCallback(client: CommunicationClient): RemoteMessageServiceCallback
+    abstract fun bindRemoteMessageServiceCallback(callback: CommunicationClient): RemoteMessageServiceCallback
 }
