@@ -15,7 +15,7 @@ import kotlinx.serialization.Serializable
 import org.json.JSONObject
 import java.lang.ref.WeakReference
 
-internal class CommunicationClient(context: Context, callback: EthereumEventCallback)  {
+internal class CommunicationClient(context: Context, callback: EthereumEventCallback?)  {
 
     var sessionId: String
     private val keyExchange: KeyExchange = KeyExchange()
@@ -28,7 +28,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
 
     private var messageService: IMessegeService? = null
     private val appContextRef: WeakReference<Context> = WeakReference(context)
-    private val ethereumEventCallbackRef: WeakReference<EthereumEventCallback> = WeakReference(callback)
+    var ethereumEventCallbackRef: WeakReference<EthereumEventCallback> = WeakReference(callback)
 
     private var requestJobs: MutableList<() -> Unit> = mutableListOf()
     private var submittedRequests: MutableMap<String, SubmittedRequest>  = mutableMapOf()
@@ -106,8 +106,8 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         tracker.trackEvent(event, parameters)
     }
 
-    fun setSessionDuration(duration: Long) {
-        sessionManager.setSessionDuration(duration)
+    fun updateSessionDuration(duration: Long) {
+        sessionManager.updateSessionDuration(duration)
     }
 
     fun clearSession() {
@@ -140,6 +140,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                 val data = json.optString(MessageType.DATA.value)
 
                 if (data.isNotEmpty()) {
+                    Logger.log("CommunicationClient:: Received data $json")
                     val dataJson = JSONObject(data)
                     val id = dataJson.optString(MessageType.ID.value)
 
@@ -149,9 +150,11 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                         handleError(dataJson.optString(MessageType.ERROR.value), "")
                         sentOriginatorInfo = false // connection request rejected
                     } else {
+                        Logger.log("CommunicationClient:: Received event $json")
                         handleEvent(dataJson)
                     }
                 } else {
+                    Logger.log("CommunicationClient:: Received error $json")
                     val id = json.optString("id")
                     val error = json.optString(MessageType.ERROR.value)
                     handleError(error, id)
@@ -181,6 +184,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     }
 
     private fun handleResponse(id: String, data: JSONObject) {
+        Logger.log("CommunicationClient:: handleResponse $data")
         val error = data.optString("error")
 
         if (handleError(error, id)) {

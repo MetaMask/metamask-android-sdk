@@ -14,7 +14,8 @@ internal class SessionManager(
 
     var sessionId: String = getSessionConfig().sessionId
 
-    fun setSessionDuration(duration: Long) {
+    fun updateSessionDuration(duration: Long) {
+        Logger.log("SessionManager:: Session duration extended by: ${duration/3600.0/24.0} days")
         sessionDuration = duration
         val sessionId = getSessionConfig().sessionId
         val expiryDate = System.currentTimeMillis() + sessionDuration * 1000

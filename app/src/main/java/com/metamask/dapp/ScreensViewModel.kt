@@ -1,6 +1,7 @@
 package com.metamask.dapp
 
 import androidx.compose.runtime.*
+import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.metamask.androidsdk.*
@@ -9,11 +10,20 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ScreensViewModel @Inject constructor(
-    private val ethereumViewModel: EthereumViewModel
+    private val ethereum: Ethereum
     ): ViewModel() {
 
     private val _currentScreen = mutableStateOf(DappScreen.CONNECT)
     val currentScreen: State<DappScreen> = _currentScreen
+
+    val ethereumState = MediatorLiveData<EthereumState>().apply {
+        value = ethereum.ethereumState.value
+        Logger.log("Initial ethereum.ethereumState value: $value")
+        addSource(ethereum.ethereumState) { newEthereumState ->
+            Logger.log("ethereum.ethereumState value changed to $newEthereumState")
+            value = newEthereumState
+        }
+    }
 
     fun navigateTo(screen: DappScreen) {
         _currentScreen.value = screen
@@ -21,7 +31,7 @@ class ScreensViewModel @Inject constructor(
     }
 
     fun connect(dapp: Dapp, onError: (message: String) -> Unit) {
-        ethereumViewModel.connect(dapp) { result ->
+        ethereum.connect(dapp) { result ->
             if (result is RequestError) {
                 Logger.log("Ethereum connection error: ${result.message}")
                 onError(result.message)
@@ -33,19 +43,20 @@ class ScreensViewModel @Inject constructor(
     }
 
     fun disconnect() {
-        ethereumViewModel.disconnect()
+        ethereum.disconnect()
     }
 
     fun clearSession() {
-        ethereumViewModel.clearSession()
+        ethereum.clearSession()
     }
 
     fun signMessage(
         message: String,
+        address: String,
         onSuccess: (Any?) -> Unit,
         onError: (message: String) -> Unit
     ) {
-        val params: List<String> = listOf(ethereumViewModel.selectedAddress, message)
+        val params: List<String> = listOf(address, message)
 
         val signRequest = EthereumRequest(
             UUID.randomUUID().toString(),
@@ -53,7 +64,7 @@ class ScreensViewModel @Inject constructor(
             params
         )
 
-        ethereumViewModel.sendRequest(signRequest) { result ->
+        ethereum.sendRequest(signRequest) { result ->
             if (result is RequestError) {
                 onError(result.message)
                 Logger.log("Ethereum sign error: ${result.message}")
@@ -83,7 +94,7 @@ class ScreensViewModel @Inject constructor(
             listOf(params)
         )
 
-        ethereumViewModel.sendRequest(transactionRequest) { result ->
+        ethereum.sendRequest(transactionRequest) { result ->
             if (result is RequestError) {
                 Logger.log("Ethereum transaction error: ${result.message}")
                 onError(result.message)
@@ -105,7 +116,7 @@ class ScreensViewModel @Inject constructor(
             params = listOf(switchChainParams)
         )
 
-        ethereumViewModel.sendRequest(switchChainRequest) { result ->
+        ethereum.sendRequest(switchChainRequest) { result ->
             if (result is RequestError) {
                 if (result.code == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.code == ErrorType.SERVER_ERROR.code) {
                     val message = "${Network.chainNameFor(chainId)} ($chainId) has not been added to your MetaMask wallet. Add chain?"
@@ -148,11 +159,11 @@ class ScreensViewModel @Inject constructor(
             params = listOf(addChainParams)
         )
 
-        ethereumViewModel.sendRequest(addChainRequest) { result ->
+        ethereum.sendRequest(addChainRequest) { result ->
             if (result is RequestError) {
                 onError("Add chain error: ${result.message}")
             } else {
-                if (chainId == ethereumViewModel.chainId) {
+                if (chainId == ethereum.chainId) {
                     onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
                 } else {
                     onSuccess("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")

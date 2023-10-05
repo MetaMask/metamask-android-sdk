@@ -12,7 +12,6 @@ To add MetaMask Android SDK from Maven as a dependency to your project, add this
 dependencies {
   implementation 'io.metamask.androidsdk:metamask-android-sdk:0.1.2'
 }
-
 ```
 And then sync your project with the gradle settings. Once the syncing has completed, you can now start using the library by first importing it. 
 
@@ -124,8 +123,8 @@ Refer to the example app for more details on how we set up a Jetpack Compose pro
 
 ### 3. Import the SDK
 Now you can import the SDK and start using it.
-```
-import io.metamask.androidsdk.EthereumViewModel
+```kotlin
+import io.metamask.androidsdk.Ethereum
 // other imports as necessary
 ```
 
@@ -141,10 +140,10 @@ val ethereumViewModel: EthereumViewModel by viewModels()
 // This helps us to monitor any SDK connection issues. 
 //  
 
-val dapp = Dapp(name: "Droid Dapp", url: "https://droiddapp.com")
+val dapp = Dapp("Droid Dapp", "https://droiddapp.com")
 
 // This is the same as calling "eth_requestAccounts"
-ethereumViewModel.connect(dapp) { result ->
+ethereum.connect(dapp) { result ->
     if (result is RequestError) {
         Log.e(TAG, "Ethereum connection error: ${result.message}")
     } else {

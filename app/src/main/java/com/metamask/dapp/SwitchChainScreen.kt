@@ -33,10 +33,11 @@ fun SwitchChainScreen(
     ) }
 
     var expanded by remember { mutableStateOf(false) }
-    var targetNetwork = networks[0]
+    var targetNetwork by remember { mutableStateOf(networks[0]) }
 
     var snackbarData by remember { mutableStateOf<SnackbarData?>(null) }
     var resultMessage by remember { mutableStateOf<String?>(null) }
+    var currentChainId by remember { mutableStateOf("") }
 
     LaunchedEffect(ethereumState.chainId) {
         // Collect the ethereumState.chainId whenever it changes
@@ -44,6 +45,7 @@ fun SwitchChainScreen(
         networks = enumValues<Network>()
             .toList()
             .filter { it.chainId != ethereumState.chainId }
+        currentChainId = ethereumState.chainId
 
         if( networks.firstOrNull() != null) {
             targetNetwork = networks[0]
@@ -64,7 +66,7 @@ fun SwitchChainScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             Text(
-                "Current: ${Network.chainNameFor(ethereumState.chainId)} (${ethereumState.chainId})",
+                "Current: ${Network.chainNameFor(currentChainId)} (${currentChainId})",
                 modifier = Modifier
                     .fillMaxWidth(),
                 textAlign = TextAlign.Start

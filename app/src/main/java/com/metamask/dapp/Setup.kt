@@ -9,10 +9,9 @@ import com.metamask.dapp.DappScreen.*
 import io.metamask.androidsdk.*
 
 @Composable
-fun Setup(ethereumViewModel: EthereumViewModel, screensViewModel: ScreensViewModel) {
+fun Setup(screensViewModel: ScreensViewModel) {
     val navController = rememberNavController()
-
-    val ethereumState by ethereumViewModel.ethereumState.observeAsState(EthereumState("", "", ""))
+    val ethereumState by screensViewModel.ethereumState.observeAsState(EthereumState("", "", ""))
     
     NavHost(navController = navController, startDestination = CONNECT.name) {
         composable(CONNECT.name) {
@@ -41,8 +40,8 @@ fun Setup(ethereumViewModel: EthereumViewModel, screensViewModel: ScreensViewMod
             SignMessageScreen(
                 navController,
                 ethereumState = ethereumState,
-                signMessage = { message, onSuccess, onError ->
-                    screensViewModel.signMessage(message, onSuccess, onError)
+                signMessage = { message, address, onSuccess, onError ->
+                    screensViewModel.signMessage(message, address, onSuccess, onError)
                 })
         }
         composable(SEND_TRANSACTION.name) {
