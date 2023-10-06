@@ -9,31 +9,33 @@ import com.metamask.dapp.DappScreen.*
 import io.metamask.androidsdk.*
 
 @Composable
-fun Setup(screensViewModel: ScreensViewModel) {
+fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel) {
     val navController = rememberNavController()
-    val ethereumState by screensViewModel.ethereumState.observeAsState(EthereumState("", "", ""))
+    val ethereumState by ethereumViewModel.ethereumState.observeAsState(EthereumState("", "", ""))
     
     NavHost(navController = navController, startDestination = CONNECT.name) {
         composable(CONNECT.name) {
             ConnectScreen(
                 ethereumState = ethereumState,
                 onConnect = { dapp, onError ->
-                    screensViewModel.connect(dapp, onError)
-                },
+                    ethereumViewModel.connect(
+                        dapp,
+                        onSuccess = { screenViewModel.setScreen(ACTIONS) },
+                        onError) },
                 onDisconnect = {
-                    screensViewModel.disconnect()
+                    ethereumViewModel.disconnect()
                 },
                 onClearSession = {
-                    screensViewModel.clearSession()
+                    ethereumViewModel.clearSession()
                 }
             )
         }
         composable(ACTIONS.name) {
             DappActionsScreen(
                 navController,
-                onSignMessage = { screensViewModel.navigateTo(SIGN_MESSAGE) },
-                onSendTransaction = { screensViewModel.navigateTo(SEND_TRANSACTION) },
-                onSwitchChain = { screensViewModel.navigateTo(SWITCH_CHAIN) }
+                onSignMessage = { screenViewModel.setScreen(SIGN_MESSAGE) },
+                onSendTransaction = { screenViewModel.setScreen(SEND_TRANSACTION) },
+                onSwitchChain = { screenViewModel.setScreen(SWITCH_CHAIN) }
             )
         }
         composable(SIGN_MESSAGE.name) {
@@ -41,7 +43,7 @@ fun Setup(screensViewModel: ScreensViewModel) {
                 navController,
                 ethereumState = ethereumState,
                 signMessage = { message, address, onSuccess, onError ->
-                    screensViewModel.signMessage(message, address, onSuccess, onError)
+                    ethereumViewModel.signMessage(message, address, onSuccess, onError)
                 })
         }
         composable(SEND_TRANSACTION.name) {
@@ -49,7 +51,7 @@ fun Setup(screensViewModel: ScreensViewModel) {
                 navController,
                 ethereumState = ethereumState,
                 sendTransaction = { amount, from, to, onSuccess, onError ->
-                    screensViewModel.sendTransaction(amount, from, to, onSuccess, onError)
+                    ethereumViewModel.sendTransaction(amount, from, to, onSuccess, onError)
                 })
         }
         composable(SWITCH_CHAIN.name) {
@@ -57,13 +59,13 @@ fun Setup(screensViewModel: ScreensViewModel) {
                 navController,
                 ethereumState = ethereumState,
                 switchChain = { chainId, onSuccess, onError ->
-                    screensViewModel.switchChain(chainId, onSuccess, onError)
+                    ethereumViewModel.switchChain(chainId, onSuccess, onError)
                 }
             )
         }
     }
 
-    when(screensViewModel.currentScreen.value) {
+    when(screenViewModel.currentScreen.value) {
         CONNECT -> {
             navController.navigate(CONNECT.name)
         }

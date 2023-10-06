@@ -24,7 +24,7 @@ class Ethereum @Inject constructor (private val repository: ApplicationRepositor
 
     // Toggle SDK tracking
     var enableDebug: Boolean = true
-        private set(value) {
+        set(value) {
             field = value
             communicationClient?.enableDebug = value
         }

@@ -1,6 +1,5 @@
 package com.metamask.dapp
 
-import androidx.compose.runtime.*
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -9,35 +8,24 @@ import java.util.*
 import javax.inject.Inject
 
 @HiltViewModel
-class ScreensViewModel @Inject constructor(
+class EthereumViewModel @Inject constructor(
     private val ethereum: Ethereum
     ): ViewModel() {
 
-    private val _currentScreen = mutableStateOf(DappScreen.CONNECT)
-    val currentScreen: State<DappScreen> = _currentScreen
-
     val ethereumState = MediatorLiveData<EthereumState>().apply {
-        value = ethereum.ethereumState.value
-        Logger.log("Initial ethereum.ethereumState value: $value")
         addSource(ethereum.ethereumState) { newEthereumState ->
-            Logger.log("ethereum.ethereumState value changed to $newEthereumState")
             value = newEthereumState
         }
     }
 
-    fun navigateTo(screen: DappScreen) {
-        _currentScreen.value = screen
-        Logger.log("Navigating to $screen")
-    }
-
-    fun connect(dapp: Dapp, onError: (message: String) -> Unit) {
+    fun connect(dapp: Dapp, onSuccess: () -> Unit, onError: (message: String) -> Unit) {
         ethereum.connect(dapp) { result ->
             if (result is RequestError) {
                 Logger.log("Ethereum connection error: ${result.message}")
                 onError(result.message)
             } else {
                 Logger.log("Ethereum connection result: $result")
-                navigateTo(DappScreen.ACTIONS)
+                onSuccess()
             }
         }
     }
