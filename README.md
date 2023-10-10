@@ -8,7 +8,7 @@ You can import the MetaMask Android SDK into your native Android app to enable u
 
 #### MavenCentral
 To add MetaMask Android SDK from Maven as a dependency to your project, add this entry in your `app/build.gradle` file's dependencies block:
-```
+```groovy
 dependencies {
   implementation 'io.metamask.androidsdk:metamask-android-sdk:0.2.0'
 }
@@ -22,7 +22,7 @@ And then sync your project with the gradle settings. Once the syncing has comple
 We use Hilt for Dagger dependency injection, so you will need to add the corresponding dependencies.
 
 In the project's root `build.gradle`,
-```
+```groovy
 buildscript {
     // other setup here
 
@@ -42,7 +42,7 @@ plugins {
 
 And then in your `app/build.gradle`:
 
-```
+```groovy
 plugins {
     id 'kotlin-kapt'
     id 'dagger.hilt.android.plugin'
@@ -61,7 +61,7 @@ dependencies {
 
 #### 2.2 Setup Application Class
 If you don't have an application class, you need to create one.
-```
+```kotlin
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
 
@@ -82,14 +82,14 @@ Then update `android:name` in the `AndroidManifest.xml` to this application clas
 #### 2.3 Add `@AndroidEntryPoint` to your Activity and Fragment
 As a final step, if you need to inject your dependencies in an activity, you need to add `@AndroidEntryPoint` in your activity class. However, if you need to inject your dependencies in a fragment, then you need to add `@AndroidEntryPoint` in both the fragment and the activity that hosts the fragment.
 
-```
+```kotlin
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
    // ...
 }
 ```
 
-```
+```kotlin
 @AndroidEntryPoint
 class LoginFragment : Fragment() {
    // ...
@@ -109,13 +109,16 @@ import io.metamask.androidsdk.Ethereum
 You can:<br>
 a) Use `Ethereum` directly to make requests or <br>
 b) Create a viewmodel that injects `Ethereum` and then use that viewmodel. <br><br>
-Option `(a)` is recommended when interacting with the SDK from a pure model layer and option `(b)` is convenient at app level as it provides a single instance that will be shared across all views and will survive configuration changes.
+Option `(a)` is recommended when interacting with the SDK within a pure model layer and option `(b)` is convenient at app level as it provides a single instance that will be shared across all views and will survive configuration changes.
 
 #### 4.1 Using Ethereum directly
 ```kotlin
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class SomeModel(private val repository: ApplicationRepository) {
+    val ethereum = Ethereum(repository)
+    
     val dapp = Dapp("Droid Dapp", "https://droiddapp.com")
+    
     ethereum.connect(dapp) { result ->
         if (result is RequestError) {
             Log.e(TAG, "Ethereum connection error: ${result.message}")
@@ -125,10 +128,10 @@ class MainActivity : ComponentActivity() {
     }
 }
 ```
-With this approach, you will need to manage the state of the ethereum object so that it survives configuration changes.
 
 #### 4.2 Using a view model
-Hilt provides a great convenience for maintaining state of your viewmodel and ensures that state is retained between configuration changes.
+Hilt provides a great convenience for maintaining state of your viewmodel, ensuring that state is retained between configuration changes.
+
 All you have to do is to create a viewmodel that injects Ethereum and then add wrapper methods for the ethereum methods you wish to use. See EthereumViewModel in the example dapp in [src](./app/src) for a comprehensive usage example.
 
 ```kotlin
@@ -158,7 +161,7 @@ class EthereumViewModel @Inject constructor(
 
 Usage:
 
-```
+```kotlin
 val ethereumViewModel: EthereumViewModel by viewModels()
 
 val dapp = Dapp("Droid Dapp", "https://droiddapp.com")
@@ -175,7 +178,6 @@ ethereumViewModel.connect(dapp) { result ->
 We only log three SDK events: `connection_request`, `connected` and `disconnected`. This helps us to debug any SDK connection issues. If you wish to disable this, you can do so by setting `ethereum.enableDebug = false`.
 
 ### 5. You can now call any ethereum provider method
-The subsequent examples use the viewmodel approach described in section 4.2 above.
 
 #### Example 1: Get account balance
 ```kotlin
@@ -183,15 +185,15 @@ var balance: String? = null
 
 // Create parameters
 val params: List<String> = listOf(
-    ethereumViewModel.selectedAddress, 
+    ethereum.selectedAddress,
     "latest" // "latest", "earliest" or "pending" (optional)
-    )
+)
 
-  
+
 // Create request  
 let getBalanceRequest = EthereumRequest(
-    EthereumMethod.ETH_GET_BALANCE.value,
-    params)
+        EthereumMethod.ETH_GET_BALANCE.value,
+params)
 
 // Make request
 ethereum.sendRequest(getBalanceRequest) { result ->
