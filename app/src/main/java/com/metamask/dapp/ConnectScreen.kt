@@ -16,7 +16,7 @@ import io.metamask.androidsdk.EthereumState
 @Composable
 fun ConnectScreen(
     ethereumState: EthereumState,
-    onConnect: (Dapp,  onError: (message: String) -> Unit) -> Unit,
+    onConnect: (Dapp, onError: (message: String) -> Unit) -> Unit,
     onDisconnect: () -> Unit,
     onClearSession: () -> Unit) {
 
