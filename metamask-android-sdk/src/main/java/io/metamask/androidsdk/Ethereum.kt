@@ -2,100 +2,98 @@ package io.metamask.androidsdk
 
 import android.content.Intent
 import android.net.Uri
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import dagger.hilt.android.lifecycle.HiltViewModel
+import java.lang.ref.WeakReference
 import java.util.*
 import javax.inject.Inject
 
-@HiltViewModel
-class EthereumViewModel @Inject constructor (
-    private val applicationRepository: ApplicationRepository
-    ) : ViewModel(), EthereumEventCallback {
+class Ethereum @Inject constructor (private val repository: ApplicationRepository): EthereumEventCallback {
 
     private var connectRequestSent = false
-    private val communicationClient = CommunicationClient(applicationRepository.context, this)
-    private val _ethereumState: MutableLiveData<EthereumState> = MutableLiveData(EthereumState("", "", ""))
+    private var communicationClient: CommunicationClient? = CommunicationClient(repository.context, null)
 
     // Ethereum LiveData
-    val ethereumState: LiveData<EthereumState> get() = _ethereumState
+    private val _ethereumState: MutableLiveData<EthereumState> = MutableLiveData(EthereumState("", "", ""))
+    val ethereumState: MutableLiveData<EthereumState> get() = _ethereumState
 
-    // Expose plain variables for developers who prefer not using observing love data
-    var chainId = String()
+    // Expose plain variables for developers who prefer not using observing live data via ethereumState
+    var chainId: String = ""
         private set
-    var selectedAddress = String()
+    var selectedAddress = ""
         private set
 
-    // Toggle SDK connection status tracking
+    // Toggle SDK tracking
     var enableDebug: Boolean = true
         set(value) {
             field = value
-            communicationClient.enableDebug = value
+            communicationClient?.enableDebug = value
         }
 
-    init {
-        _ethereumState.postValue(_ethereumState.value?.copy(
-            selectedAddress = "",
-            chainId = "",
-            sessionId = getSessionId()
-        ))
+    fun enableDebug(enable: Boolean) = apply {
+        this.enableDebug = enable
     }
 
     companion object {
         private const val METAMASK_DEEPLINK = "https://metamask.app.link"
         private const val METAMASK_BIND_DEEPLINK = "$METAMASK_DEEPLINK/bind"
-
         private const val DEFAULT_SESSION_DURATION: Long = 7 * 24 * 3600 // 7 days default
     }
 
-    private var sessionLifetime: Long = DEFAULT_SESSION_DURATION
+    private var sessionDuration: Long = DEFAULT_SESSION_DURATION
 
     override fun updateAccount(account: String) {
         Logger.log("Ethereum:: Selected account changed")
-        selectedAddress = account
         _ethereumState.postValue(
-            _ethereumState.value?.copy(selectedAddress = account)
+            _ethereumState.value?.copy(
+                selectedAddress = account
+            )
         )
+        selectedAddress = account
     }
 
     override fun updateChainId(newChainId: String) {
         Logger.log("Ethereum:: ChainId changed: $newChainId")
-        chainId = newChainId
         _ethereumState.postValue(
-            _ethereumState.value?.copy(chainId = newChainId)
+            _ethereumState.value?.copy(
+                chainId = newChainId
+            )
         )
+        chainId = newChainId
     }
 
     // Set session duration in seconds
-    fun setSessionDuration(duration: Long) {
-        sessionLifetime = duration
-        communicationClient.setSessionDuration(duration)
+    fun updateSessionDuration(duration: Long = DEFAULT_SESSION_DURATION) = apply {
+        this.sessionDuration = duration
+        communicationClient?.updateSessionDuration(duration)
     }
 
     // Clear persisted session. Subsequent MetaMask connection request will need approval
     fun clearSession() {
         connectRequestSent = false
-        communicationClient.clearSession()
-        selectedAddress = ""
+        communicationClient?.clearSession()
         _ethereumState.postValue(
             _ethereumState.value?.copy(
-                selectedAddress = "",
-                chainId = "",
                 sessionId = getSessionId()
             )
         )
     }
 
-    fun getSessionId(): String = communicationClient.sessionId
+    private fun getSessionId(): String = communicationClient?.sessionId ?: ""
 
     fun connect(dapp: Dapp, callback: ((Any?) -> Unit)? = null) {
         Logger.log("Ethereum:: connecting...")
         connectRequestSent = true
-        communicationClient.setSessionDuration(sessionLifetime)
-        communicationClient.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
-        communicationClient.dapp = dapp
+        communicationClient?.ethereumEventCallbackRef = WeakReference(this)
+        communicationClient?.updateSessionDuration(sessionDuration)
+        communicationClient?.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
+        communicationClient?.dapp = dapp
 
+        _ethereumState.postValue(
+            _ethereumState.value?.copy(
+                selectedAddress = "",
+                chainId = ""
+            )
+        )
         requestAccounts(callback)
     }
 
@@ -110,7 +108,7 @@ class EthereumViewModel @Inject constructor (
                 chainId = ""
             )
         )
-        communicationClient.unbindService()
+        communicationClient?.unbindService()
     }
 
     private fun requestAccounts(callback: ((Any?) -> Unit)? = null) {
@@ -122,17 +120,17 @@ class EthereumViewModel @Inject constructor (
             ""
         )
         sendRequest(providerStateRequest) { result ->
-            Logger.log("Ethereum:: Provider request")
             if (result is RequestError) {
                 Logger.error("Ethereum:: Provider Connection request failed ${result.message}")
-                communicationClient.trackEvent(Event.SDK_CONNECTION_FAILED, null)
+                communicationClient?.trackEvent(Event.SDK_CONNECTION_FAILED, null)
 
                 if (result.code == ErrorType.USER_REJECTED_REQUEST.code) {
                     Logger.error("Ethereum:: Provider Connection request rejected")
-                    communicationClient.trackEvent(Event.SDK_CONNECTION_REJECTED, null)
+                    communicationClient?.trackEvent(Event.SDK_CONNECTION_REJECTED, null)
                 }
             } else {
-                communicationClient.trackEvent(Event.SDK_CONNECTION_AUTHORIZED, null)
+                communicationClient?.trackEvent(Event.SDK_CONNECTION_AUTHORIZED, null)
+                updateSessionDuration()
             }
         }
 
@@ -143,16 +141,16 @@ class EthereumViewModel @Inject constructor (
         )
         sendRequest(accountsRequest) { result ->
             if (result is RequestError) {
-                communicationClient.trackEvent(Event.SDK_CONNECTION_FAILED, null)
+                communicationClient?.trackEvent(Event.SDK_CONNECTION_FAILED, null)
 
                 if (
                     result.code == ErrorType.USER_REJECTED_REQUEST.code ||
                     result.code == ErrorType.UNAUTHORISED_REQUEST.code
                 ) {
-                    communicationClient.trackEvent(Event.SDK_CONNECTION_REJECTED, null)
+                    communicationClient?.trackEvent(Event.SDK_CONNECTION_REJECTED, null)
                 }
             } else {
-                communicationClient.trackEvent(Event.SDK_CONNECTION_AUTHORIZED, null)
+                communicationClient?.trackEvent(Event.SDK_CONNECTION_AUTHORIZED, null)
             }
             callback?.invoke(result)
         }
@@ -168,7 +166,7 @@ class EthereumViewModel @Inject constructor (
             return
         }
 
-        communicationClient.sendRequest(request) { response ->
+        communicationClient?.sendRequest(request) { response ->
             callback?.invoke(response)
         }
 
@@ -184,7 +182,7 @@ class EthereumViewModel @Inject constructor (
 
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deeplinkUrl))
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        applicationRepository.context.startActivity(intent)
+        repository.context.startActivity(intent)
     }
 
     private fun requiresAuthorisation(method: String): Boolean {
