@@ -42,7 +42,7 @@ class Ethereum @Inject constructor (private val repository: ApplicationRepositor
     private var sessionDuration: Long = DEFAULT_SESSION_DURATION
 
     override fun updateAccount(account: String) {
-        Logger.log("Ethereum:: Selected account changed")
+        Logger.log("Ethereum:: Selected account changed: $account")
         _ethereumState.postValue(
             _ethereumState.value?.copy(
                 selectedAddress = account
@@ -114,30 +114,9 @@ class Ethereum @Inject constructor (private val repository: ApplicationRepositor
     private fun requestAccounts(callback: ((Any?) -> Unit)? = null) {
         Logger.log("Ethereum:: Requesting ethereum accounts")
 
-        val providerStateRequest = EthereumRequest(
-            UUID.randomUUID().toString(),
-            EthereumMethod.GET_METAMASK_PROVIDER_STATE.value,
-            ""
-        )
-        sendRequest(providerStateRequest) { result ->
-            if (result is RequestError) {
-                Logger.error("Ethereum:: Provider Connection request failed ${result.message}")
-                communicationClient?.trackEvent(Event.SDK_CONNECTION_FAILED, null)
-
-                if (result.code == ErrorType.USER_REJECTED_REQUEST.code) {
-                    Logger.error("Ethereum:: Provider Connection request rejected")
-                    communicationClient?.trackEvent(Event.SDK_CONNECTION_REJECTED, null)
-                }
-            } else {
-                communicationClient?.trackEvent(Event.SDK_CONNECTION_AUTHORIZED, null)
-                updateSessionDuration()
-            }
-        }
-
         val accountsRequest = EthereumRequest(
             UUID.randomUUID().toString(),
-            EthereumMethod.ETH_REQUEST_ACCOUNTS.value,
-            ""
+            EthereumMethod.ETH_REQUEST_ACCOUNTS.value
         )
         sendRequest(accountsRequest) { result ->
             if (result is RequestError) {

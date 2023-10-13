@@ -118,7 +118,6 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
 
     private fun handleMessage(message: String) {
         val jsonString = keyExchange.decrypt(message)
-        Logger.log("CommunicationClient:: Got message: $jsonString")
         val json = JSONObject(jsonString)
 
         when (json.optString(MessageType.TYPE.value)) {
@@ -140,7 +139,6 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                 val data = json.optString(MessageType.DATA.value)
 
                 if (data.isNotEmpty()) {
-                    Logger.log("CommunicationClient:: Received data $json")
                     val dataJson = JSONObject(data)
                     val id = dataJson.optString(MessageType.ID.value)
 
@@ -150,7 +148,6 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                         handleError(dataJson.optString(MessageType.ERROR.value), "")
                         sentOriginatorInfo = false // connection request rejected
                     } else {
-                        Logger.log("CommunicationClient:: Received event $json")
                         handleEvent(dataJson)
                     }
                 } else {
@@ -184,7 +181,6 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     }
 
     private fun handleResponse(id: String, data: JSONObject) {
-        Logger.log("CommunicationClient:: handleResponse $data")
         val error = data.optString("error")
 
         if (handleError(error, id)) {
@@ -192,7 +188,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
 
         val request = submittedRequests[id]?.request
-        Logger.log("CommunicationClient:: Response for request ${request?.method}")
+        Logger.log("CommunicationClient:: Response for rpc request ${request?.method}")
         val isResultMethod = EthereumMethod.isResultMethod(request?.method ?: "")
 
         if (!isResultMethod) {
@@ -314,7 +310,6 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             EthereumMethod.METAMASK_ACCOUNTS_CHANGED.value -> {
                 val accountsJson = event.optString("params")
                 val accounts: List<String> = Gson().fromJson(accountsJson, object : TypeToken<List<String>>() {}.type)
-
                 accounts.getOrNull(0)?.let { account ->
                     updateAccount(account)
                 }
@@ -334,13 +329,11 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     }
 
     private fun updateAccount(account: String) {
-        Logger.log("CommunicationClient:: Received account changed event: $account")
         val callback = ethereumEventCallbackRef.get()
         callback?.updateAccount(account)
     }
 
     private fun updateChainId(chainId: String) {
-        Logger.log("CommunicationClient:: Received chain changed event: $chainId")
         val callback = ethereumEventCallbackRef.get()
         callback?.updateChainId(chainId)
     }
