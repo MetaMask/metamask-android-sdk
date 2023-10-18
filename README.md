@@ -1,4 +1,6 @@
 # MetaMask Android SDK
+![Maven Central](https://img.shields.io/maven-central/v/io.metamask.androidsdk/metamask-android-sdk)
+
 The MetaMask Android SDK enables developers to connect their native Android apps to the Ethereum blockchain via the MetaMask Mobile wallet, effectively enabling the creation of Android native decentralised applications (Dapps).
 
 ## Getting Started
@@ -7,10 +9,11 @@ You can import the MetaMask Android SDK into your native Android app to enable u
 ### 1. Install
 
 #### MavenCentral
+![Maven Central](https://img.shields.io/maven-central/v/io.metamask.androidsdk/metamask-android-sdk)  
 To add MetaMask Android SDK from Maven as a dependency to your project, add this entry in your `app/build.gradle` file's dependencies block:
 ```groovy
 dependencies {
-  implementation 'io.metamask.androidsdk:metamask-android-sdk:0.2.0'
+  implementation 'io.metamask.androidsdk:metamask-android-sdk:latest_version'
 }
 ```
 And then sync your project with the gradle settings. Once the syncing has completed, you can now start using the library by first importing it.
@@ -70,7 +73,7 @@ class DappApplication : Application() {}
 ```
 Then update `android:name` in the `AndroidManifest.xml` to this application class.
 
-```
+```xml
 <manifest>
     <application
         android:name=".DappApplication"
