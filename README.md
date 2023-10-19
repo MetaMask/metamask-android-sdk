@@ -192,11 +192,11 @@ val params: List<String> = listOf(
     "latest" // "latest", "earliest" or "pending" (optional)
 )
 
-
 // Create request  
-let getBalanceRequest = EthereumRequest(
-        EthereumMethod.ETH_GET_BALANCE.value,
-params)
+val getBalanceRequest = EthereumRequest(
+    method = EthereumMethod.ETH_GET_BALANCE.value,
+    params = params
+)
 
 // Make request
 ethereum.sendRequest(getBalanceRequest) { result ->
@@ -215,8 +215,8 @@ val from = ethereum.selectedAddress
 val params: List<String> = listOf(from, message)
 
 val signRequest = EthereumRequest(
-    EthereumMethod.ETH_SIGN_TYPED_DATA_V4.value,
-    params
+    method = EthereumMethod.ETH_SIGN_TYPED_DATA_V4.value,
+    params = params
 )
 
 ethereum.sendRequest(signRequest) { result ->
@@ -232,7 +232,7 @@ ethereum.sendRequest(signRequest) { result ->
 
 ```kotlin
 // Create parameters
-val from = ethereumViewModel.
+val from = ethereum.selectedAddress
 val to = "0x0000000000000000000000000000000000000000"
 val amount = "0x01"
 val params: Map<String, Any> = mapOf(
@@ -243,8 +243,8 @@ val params: Map<String, Any> = mapOf(
 
 // Create request
 val transactionRequest = EthereumRequest(
-    EthereumMethod.ETH_SEND_TRANSACTION.value,
-    listOf(params)
+    method = EthereumMethod.ETH_SEND_TRANSACTION.value,
+    params = listOf(params)
 )
 
 // Make a transaction request
