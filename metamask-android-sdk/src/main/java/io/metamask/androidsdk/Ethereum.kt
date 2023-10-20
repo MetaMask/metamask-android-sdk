@@ -1,16 +1,16 @@
 package io.metamask.androidsdk
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.MutableLiveData
 import java.lang.ref.WeakReference
 import java.util.*
-import javax.inject.Inject
 
-class Ethereum @Inject constructor (private val repository: ApplicationRepository): EthereumEventCallback {
+    class Ethereum (private val context: Context): EthereumEventCallback {
 
     private var connectRequestSent = false
-    private var communicationClient: CommunicationClient? = CommunicationClient(repository.context, null)
+    private var communicationClient: CommunicationClient? = CommunicationClient(context, null)
 
     // Ethereum LiveData
     private val _ethereumState: MutableLiveData<EthereumState> = MutableLiveData(EthereumState("", "", ""))
@@ -161,7 +161,7 @@ class Ethereum @Inject constructor (private val repository: ApplicationRepositor
 
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deeplinkUrl))
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        repository.context.startActivity(intent)
+        context.startActivity(intent)
     }
 
     private fun requiresAuthorisation(method: String): Boolean {
