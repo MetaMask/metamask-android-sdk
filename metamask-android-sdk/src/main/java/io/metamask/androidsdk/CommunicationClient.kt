@@ -48,7 +48,6 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     init {
         sessionManager = SessionManager(KeyStorage(context))
         sessionId = sessionManager.sessionId
-        Logger.log("Mpendulo:: sessionId: $sessionId")
     }
 
     private val serviceConnection = object : ServiceConnection {

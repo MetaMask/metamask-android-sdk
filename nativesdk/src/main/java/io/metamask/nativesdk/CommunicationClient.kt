@@ -192,7 +192,7 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
             }
         }
 
-        Logger.log("CommunicationClient::sendMessage metamask -> dapp $message")
+        Logger.log("CommunicationClient::sendMessage wallet -> dapp $message")
 
         val encrypted = keyExchange.encrypt(message)
         broadcastToMessageService(encrypted)
