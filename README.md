@@ -1,121 +1,43 @@
 # MetaMask Android SDK
+![Maven Central](https://img.shields.io/maven-central/v/io.metamask.androidsdk/metamask-android-sdk)
+
 The MetaMask Android SDK enables developers to connect their native Android apps to the Ethereum blockchain via the MetaMask Mobile wallet, effectively enabling the creation of Android native decentralised applications (Dapps).
 
 ## Getting Started
 You can import the MetaMask Android SDK into your native Android app to enable users to easily connect with their MetaMask Mobile wallet. Refer to the [MetaMask API Reference](https://docs.metamask.io/wallet/reference/provider-api) for more information.
 
-### 1. Install
+### 1. Add MetaMask Android SDK dependency
 
 #### MavenCentral
+![Maven Central](https://img.shields.io/maven-central/v/io.metamask.androidsdk/metamask-android-sdk)  
+
 To add MetaMask Android SDK from Maven as a dependency to your project, add this entry in your `app/build.gradle` file's dependencies block:
 ```groovy
 dependencies {
-  implementation 'io.metamask.androidsdk:metamask-android-sdk:0.2.0'
+    implementation 'io.metamask.androidsdk:metamask-android-sdk:0.2.1'
 }
 ```
 And then sync your project with the gradle settings. Once the syncing has completed, you can now start using the library by first importing it.
 
 <b>Please note that this SDK requires MetaMask Mobile version 7.6.0 or higher</b>.
 
-### 2. Setup your app
-#### 2.1 Gradle settings
-We use Hilt for Dagger dependency injection, so you will need to add the corresponding dependencies.
-
-In the project's root `build.gradle`,
-```groovy
-buildscript {
-    // other setup here
-
-    ext {
-        hilt_version = '2.43.2'
-    }
-
-    dependencies {
-        classpath "com.google.dagger:hilt-android-gradle-plugin:$hilt_version"
-    }
-}
-plugins {
-    // other setup here
-    id 'com.google.dagger.hilt.android' version "$hilt_version" apply false
-}
-```
-
-And then in your `app/build.gradle`:
-
-```groovy
-plugins {
-    id 'kotlin-kapt'
-    id 'dagger.hilt.android.plugin'
-}
-
-dependencies {
-    // dagger-hilt
-    implementation "com.google.dagger:hilt-android:$hilt_version"
-    kapt "com.google.dagger:hilt-compiler:$hilt_version"
-    
-    // viewmodel-related
-    implementation 'androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1'
-    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1'
-}
-```
-
-#### 2.2 Setup Application Class
-If you don't have an application class, you need to create one.
-```kotlin
-import android.app.Application
-import dagger.hilt.android.HiltAndroidApp
-
-@HiltAndroidApp
-class DappApplication : Application() {}
-```
-Then update `android:name` in the `AndroidManifest.xml` to this application class.
-
-```
-<manifest>
-    <application
-        android:name=".DappApplication"
-        ...
-    </application>
-</manifest>
-
-```
-#### 2.3 Add `@AndroidEntryPoint` to your Activity and Fragment
-As a final step, if you need to inject your dependencies in an activity, you need to add `@AndroidEntryPoint` in your activity class. However, if you need to inject your dependencies in a fragment, then you need to add `@AndroidEntryPoint` in both the fragment and the activity that hosts the fragment.
-
-```kotlin
-@AndroidEntryPoint
-class MainActivity : ComponentActivity() {
-   // ...
-}
-```
-
-```kotlin
-@AndroidEntryPoint
-class LoginFragment : Fragment() {
-   // ...
-}
-```
-
-Refer to the example app for more details on how we set up a Jetpack Compose project to work with the SDK.
-
-### 3. Import the SDK
+### 2. Import the SDK
 Now you can import the SDK and start using it.
 ```kotlin
 import io.metamask.androidsdk.Ethereum
-// other imports as necessary
 ```
 
-### 4. Connect your Dapp
+### 3. Connect your Dapp
 You can:<br>
-a) Use `Ethereum` directly to make requests or <br>
+a) Use `Ethereum` directly or <br>
 b) Create a viewmodel that injects `Ethereum` and then use that viewmodel. <br><br>
-Option `(a)` is recommended when interacting with the SDK within a pure model layer and option `(b)` is convenient at app level as it provides a single instance that will be shared across all views and will survive configuration changes.
+Option `(a)` is recommended when interacting with the SDK within a pure model layer.
+Option `(b)` is convenient at app level as it provides a single instance that will be shared across all views and will survive configuration changes.
 
-#### 4.1 Using Ethereum directly
+#### 3.1 Using Ethereum directly
 ```kotlin
-@AndroidEntryPoint
-class SomeModel(private val repository: ApplicationRepository) {
-    val ethereum = Ethereum(repository)
+class SomeModel(private val context: Context) {
+    val ethereum = Ethereum(context)
     
     val dapp = Dapp("Droid Dapp", "https://droiddapp.com")
     
@@ -129,10 +51,10 @@ class SomeModel(private val repository: ApplicationRepository) {
 }
 ```
 
-#### 4.2 Using a view model
-Hilt provides a great convenience for maintaining state of your viewmodel, ensuring that state is retained between configuration changes.
+#### 3.2 Using a view model
+Dependency injection managers like Hilt provide a great convenience by initialising the view model and maintaining its state, ensuring that state is retained between configuration changes.
 
-All you have to do is to create a viewmodel that injects Ethereum and then add wrapper methods for the ethereum methods you wish to use. See EthereumViewModel in the example dapp in [src](./app/src) for a comprehensive usage example.
+All you have to do is to create a viewmodel that injects Ethereum and then add wrapper methods for the ethereum methods you wish to use. See EthereumViewModel in the example dapp in [src](./app/src) for a comprehensive usage example. If using Hilt, your setup may look like this:
 
 ```kotlin
 @HiltViewModel
@@ -175,9 +97,7 @@ ethereumViewModel.connect(dapp) { result ->
 }
 ```
 
-We only log three SDK events: `connection_request`, `connected` and `disconnected`. This helps us to debug any SDK connection issues. If you wish to disable this, you can do so by setting `ethereum.enableDebug = false`.
-
-### 5. You can now call any ethereum provider method
+### 4. You can now call any ethereum provider method
 
 #### Example 1: Get account balance
 ```kotlin
@@ -189,11 +109,11 @@ val params: List<String> = listOf(
     "latest" // "latest", "earliest" or "pending" (optional)
 )
 
-
-// Create request  
-let getBalanceRequest = EthereumRequest(
-        EthereumMethod.ETH_GET_BALANCE.value,
-params)
+// Create request
+val getBalanceRequest = EthereumRequest(
+    method = EthereumMethod.ETH_GET_BALANCE.value,
+    params = params
+)
 
 // Make request
 ethereum.sendRequest(getBalanceRequest) { result ->
@@ -212,8 +132,8 @@ val from = ethereum.selectedAddress
 val params: List<String> = listOf(from, message)
 
 val signRequest = EthereumRequest(
-    EthereumMethod.ETH_SIGN_TYPED_DATA_V4.value,
-    params
+    method = EthereumMethod.ETH_SIGN_TYPED_DATA_V4.value,
+    params = params
 )
 
 ethereum.sendRequest(signRequest) { result ->
@@ -229,7 +149,7 @@ ethereum.sendRequest(signRequest) { result ->
 
 ```kotlin
 // Create parameters
-val from = ethereumViewModel.
+val from = ethereum.selectedAddress
 val to = "0x0000000000000000000000000000000000000000"
 val amount = "0x01"
 val params: Map<String, Any> = mapOf(
@@ -240,8 +160,8 @@ val params: Map<String, Any> = mapOf(
 
 // Create request
 val transactionRequest = EthereumRequest(
-    EthereumMethod.ETH_SEND_TRANSACTION.value,
-    listOf(params)
+    method = EthereumMethod.ETH_SEND_TRANSACTION.value,
+    params = listOf(params)
 )
 
 // Make a transaction request
@@ -315,7 +235,7 @@ private fun addEthereumChain(
         if (result is RequestError) {
             onError("Add chain error: ${result.message}")
         } else {
-            if (chainId == ethereumViewModel.chainId) {
+            if (chainId == ethereum.chainId) {
                 onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
             } else {
                 onSuccess("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
@@ -327,6 +247,10 @@ private fun addEthereumChain(
 
 ## Examples
 See the [app](./app/) directory for an example dapp integrating the SDK, to act as a guide on how to connect to ethereum and make requests.
+
+## Logging
+
+We only log three SDK events: `connection_request`, `connected` and `disconnected`. This helps us to debug and monitor the SDK connection quality. If you wish to disable this, you can do so by setting `ethereum.enableDebug = false`.
 
 ## Requirements
 ### MetaMask Mobile

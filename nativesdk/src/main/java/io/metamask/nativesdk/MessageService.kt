@@ -132,7 +132,7 @@ class MessageService : Service(), MetaMaskConnectionStatusCallback {
             if (keyExchangeJson != null) {
                 handleKeyExchange(keyExchangeJson)
             } else if (messageJson != null) {
-                Logger.log("MessageService:: Received message from dapp")
+                Logger.log("MessageService::sendMessage rx from dapp")
                 val messageJsonObject = JSONObject(messageJson)
                 val id = messageJsonObject.optString("id")
                 val message = messageJsonObject.optString("message")
@@ -144,7 +144,7 @@ class MessageService : Service(), MetaMaskConnectionStatusCallback {
                         Logger.log("MessageService:: keys not exchanged, request new key exchange")
                         initiateKeyExchange()
                     } else {
-                        Logger.log("MessageService:: SDK not yet bound to MetaMask, sending request to bind service")
+                        Logger.log("MessageService:: SDK not yet connected to wallet, sending request to connect")
                         val intent = Intent("local.client").apply {
                             putExtra("event", EventType.BIND.value)
                         }
@@ -152,10 +152,9 @@ class MessageService : Service(), MetaMaskConnectionStatusCallback {
                     }
 
                     if (metaMaskReady()) {
-                        Logger.log("MessageService:: SDK now bound to MetaMask, sending message")
                         handleMessage(message, id)
                     } else {
-                        Logger.log("MessageService:: queueing job while waiting for SDK to bind to MetaMask")
+                        Logger.log("MessageService:: queueing job while waiting for SDK to connect to wallet")
                         queueJob { handleMessage(message, id) }
                     }
                 }
@@ -164,7 +163,6 @@ class MessageService : Service(), MetaMaskConnectionStatusCallback {
     }
 
     private fun sendMessage(message: String) {
-        Logger.log("MessageService:: Sending message to dapp")
         val bundle = Bundle().apply {
             putString(MESSAGE, message)
         }
@@ -186,8 +184,6 @@ class MessageService : Service(), MetaMaskConnectionStatusCallback {
                 put(KeyExchange.PUBLIC_KEY, nextStep.publicKey)
                 put(KeyExchange.TYPE, nextStep.type)
             }.toString()
-
-            Logger.log("Sending next key exchange message $exchangeMessage")
 
             sendKeyExchangeMessage(exchangeMessage)
         }
@@ -233,7 +229,7 @@ class MessageService : Service(), MetaMaskConnectionStatusCallback {
     }
 
     private fun requestBindMetamaskService() {
-        Logger.log("MessageService:: Requesting binding to metamask")
+        Logger.log("MessageService:: Requesting connection to wallet")
 
         val intent = Intent("local.client")
         intent.putExtra("event", EventType.BIND.value)
@@ -247,11 +243,10 @@ class MessageService : Service(), MetaMaskConnectionStatusCallback {
     private fun queueJob(job: () -> Unit) {
         Logger.log("MessageService:: Queue job")
         jobQueue.add(job)
-        Logger.log("MessageService:: Job queue count: ${jobQueue.size}")
     }
 
     private fun resumeQueuedJobs() {
-        Logger.log("Resuming jobs, Job queue count: ${jobQueue.size}")
+        Logger.log("MessageService:: Resuming jobs")
 
         while (jobQueue.isNotEmpty()) {
             val job = jobQueue.removeFirstOrNull()
@@ -260,7 +255,7 @@ class MessageService : Service(), MetaMaskConnectionStatusCallback {
     }
 
     private fun sendKeyExchangeMessage(message: String) {
-        Logger.log("Sending key exchange: $message")
+        Logger.log("MessageService:: Sending key exchange: $message")
         val bundle = Bundle().apply {
             putString(KEY_EXCHANGE, message)
         }
@@ -270,33 +265,33 @@ class MessageService : Service(), MetaMaskConnectionStatusCallback {
     private fun handleMessage(message: String, id: String) {
         val payload = keyExchange.decrypt(message)
 
+        if (id != sessionId) {
+            sessionId = id
+            SessionManager.getInstance().sessionId = id
+        }
+
         val payloadJsonObject = JSONObject(payload)
         val isOriginatorInfo = payloadJsonObject.optString("originatorInfo").isNotEmpty()
 
         if (isOriginatorInfo) {
             sessionId = id
-            SessionManager.getInstance().sessionId = id
-
-            Logger.log("Sending originator info")
 
             payloadJsonObject.apply {
                 put("clientId", sessionId)
             }
-
             dappOriginatorInfo = payloadJsonObject.toString()
 
             sendOriginatorInfo()
         } else {
             val messageJSON = JSONObject().apply {
-                put("id", sessionId)
+                put("id", id)
                 put("message", payload)
             }.toString()
 
             if (keyExchange.keysExchanged()) {
-                Logger.log("MessageService:: Ready, Forwarding message to comm client")
                 broadcastEvent(EventType.MESSAGE, messageJSON)
             } else {
-                Logger.log("MessageService:: Keys not exchanged, queueing job and initiating key exchange")
+                Logger.log("MessageService:: Keys not exchanged, initiating key exchange and queueing request $messageJSON")
                 queueJob { broadcastEvent(EventType.MESSAGE, messageJSON) }
                 initiateKeyExchange()
             }
@@ -304,7 +299,7 @@ class MessageService : Service(), MetaMaskConnectionStatusCallback {
     }
 
     private fun sendOriginatorInfo() {
-        Logger.log("Clients connected, sending CLIENTS_CONNECTED with originator info")
+        Logger.log("MessageService:: CLIENTS_CONNECTED, originator info $dappOriginatorInfo")
         sentOriginatorInfo = true
         broadcastEvent(EventType.CLIENTS_CONNECTED, dappOriginatorInfo ?: "")
         trackEvent(Event.SDK_CONNECTION_ESTABLISHED, sessionId)
@@ -334,7 +329,6 @@ class MessageService : Service(), MetaMaskConnectionStatusCallback {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == "local.service") {
                 val message = intent.getStringExtra(EventType.MESSAGE.value) as String
-                Logger.log("MessageService:: Got broadcast message: $message")
 
                 val bundle = Bundle().apply {
                     putString(EventType.MESSAGE.value, message)

@@ -48,6 +48,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     init {
         sessionManager = SessionManager(KeyStorage(context))
         sessionId = sessionManager.sessionId
+        Logger.log("Mpendulo:: sessionId: $sessionId")
     }
 
     private val serviceConnection = object : ServiceConnection {
@@ -188,7 +189,6 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
 
         val request = submittedRequests[id]?.request
-        Logger.log("CommunicationClient:: Response for rpc request ${request?.method}")
         val isResultMethod = EthereumMethod.isResultMethod(request?.method ?: "")
 
         if (!isResultMethod) {
@@ -201,7 +201,6 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                     completeRequest(id, result)
                 } else {
                     val accounts: List<String>? = Gson().fromJson(resultJson, object : TypeToken<List<String>>() {}.type)
-                    Logger.log("CommunicationClient:: Accounts: $accounts")
                     val account = accounts?.firstOrNull()
                     if (account != null) {
                         submittedRequests[id]?.callback?.invoke(account)
@@ -396,7 +395,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             if (isMetaMaskReady) {
                 processRequest(request, callback)
             } else {
-                Logger.log("CommunicationClient::sendRequest - MetaMask is not ready, queueing request")
+                Logger.log("CommunicationClient::sendRequest - wallet is not ready, queueing request")
                 queueRequestJob { processRequest(request, callback) }
                 sendOriginatorInfo()
             }
@@ -454,13 +453,13 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                 serviceConnection,
                 Context.BIND_AUTO_CREATE)
         } else {
-            Logger.error("App context null!")
+            Logger.error("App context null")
         }
     }
 
     fun unbindService() {
         if (isServiceConnected) {
-            Logger.log("CommunicationClient:: Unbinding service")
+            Logger.log("CommunicationClient:: unbindService")
             appContextRef.get()?.unbindService(serviceConnection)
             isServiceConnected = false
         }
@@ -479,6 +478,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
 
     private fun sendKeyExchangeMesage(message: String) {
         Logger.log("Sending key exchange $message")
+
         val bundle = Bundle().apply {
             putString(KEY_EXCHANGE, message)
         }

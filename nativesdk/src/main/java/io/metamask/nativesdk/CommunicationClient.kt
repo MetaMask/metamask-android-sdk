@@ -62,7 +62,7 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
             val data = intent.getStringExtra("data")
 
             if (event == EventType.BIND.value) {
-                Logger.log("CommunicationClient:: Received request to bind service")
+                Logger.log("CommunicationClient:: Request to bind service")
                 bindService()
             } else if (event != null && data != null) {
                 broadcastToMetaMask(event, data)
@@ -71,14 +71,13 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
     }
 
     private fun broadcastToMessageService(message: String) {
-        Logger.log("CommunicationClient:: Sending message to MessageService")
         val intent = Intent("local.service")
         intent.putExtra(EventType.MESSAGE.value, message)
         reactAppContext.sendBroadcast(intent)
     }
 
     fun broadcastToMetaMask(event: String, data: Any) {
-        Logger.log("CommunicationClient:: Sending event to metamask - [$event]")
+        Logger.log("CommunicationClient:: dapp -> metamask $data")
         reactAppContext.getJSModule(
             RCTDeviceEventEmitter::class.java
         )
@@ -100,7 +99,7 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
 
     override fun invalidate() {
         super.invalidate()
-        Logger.log("CommunicationClient:: invalidated - app about to be terminated")
+        Logger.log("CommunicationClient:: invalidate - app terminated")
 
         if (!didPerformTearDown) {
             destroyActiveConnections()
@@ -109,7 +108,7 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
 
     override fun onCatalystInstanceDestroy() {
         super.onCatalystInstanceDestroy()
-        Logger.log("CommunicationClient:: onCatalystInstanceDestroy - app about to be terminated")
+        Logger.log("CommunicationClient:: onCatalystInstanceDestroy - app terminating")
 
         if (!didPerformTearDown) {
             destroyActiveConnections()
@@ -167,13 +166,13 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
     fun sendMessage(message: String, promise: Promise) {
 
         if (!isServiceConnected) {
-            Logger.log("CommunicationClient:: Service is not yet bound to MetaMask")
+            Logger.log("CommunicationClient::sendMessage rx from wallet - service not yet connected: $message")
             promise.resolve(null)
             return
         }
 
         if (!keyExchange.keysExchanged()) {
-            Logger.log("CommunicationClient:: Keys not exchanged with dapp, ignoring message")
+            Logger.log("CommunicationClient::sendMessage Keys not exchanged")
             promise.resolve(null)
             return
         }
@@ -189,10 +188,11 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
             val sessionId = SessionManager.getInstance().sessionId
 
             if (id != sessionId) {
-                Logger.log("CommunicationClient:: Ignoring wrong id $id, only handling id: $sessionId")
                 return
             }
         }
+
+        Logger.log("CommunicationClient::sendMessage metamask -> dapp $message")
 
         val encrypted = keyExchange.encrypt(message)
         broadcastToMessageService(encrypted)
