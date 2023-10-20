@@ -14,7 +14,7 @@ You can import the MetaMask Android SDK into your native Android app to enable u
 To add MetaMask Android SDK from Maven as a dependency to your project, add this entry in your `app/build.gradle` file's dependencies block:
 ```groovy
 dependencies {
-    implementation 'io.metamask.androidsdk:metamask-android-sdk:0.2.1'
+    implementation "io.metamask.androidsdk:metamask-android-sdk:0.2.1"
 }
 ```
 And then sync your project with the gradle settings. Once the syncing has completed, you can now start using the library by first importing it.
@@ -30,7 +30,7 @@ import io.metamask.androidsdk.Ethereum
 ### 3. Connect your Dapp
 You can:<br>
 a) Use `Ethereum` directly or <br>
-b) Create a viewmodel that injects `Ethereum` and then use that viewmodel. <br><br>
+b) Create a ViewModel that injects `Ethereum` and then use that ViewModel. <br><br>
 Option `(a)` is recommended when interacting with the SDK within a pure model layer.
 Option `(b)` is convenient at app level as it provides a single instance that will be shared across all views and will survive configuration changes.
 
@@ -54,7 +54,7 @@ class SomeModel(private val context: Context) {
 #### 3.2 Using a view model
 Dependency injection managers like Hilt provide a great convenience by initialising the view model and maintaining its state, ensuring that state is retained between configuration changes.
 
-All you have to do is to create a viewmodel that injects Ethereum and then add wrapper methods for the ethereum methods you wish to use. See EthereumViewModel in the example dapp in [src](./app/src) for a comprehensive usage example. If using Hilt, your setup may look like this:
+All you have to do is to create a ViewModel that injects Ethereum and then add wrapper methods for the ethereum methods you wish to use. See EthereumViewModel in the example dapp in [src](./app/src) for a comprehensive usage example. If using Hilt, your setup may look like this:
 
 ```kotlin
 @HiltViewModel
