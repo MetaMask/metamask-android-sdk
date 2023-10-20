@@ -97,7 +97,7 @@ ethereumViewModel.connect(dapp) { result ->
 }
 ```
 
-### 4. You can now call any ethereum provider method
+### 4. Make RPC calls
 
 #### Example 1: Get account balance
 ```kotlin
