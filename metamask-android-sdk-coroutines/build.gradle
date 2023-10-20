@@ -1,0 +1,39 @@
+plugins {
+    id 'com.android.library'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'io.metamask.androidsdk.coroutines'
+    compileSdk 33
+    defaultConfig {
+        minSdk 23
+    }
+
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+}
+
+kotlin {
+    jvmToolchain(11)
+}
+
+dependencies {
+    implementation(project(":metamask-android-sdk"))
+    api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation "io.mockk:mockk-android:1.13.7" // 1.13.8 has kotlin 1.9.0
+    testImplementation 'org.jetbrains.kotlin:kotlin-test-junit:1.6.21'
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3"
+}

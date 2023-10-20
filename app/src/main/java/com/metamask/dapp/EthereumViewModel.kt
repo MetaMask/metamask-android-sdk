@@ -1,10 +1,19 @@
 package com.metamask.dapp
 
 import androidx.lifecycle.MediatorLiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import io.metamask.androidsdk.*
-import java.util.*
+import io.metamask.androidsdk.Dapp
+import io.metamask.androidsdk.ErrorType
+import io.metamask.androidsdk.Ethereum
+import io.metamask.androidsdk.EthereumMethod
+import io.metamask.androidsdk.EthereumRequest
+import io.metamask.androidsdk.EthereumState
+import io.metamask.androidsdk.Logger
+import io.metamask.androidsdk.Network
+import io.metamask.androidsdk.RequestError
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -12,8 +21,16 @@ class EthereumViewModel @Inject constructor(
     private val ethereum: Ethereum
     ): ViewModel() {
 
+    init {
+        ethereum.addStateListener {
+            etheriumStateLiveData.postValue(it)
+        }
+    }
+
+    private val etheriumStateLiveData = MutableLiveData<EthereumState>()
+
     val ethereumState = MediatorLiveData<EthereumState>().apply {
-        addSource(ethereum.ethereumState) { newEthereumState ->
+        addSource(etheriumStateLiveData) { newEthereumState ->
             value = newEthereumState
         }
     }
