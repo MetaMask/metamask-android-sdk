@@ -1,46 +1,79 @@
 # MetaMask Android SDK
 ![Maven Central](https://img.shields.io/maven-central/v/io.metamask.androidsdk/metamask-android-sdk)
 
-The MetaMask Android SDK enables developers to connect their native Android apps to the Ethereum blockchain via the MetaMask Mobile wallet, effectively enabling the creation of Android native decentralised applications (Dapps).
+Import MetaMask SDK into your native Android dapp to enable your users to easily connect with their
+MetaMask Mobile wallet.
 
-## Getting Started
-You can import the MetaMask Android SDK into your native Android app to enable users to easily connect with their MetaMask Mobile wallet. Refer to the [MetaMask API Reference](https://docs.metamask.io/wallet/reference/provider-api) for more information.
+See the following for more information:
 
-### 1. Add MetaMask Android SDK dependency
+- [Example Android dapp](app)
+- Documentation for [setting up the SDK in your Android dapp](https://docs.metamask.io/wallet/how-to/connect/set-up-sdk/mobile/android/)
+- Documentation for the [Android SDK architecture](https://docs.metamask.io/wallet/concepts/sdk/android/)
 
-#### MavenCentral
-![Maven Central](https://img.shields.io/maven-central/v/io.metamask.androidsdk/metamask-android-sdk)  
+You can also see the [JavaScript SDK repository](https://github.com/MetaMask/metamask-sdk) and the
+[iOS SDK repository](https://github.com/MetaMask/metamask-ios-sdk).
 
-To add MetaMask Android SDK from Maven as a dependency to your project, add this entry in your `app/build.gradle` file's dependencies block:
-```groovy
+## Prerequisites
+
+- MetaMask Mobile version 7.6.0 or above installed on your target device (that is, a physical
+  device or emulator).
+  You can install MetaMask Mobile from [Google Play](https://play.google.com/store/apps/details?id=io.metamask),
+  or clone and compile MetaMask Mobile from [source](https://github.com/MetaMask/metamask-mobile)
+  and build to your target device.
+- Android SDK version 23 or above.
+
+## Get started
+
+### 1. Install the SDK
+
+To add the SDK from Maven Central as a dependency to your project, in your `app/build.gradle` file,
+add the following entry to the `dependencies` block:
+
+```gradle title="build.gradle"
 dependencies {
     implementation 'io.metamask.androidsdk:metamask-android-sdk:0.2.1'
 }
 ```
-And then sync your project with the gradle settings. Once the syncing has completed, you can now start using the library by first importing it.
 
-<b>Please note that this SDK requires MetaMask Mobile version 7.6.0 or higher</b>.
+Then, sync your project with the Gradle settings.
+Once the syncing completes, you can set up the rest of your project.
 
 ### 2. Import the SDK
-Now you can import the SDK and start using it.
+
+Import the SDK by adding the following line to the top of your project file:
+
 ```kotlin
 import io.metamask.androidsdk.Ethereum
 ```
 
-### 3. Connect your Dapp
-You can:<br>
-a) Use `Ethereum` directly or <br>
-b) Create a viewmodel that injects `Ethereum` and then use that viewmodel. <br><br>
-Option `(a)` is recommended when interacting with the SDK within a pure model layer.
-Option `(b)` is convenient at app level as it provides a single instance that will be shared across all views and will survive configuration changes.
+### 3. Connect your dapp
 
-#### 3.1 Using Ethereum directly
+You can connect your dapp to MetaMask in one of two ways:
+
+1. [Use the `ethereum` provider object directly](#31-use-the-provider-object-directly).
+   We recommend using this method in a pure model layer.
+2. [Use a ViewModel](#32-use-a-viewmodel) that injects the `ethereum` provider object.
+   We recommend using this method at the app level, because it provides a single instance that
+   survives configuration changes and can be shared across all views.
+
+> **Note:**
+> By default, MetaMask logs three SDK events: `connection_request`, `connected`, and `disconnected`.
+> This allows MetaMask to monitor any SDK connection issues.
+> To disable this, set `ethereum.enableDebug = false`.
+
+#### 3.1. Use the provider object directly
+
+Use the `ethereum` provider object directly to connect your dapp to MetaMask by adding the following
+code to your project file:
+
 ```kotlin
-class SomeModel(private val context: Context) {
+@AndroidEntryPoint
+class SomeModel(private val repository: ApplicationRepository) {
     val ethereum = Ethereum(context)
     
     val dapp = Dapp("Droid Dapp", "https://droiddapp.com")
-    
+
+    // This is the same as calling eth_requestAccounts
     ethereum.connect(dapp) { result ->
         if (result is RequestError) {
             Log.e(TAG, "Ethereum connection error: ${result.message}")
@@ -51,44 +84,48 @@ class SomeModel(private val context: Context) {
 }
 ```
 
-#### 3.2 Using a view model
-Dependency injection managers like Hilt provide a great convenience by initialising the view model and maintaining its state, ensuring that state is retained between configuration changes.
+#### 3.2. Use a ViewModel
 
-All you have to do is to create a viewmodel that injects Ethereum and then add wrapper methods for the ethereum methods you wish to use. See EthereumViewModel in the example dapp in [src](./app/src) for a comprehensive usage example. If using Hilt, your setup may look like this:
+To connect your dapp to MetaMask using a ViewModel, create a ViewModel that injects the
+`ethereum` provider object, then add wrapper functions for each Ethereum method you wish to call.
 
-```kotlin
+You can use a dependency manager such as [Hilt](https://developer.android.com/training/dependency-injection/hilt-android)
+to initialize the ViewModel and maintain its state across configuration changes.
+If you use Hilt, your setup might look like the following:
+
+```kotlin title="EthereumViewModel.kt"
 @HiltViewModel
 class EthereumViewModel @Inject constructor(
-    private val ethereum: Ethereum
+        private val ethereum: Ethereum
 ): ViewModel() {
 
-    // See the example app on how to have your composables only work with state using ethereumState instead of having a viewmodel dependency 
-    val ethereumState = MediatorLiveData<EthereumState>().apply {
-        addSource(ethereum.ethereumState) { newEthereumState ->
-            value = newEthereumState
-        }
+  val ethereumState = MediatorLiveData<EthereumState>().apply {
+    addSource(ethereum.ethereumState) { newEthereumState ->
+      value = newEthereumState
     }
+  }
 
-    // wrap the ethereum connect method
-    fun connect(dapp: Dapp, callback: ((Any?) -> Unit)?) {
-        ethereum.connect(dapp, callback)
-    }
-
-    // wrap the ethereum sendRequest method for making all RPC requests
-    fun sendRequest(request: EthereumRequest, callback: ((Any?) -> Unit)?) {
-        ethereum.sendRequest(request, callback)
-    }
+  // Wrapper function to connect the dapp
+  fun connect(dapp: Dapp, callback: ((Any?) -> Unit)?) {
+    ethereum.connect(dapp, callback)
+  }
+  
+  // Wrapper function call all RPC methods
+  fun sendRequest(request: EthereumRequest, callback: ((Any?) -> Unit)?) {
+    ethereum.sendRequest(request, callback)
+  }
 }
 ```
 
-Usage:
+To use the ViewModel, add the following code to your project file:
 
 ```kotlin
 val ethereumViewModel: EthereumViewModel by viewModels()
 
 val dapp = Dapp("Droid Dapp", "https://droiddapp.com")
 
-ethereumViewModel.connect(dapp) { result ->
+// This is the same as calling eth_requestAccounts
+ethereum.connect(dapp) { result ->
     if (result is RequestError) {
         Log.e(TAG, "Ethereum connection error: ${result.message}")
     } else {
@@ -97,9 +134,19 @@ ethereumViewModel.connect(dapp) { result ->
 }
 ```
 
-### 4. Make RPC calls
+See the example dapp's
+[`EthereumViewModel.kt`](app/src/main/java/com/metamask/dapp/EthereumViewModel.kt) file for more information.
 
-#### Example 1: Get account balance
+### 4. Call methods
+
+You can now call any [JSON-RPC API method](https://docs.metamask.io/wallet/reference/eth_subscribe/)
+using `ethereum.sendRequest()`.
+
+#### Example: Get account balance
+
+The following example gets the user's account balance by calling
+[`eth_getBalance`](https://docs.metamask.io/wallet/reference/eth_getbalance/).
+
 ```kotlin
 var balance: String? = null
 
@@ -107,11 +154,11 @@ var balance: String? = null
 val params: List<String> = listOf(
     ethereum.selectedAddress,
     "latest" // "latest", "earliest" or "pending" (optional)
-)
+    )
 
 // Create request
 val getBalanceRequest = EthereumRequest(
-    method = EthereumMethod.ETH_GET_BALANCE.value,
+    method = EthereumMethod.ETHGETBALANCE.value,
     params = params
 )
 
@@ -124,7 +171,12 @@ ethereum.sendRequest(getBalanceRequest) { result ->
     }
 }
 ```
-#### Example 2: Sign message
+
+#### Example: Sign message
+
+The following example requests the user sign a message by calling
+[`eth_signTypedData_v4`](https://docs.metamask.io/wallet/reference/eth_signtypeddata_v4/).
+
 ```kotlin
 val message = "{\"domain\":{\"chainId\":\"${ethereum.chainId}\",\"name\":\"Ether Mail\",\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\",\"version\":\"1\"},\"message\":{\"contents\":\"Hello, Busa!\",\"from\":{\"name\":\"Kinno\",\"wallets\":[\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\",\"0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF\"]},\"to\":[{\"name\":\"Busa\",\"wallets\":[\"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB\",\"0xB0BdaBea57B0BDABeA57b0bdABEA57b0BDabEa57\",\"0xB0B0b0b0b0b0B000000000000000000000000000\"]}]},\"primaryType\":\"Mail\",\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Group\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"members\",\"type\":\"Person[]\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person[]\"},{\"name\":\"contents\",\"type\":\"string\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallets\",\"type\":\"address[]\"}]}}"
 
@@ -145,7 +197,10 @@ ethereum.sendRequest(signRequest) { result ->
 }
 ```
 
-#### Example 3: Send transaction
+#### Example: Send transaction
+
+The following example sends a transaction by calling
+[`eth_sendTransaction`](https://docs.metamask.io/wallet/reference/eth_sendtransaction/).
 
 ```kotlin
 // Create parameters
@@ -171,12 +226,16 @@ ethereum.sendRequest(transactionRequest) { result ->
     } else {
         Log.d(TAG, "Ethereum transaction result: $result")
     }
-} 
+}
 ```
 
-#### Example 4: Switch chain
-```kotlin
+#### Example: Switch chain
 
+The following example switches to a new Ethereum chain by calling
+[`wallet_switchEthereumChain`](https://docs.metamask.io/wallet/reference/wallet_switchethereumchain/)
+and [`wallet_addEthereumChain`](https://docs.metamask.io/wallet/reference/wallet_addethereumchain/).
+
+```kotlin
 fun switchChain(
     chainId: String,
     onSuccess: (message: String) -> Unit,
@@ -219,7 +278,7 @@ private fun addEthereumChain(
     onSuccess: (message: String) -> Unit,
     onError: (message: String) -> Unit
 ) {
-    Log.d(TAG, "Adding chainId: $chainId")
+    Logger.log("Adding chainId: $chainId")
 
     val addChainParams: Map<String, Any> = mapOf(
         "chainId" to chainId,
@@ -244,23 +303,3 @@ private fun addEthereumChain(
     }
 }
 ```
-
-## Examples
-See the [app](./app/) directory for an example dapp integrating the SDK, to act as a guide on how to connect to ethereum and make requests.
-
-## Logging
-
-We only log three SDK events: `connection_request`, `connected` and `disconnected`. This helps us to debug and monitor the SDK connection quality. If you wish to disable this, you can do so by setting `ethereum.enableDebug = false`.
-
-## Requirements
-### MetaMask Mobile
-This SDK requires MetaMask Mobile version 7.6.0 or higher.
-
-### Environment
-You will need to have MetaMask Mobile wallet installed on your target device i.e physical device or emulator, so you can either have it installed from the [Google Play](https://play.google.com/store/apps/details?id=io.metamask), or clone and compile MetaMask Mobile wallet from [source](https://github.com/MetaMask/metamask-mobile) and build to your target device.
-
-### Hardware
-This SDK has an Minimum Android SDK (minSdk) version requirement of 23.
-
-## Resources
-Refer to the [MetaMask API Reference](https://docs.metamask.io/wallet/reference/provider-api) for more information.
