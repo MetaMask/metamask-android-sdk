@@ -3,24 +3,32 @@ package io.metamask.androidsdk
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import androidx.lifecycle.MutableLiveData
 import java.lang.ref.WeakReference
-import java.util.*
+import java.util.UUID
 
-    class Ethereum (private val context: Context): EthereumEventCallback {
+class Ethereum (private val context: Context): EthereumEventCallback {
 
     private var connectRequestSent = false
-    private var communicationClient: CommunicationClient? = CommunicationClient(context, null)
+    private val communicationClient: CommunicationClient? by lazy {
+        CommunicationClient(context = context, callback = null)
+    }
 
-    // Ethereum LiveData
-    private val _ethereumState: MutableLiveData<EthereumState> = MutableLiveData(EthereumState("", "", ""))
-    val ethereumState: MutableLiveData<EthereumState> get() = _ethereumState
 
     // Expose plain variables for developers who prefer not using observing live data via ethereumState
     var chainId: String = ""
         private set
-    var selectedAddress = ""
+    var selectedAddress: String = ""
         private set
+
+    var currentEthereumState: EthereumState = EthereumState(
+        chainId = "",
+        sessionId = "",
+        selectedAddress = ""
+    )
+        private set(value) {
+            field = value
+            stateListeners.forEach { it.onEtheriumStateChanged(field) }
+        }
 
     // Toggle SDK tracking
     var enableDebug: Boolean = true
@@ -29,7 +37,7 @@ import java.util.*
             communicationClient?.enableDebug = value
         }
 
-    fun enableDebug(enable: Boolean) = apply {
+    fun enableDebug(enable: Boolean): Ethereum = apply {
         this.enableDebug = enable
     }
 
@@ -41,23 +49,27 @@ import java.util.*
 
     private var sessionDuration: Long = DEFAULT_SESSION_DURATION
 
+    private val stateListeners = mutableSetOf<EthereumStateListener>()
+
+    fun addStateListener(listener: EthereumStateListener) {
+        stateListeners.add(listener)
+        Logger.log("Ethereum:: listener added: $listener; total=${stateListeners.size}")
+    }
+
+    fun removeStateListener(listener: EthereumStateListener) {
+        stateListeners.remove(listener)
+        Logger.log("Ethereum:: listener removed: $listener; total=${stateListeners.size}")
+    }
+
     override fun updateAccount(account: String) {
         Logger.log("Ethereum:: Selected account changed: $account")
-        _ethereumState.postValue(
-            _ethereumState.value?.copy(
-                selectedAddress = account
-            )
-        )
+        currentEthereumState = currentEthereumState.copy(selectedAddress = account)
         selectedAddress = account
     }
 
     override fun updateChainId(newChainId: String) {
         Logger.log("Ethereum:: ChainId changed: $newChainId")
-        _ethereumState.postValue(
-            _ethereumState.value?.copy(
-                chainId = newChainId
-            )
-        )
+        currentEthereumState = currentEthereumState.copy(chainId = newChainId)
         chainId = newChainId
     }
 
@@ -71,11 +83,8 @@ import java.util.*
     fun clearSession() {
         connectRequestSent = false
         communicationClient?.clearSession()
-        _ethereumState.postValue(
-            _ethereumState.value?.copy(
-                sessionId = getSessionId()
-            )
-        )
+
+        currentEthereumState = currentEthereumState.copy(sessionId = getSessionId())
     }
 
     private fun getSessionId(): String = communicationClient?.sessionId ?: ""
@@ -88,11 +97,9 @@ import java.util.*
         communicationClient?.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
         communicationClient?.dapp = dapp
 
-        _ethereumState.postValue(
-            _ethereumState.value?.copy(
-                selectedAddress = "",
-                chainId = ""
-            )
+        currentEthereumState = currentEthereumState.copy(
+            selectedAddress = "",
+            chainId = ""
         )
         requestAccounts(callback)
     }
@@ -102,11 +109,9 @@ import java.util.*
 
         connectRequestSent = false
         selectedAddress = ""
-        _ethereumState.postValue(
-            _ethereumState.value?.copy(
-                selectedAddress = "",
-                chainId = ""
-            )
+        currentEthereumState = currentEthereumState.copy(
+            selectedAddress = "",
+            chainId = ""
         )
         communicationClient?.unbindService()
     }
@@ -115,8 +120,8 @@ import java.util.*
         Logger.log("Ethereum:: Requesting ethereum accounts")
 
         val accountsRequest = EthereumRequest(
-            UUID.randomUUID().toString(),
-            EthereumMethod.ETH_REQUEST_ACCOUNTS.value
+            id = UUID.randomUUID().toString(),
+            method = EthereumMethod.ETH_REQUEST_ACCOUNTS.value
         )
         sendRequest(accountsRequest) { result ->
             if (result is RequestError) {
@@ -168,10 +173,7 @@ import java.util.*
         return if (EthereumMethod.hasMethod(method)) {
             EthereumMethod.requiresAuthorisation(method)
         } else {
-            when(connectRequestSent) {
-                true -> false
-                else -> true
-            }
+            !connectRequestSent
         }
     }
 }

@@ -1,0 +1,12 @@
+int MAJOR = 0
+int MINOR = 2
+int HOTFIX = 0
+int PATCH = 0
+
+ext {
+    LIB_VERSION_NAME = "$MAJOR.$MINOR.$PATCH"
+    LIB_VERSION_CODE = 1_000_000 * MAJOR +
+            10_000 * MINOR +
+            100 * HOTFIX +
+            PATCH
+}
