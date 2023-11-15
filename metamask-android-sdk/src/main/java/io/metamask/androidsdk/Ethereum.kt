@@ -85,8 +85,8 @@ import java.util.*
         connectRequestSent = true
         communicationClient?.ethereumEventCallbackRef = WeakReference(this)
         communicationClient?.updateSessionDuration(sessionDuration)
-        communicationClient?.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
         communicationClient?.dapp = dapp
+        communicationClient?.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
 
         _ethereumState.postValue(
             _ethereumState.value?.copy(
