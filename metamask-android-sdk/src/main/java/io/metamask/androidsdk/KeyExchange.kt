@@ -19,7 +19,9 @@ internal class KeyExchange(private val crypto: Crypto = Crypto()) {
     private var isKeysExchanged = false
 
     init {
-        reset()
+        crypto.onInitialized = {
+            reset()
+        }
     }
 
     private fun setIsKeysExchanged(newValue: Boolean) {

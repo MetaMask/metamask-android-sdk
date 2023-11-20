@@ -17,7 +17,8 @@ import java.lang.ref.WeakReference
 
 internal class CommunicationClient(context: Context, callback: EthereumEventCallback?)  {
 
-    var sessionId: String
+    var sessionId: String = ""
+    var session: String = ""
     private val keyExchange: KeyExchange = KeyExchange()
 
     var dapp: Dapp? = null
@@ -47,7 +48,9 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
 
     init {
         sessionManager = SessionManager(KeyStorage(context))
-        sessionId = sessionManager.sessionId
+        sessionManager.onInitialized = {
+            sessionId = sessionManager.sessionId
+        }
     }
 
     private val serviceConnection = object : ServiceConnection {
@@ -194,7 +197,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             val resultJson = data.optString("result")
 
             if (resultJson.isNotEmpty()) {
-                var result: Map<String, Any?>? = Gson().fromJson(resultJson, object : TypeToken<Map<String, Any?>>() {}.type)
+                val result: Map<String, Any?>? = Gson().fromJson(resultJson, object : TypeToken<Map<String, Any?>>() {}.type)
                 if (result != null) {
                     submittedRequests[id]?.callback?.invoke(result)
                     completeRequest(id, result)
@@ -206,7 +209,6 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                         completeRequest(id, account)
                     }
                 }
-
             } else {
                 val result: Map<String, Serializable> = Gson().fromJson(data.toString(), object : TypeToken<Map<String, Serializable>>() {}.type)
                 completeRequest(id, result)
@@ -414,6 +416,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         val messageJson = Gson().toJson(message)
 
         submittedRequests[request.id] = SubmittedRequest(request, callback)
+        Logger.log("Mpendulo:: processRequest sessionId: $sessionId")
         sendMessage(messageJson)
     }
 

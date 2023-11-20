@@ -82,10 +82,10 @@ import java.util.*
 
     fun connect(dapp: Dapp, callback: ((Any?) -> Unit)? = null) {
         Logger.log("Ethereum:: connecting...")
+        communicationClient?.dapp = dapp
         connectRequestSent = true
         communicationClient?.ethereumEventCallbackRef = WeakReference(this)
         communicationClient?.updateSessionDuration(sessionDuration)
-        communicationClient?.dapp = dapp
         communicationClient?.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
 
         _ethereumState.postValue(
