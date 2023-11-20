@@ -7,8 +7,7 @@ import androidx.lifecycle.MutableLiveData
 import java.lang.ref.WeakReference
 import java.util.*
 
-    class Ethereum (private val context: Context): EthereumEventCallback {
-
+class Ethereum (private val context: Context): EthereumEventCallback {
     private var connectRequestSent = false
     private var communicationClient: CommunicationClient? = CommunicationClient(context, null)
 
@@ -81,12 +80,17 @@ import java.util.*
     private fun getSessionId(): String = communicationClient?.sessionId ?: ""
 
     fun connect(dapp: Dapp, callback: ((Any?) -> Unit)? = null) {
+        if (dapp.validationError != null) {
+            callback?.invoke((dapp.validationError))
+            return
+        }
+
         Logger.log("Ethereum:: connecting...")
+        communicationClient?.dapp = dapp
         connectRequestSent = true
         communicationClient?.ethereumEventCallbackRef = WeakReference(this)
         communicationClient?.updateSessionDuration(sessionDuration)
         communicationClient?.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
-        communicationClient?.dapp = dapp
 
         _ethereumState.postValue(
             _ethereumState.value?.copy(
