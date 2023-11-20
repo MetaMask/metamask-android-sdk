@@ -5,8 +5,6 @@ import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.MutableLiveData
 import java.lang.ref.WeakReference
-import java.net.MalformedURLException
-import java.net.URL
 import java.util.*
 
 class Ethereum (private val context: Context): EthereumEventCallback {

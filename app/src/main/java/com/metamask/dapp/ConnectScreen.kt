@@ -43,7 +43,7 @@ fun ConnectScreen(
                 }
             } else {
                 DappButton(buttonText = stringResource(R.string.connect)) {
-                    onConnect(Dapp("", "https://droiddapp.io")) { error ->
+                    onConnect(Dapp("Droiddapp", "https://droiddapp.io")) { error ->
                         errorMessage = error
                     }
                 }

@@ -8,7 +8,7 @@ import java.util.*
 
 internal class SessionManager(
     private val store: SecureStorage,
-    private var sessionDuration: Long = 7 * 24 * 3600, // 7 days default
+    private var sessionDuration: Long = 7 * 24 * 3600 // 7 days default
 ) {
     private val sessionConfigKey: String = "SESSION_CONFIG_KEY"
     private val sessionConfigFile: String = "SESSION_CONFIG_FILE"

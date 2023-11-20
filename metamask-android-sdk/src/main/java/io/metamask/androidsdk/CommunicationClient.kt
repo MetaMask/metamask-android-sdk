@@ -18,7 +18,6 @@ import java.lang.ref.WeakReference
 internal class CommunicationClient(context: Context, callback: EthereumEventCallback?)  {
 
     var sessionId: String = ""
-    var session: String = ""
     private val keyExchange: KeyExchange = KeyExchange()
 
     var dapp: Dapp? = null
@@ -416,7 +415,6 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         val messageJson = Gson().toJson(message)
 
         submittedRequests[request.id] = SubmittedRequest(request, callback)
-        Logger.log("Mpendulo:: processRequest sessionId: $sessionId")
         sendMessage(messageJson)
     }
 

@@ -24,10 +24,10 @@ data class Dapp(
     val validationError: RequestError?
         get() {
         if (!hasValidUrl()) {
-            return RequestError(101, "Please use a valid Dapp url")
+            return RequestError(-101, "Please use a valid Dapp url")
         }
         if (!hasValidName()) {
-            return RequestError(101, "Please use a valid Dapp name")
+            return RequestError(-102, "Please use a valid Dapp name")
         }
         return null
     }
