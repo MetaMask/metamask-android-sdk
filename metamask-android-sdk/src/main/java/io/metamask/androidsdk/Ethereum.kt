@@ -112,7 +112,8 @@ class Ethereum (private val context: Context): EthereumEventCallback {
 
         val connectSignRequest = EthereumRequest(
             UUID.randomUUID().toString(),
-            EthereumMethod.METAMASK_CONNECT_SIGN.value
+            EthereumMethod.METAMASK_CONNECT_SIGN.value,
+            params = listOf(message)
         )
         sendRequest(connectSignRequest) { result ->
             if (result is RequestError) {

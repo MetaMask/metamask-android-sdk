@@ -59,7 +59,7 @@ enum class EthereumMethod(val value: String) {
             val resultMethods: List<String> = listOf(
                 ETH_SIGN, ETH_CHAIN_ID, PERSONAL_SIGN,
                 ADD_ETHEREUM_CHAIN, SWITCH_ETHEREUM_CHAIN,
-                ETH_SIGN_TRANSACTION, ETH_SEND_TRANSACTION,
+                ETH_SIGN_TRANSACTION, ETH_SEND_TRANSACTION, METAMASK_CONNECT_SIGN,
                 WATCH_ASSET, ETH_REQUEST_ACCOUNTS, GET_METAMASK_PROVIDER_STATE,
                 ETH_SIGN_TYPED_DATA, ETH_SIGN_TYPED_DATA_V3, ETH_SIGN_TYPED_DATA_V4,
             ).map { it.value }

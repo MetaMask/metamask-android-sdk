@@ -194,7 +194,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             val resultJson = data.optString("result")
 
             if (resultJson.isNotEmpty()) {
-                var result: Map<String, Any?>? = Gson().fromJson(resultJson, object : TypeToken<Map<String, Any?>>() {}.type)
+                val result: Map<String, Any?>? = Gson().fromJson(resultJson, object : TypeToken<Map<String, Any?>>() {}.type)
                 if (result != null) {
                     submittedRequests[id]?.callback?.invoke(result)
                     completeRequest(id, result)
