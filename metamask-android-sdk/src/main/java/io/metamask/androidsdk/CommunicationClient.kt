@@ -376,7 +376,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
     }
 
-    fun sendRequest(request: EthereumRequest, callback: (Any?) -> Unit) {
+    fun sendRequest(request: RpcRequest, callback: (Any?) -> Unit) {
         if (request.method == EthereumMethod.GET_METAMASK_PROVIDER_STATE.value) {
             clearPendingRequests()
         }
@@ -402,7 +402,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
     }
 
-    private fun processRequest(request: EthereumRequest, callback: (Any?) -> Unit) {
+    private fun processRequest(request: RpcRequest, callback: (Any?) -> Unit) {
         Logger.log("CommunicationClient:: sending request $request")
         if (queuedRequests[request.id] != null) {
             queuedRequests.remove(request.id)

@@ -3,6 +3,6 @@ package io.metamask.androidsdk
 data class
 
 SubmittedRequest(
-    val request: EthereumRequest,
+    val request: RpcRequest,
     val callback: (Any?) -> Unit
 )

@@ -139,7 +139,7 @@ class Ethereum (private val context: Context): EthereumEventCallback {
         }
     }
 
-    fun sendRequest(request: EthereumRequest, callback: ((Any?) -> Unit)? = null) {
+    fun sendRequest(request: RpcRequest, callback: ((Any?) -> Unit)? = null) {
         Logger.log("Ethereum:: Sending request $request")
 
         if (!connectRequestSent) {
@@ -158,6 +158,11 @@ class Ethereum (private val context: Context): EthereumEventCallback {
         if (authorise) {
             openMetaMask()
         }
+    }
+
+    fun sendRequestBatch(requests: List<EthereumRequest>, callback: ((Any?) -> Unit)? = null) {
+        val batchRequest = BatchRequest(method = EthereumMethod.METAMASK_BATCH.value, params = requests)
+        sendRequest(batchRequest, callback)
     }
 
     private fun openMetaMask() {

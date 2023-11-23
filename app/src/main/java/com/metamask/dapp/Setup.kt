@@ -12,6 +12,7 @@ import io.metamask.androidsdk.*
 fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel) {
     val navController = rememberNavController()
     val ethereumState by ethereumViewModel.ethereumState.observeAsState(EthereumState("", "", ""))
+    var isChainedSigning by remember { mutableStateOf(false) }
     
     NavHost(navController = navController, startDestination = CONNECT.name) {
         composable(CONNECT.name) {
@@ -33,7 +34,14 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
         composable(ACTIONS.name) {
             DappActionsScreen(
                 navController,
-                onSignMessage = { screenViewModel.setScreen(SIGN_MESSAGE) },
+                onSignMessage = {
+                    isChainedSigning = false
+                    screenViewModel.setScreen(SIGN_MESSAGE)
+                                },
+                onChainedSign = {
+                    isChainedSigning = true
+                    screenViewModel.setScreen(SIGN_MESSAGE)
+                                },
                 onSendTransaction = { screenViewModel.setScreen(SEND_TRANSACTION) },
                 onSwitchChain = { screenViewModel.setScreen(SWITCH_CHAIN) }
             )
@@ -42,9 +50,14 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
             SignMessageScreen(
                 navController,
                 ethereumState = ethereumState,
+                isChainedSigning,
                 signMessage = { message, address, onSuccess, onError ->
                     ethereumViewModel.signMessage(message, address, onSuccess, onError)
-                })
+                },
+                chainSign = { messages, address, onSuccess, onError ->
+                    ethereumViewModel.sendBatchRequest(messages, address, onSuccess, onError)
+                }
+            )
         }
         composable(SEND_TRANSACTION.name) {
             SendTransactionScreen(

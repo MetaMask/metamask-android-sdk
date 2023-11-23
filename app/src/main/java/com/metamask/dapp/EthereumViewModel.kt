@@ -38,6 +38,32 @@ class EthereumViewModel @Inject constructor(
         ethereum.clearSession()
     }
 
+    fun sendBatchRequest(messages: List<String>,
+                         address: String,
+                         onSuccess: (Any?) -> Unit,
+                         onError: (message: String) -> Unit) {
+        val requestBatch: MutableList<EthereumRequest> = mutableListOf()
+
+        for (message in messages) {
+            val params: List<String> = listOf(address, message)
+            val ethereumRequest = EthereumRequest(
+                method = EthereumMethod.PERSONAL_SIGN.value,
+                params = params
+            )
+            requestBatch.add(ethereumRequest)
+        }
+
+        ethereum.sendRequestBatch(requestBatch) { result ->
+            if (result is RequestError) {
+                onError(result.message)
+                Logger.log("Ethereum sign error: ${result.message}")
+            } else {
+                Logger.log("Ethereum sign result: $result")
+                onSuccess(result)
+            }
+        }
+    }
+
     fun signMessage(
         message: String,
         address: String,

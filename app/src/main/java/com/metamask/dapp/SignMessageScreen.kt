@@ -21,8 +21,15 @@ import io.metamask.androidsdk.*
 fun SignMessageScreen(
     navController: NavController,
     ethereumState: EthereumState,
+    isChainedSigning: Boolean,
     signMessage: (
         message: String,
+        address: String,
+        onSuccess: (Any?) -> Unit,
+        onError: (message: String) -> Unit
+    ) -> Unit,
+    chainSign: (
+        messages: List<String>,
         address: String,
         onSuccess: (Any?) -> Unit,
         onError: (message: String) -> Unit
@@ -34,8 +41,12 @@ fun SignMessageScreen(
 
     var message = signMessage(ethereumState.chainId)
     var signResult by remember { mutableStateOf("") }
-
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val transactionData = "{\"data\":\"0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675\",\"from\": \"0x0000000000000000000000000000000000000000\",\"gas\": \"0x76c0\",\"gasPrice\": \"0x9184e72a000\",\"to\": \"0xd46e8dd67c5d32be8058bb8eb970870f07244567\",\"value\": \"0x9184e72a\"}"
+    val helloWorld = "Hello, world, signing in!"
+    val byeWorld = "Last message to sign!"
+    val chainSignMessages: List<String> = listOf(helloWorld, transactionData, byeWorld)
 
     LaunchedEffect(ethereumState.chainId) {
         message = signMessage(ethereumState.chainId)
@@ -55,7 +66,7 @@ fun SignMessageScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             BasicTextField(
-                value = message,
+                value = if (isChainedSigning) {chainSignMessages.joinToString("\n=================================\n")} else { message },
                 textStyle = TextStyle(color = if (isSystemInDarkTheme()) { Color.White} else { Color.Black}),
                  onValueChange = {
                      message = it
@@ -63,18 +74,35 @@ fun SignMessageScreen(
                 modifier = Modifier.padding(bottom = 36.dp)
             )
 
-            DappButton(buttonText = stringResource(R.string.sign)) {
-                signMessage(
-                    message,
-                    ethereumState.selectedAddress,
-                    { result ->
-                        signResult = result as String
-                        errorMessage = null
-                    },
-                    { error ->
-                        errorMessage = error
-                    }
-                )
+            if (isChainedSigning) {
+                DappButton(buttonText = stringResource(R.string.chained_sign)) {
+                    chainSign(
+                        chainSignMessages,
+                        ethereumState.selectedAddress,
+                        { result ->
+                            val results = result as? List<String>
+                            signResult = results?.joinToString("\n=================================\n") ?: ""
+                            errorMessage = null
+                        },
+                        { error ->
+                            errorMessage = error
+                        }
+                    )
+                }
+            } else {
+                DappButton(buttonText = stringResource(R.string.sign)) {
+                    signMessage(
+                        message,
+                        ethereumState.selectedAddress,
+                        { result ->
+                            signResult = result as String
+                            errorMessage = null
+                        },
+                        { error ->
+                            errorMessage = error
+                        }
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -96,6 +124,8 @@ fun PreviewSignMessage() {
     SignMessageScreen(
         rememberNavController(),
         ethereumState = EthereumState("", "", ""),
-        signMessage = { _, _, _, _ -> }
+        false,
+        signMessage = { _, _, _, _ -> },
+        chainSign = { _, _, _, _ -> }
     )
 }
