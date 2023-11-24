@@ -1,0 +1,56 @@
+name: Bug Report
+description: Create a bug report for the MetaMask Android SDK
+title: "[Bug]: "
+labels: ["template: bug"]
+body:
+  - type: textarea
+    attributes:
+      label: Provide environment information
+      description: "Give us a general overview of the environment where the issue is happening"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: MetaMask Android SDK Version
+      description: "Please specify the exact MetaMask SDK version"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: MetaMask Mobile app Version
+      description: "Please specify the exact MetaMask Mobile app version"
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Android Version
+      description: "Please specify the exact version. For example: Android 12.1"
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Expected Behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Link to reproduction - Issues with a link to complete (but minimal) reproduction code will be addressed faster
+      description: A link to a GitHub repository to recreate the issue. Include steps to run the repository and make sure it contains only code to reproduce the bug. I.E. don't invite us to your production application repo.
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: To Reproduce
+      description: Steps to reproduce the behavior, please provide a clear description of how to reproduce the issue, based on the linked minimal reproduction. Screenshots can be provided in the issue body below. If using code blocks, make sure that [syntax highlighting is correct](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-and-highlighting-code-blocks#syntax-highlighting) and double check that the rendered preview is not broken.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: Before posting the issue go through the steps you've written down to make sure the steps provided are detailed and clear.

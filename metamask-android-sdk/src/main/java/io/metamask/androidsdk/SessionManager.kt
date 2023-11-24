@@ -2,6 +2,7 @@ package io.metamask.androidsdk
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.*
 import java.lang.reflect.Type
 import java.util.*
 
@@ -12,18 +13,31 @@ internal class SessionManager(
     private val sessionConfigKey: String = "SESSION_CONFIG_KEY"
     private val sessionConfigFile: String = "SESSION_CONFIG_FILE"
 
-    var sessionId: String = getSessionConfig().sessionId
+    var sessionId: String = ""
+
+    var onInitialized: () -> Unit = {}
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
+
+    init {
+        coroutineScope.launch {
+            val id = getSessionConfig().sessionId
+            sessionId = id
+            onInitialized()
+        }
+    }
 
     fun updateSessionDuration(duration: Long) {
         Logger.log("SessionManager:: Session duration extended by: ${duration/3600.0/24.0} days")
-        sessionDuration = duration
-        val sessionId = getSessionConfig().sessionId
-        val expiryDate = System.currentTimeMillis() + sessionDuration * 1000
-        val sessionConfig = SessionConfig(sessionId, expiryDate)
-        saveSessionConfig(sessionConfig)
+        coroutineScope.launch {
+            sessionDuration = duration
+            val sessionId = getSessionConfig().sessionId
+            val expiryDate = System.currentTimeMillis() + sessionDuration * 1000
+            val sessionConfig = SessionConfig(sessionId, expiryDate)
+            saveSessionConfig(sessionConfig)
+        }
     }
 
-    private fun getSessionConfig(reset: Boolean = false): SessionConfig {
+    private suspend fun getSessionConfig(reset: Boolean = false): SessionConfig {
         if (reset) {
             store.clearValue(sessionConfigKey, sessionConfigFile)
             return makeNewSessionConfig()
@@ -54,9 +68,11 @@ internal class SessionManager(
     }
 
     fun clearSession() {
-        store.clearValue(sessionConfigKey, sessionConfigFile)
-        makeNewSessionConfig()
-        sessionId = getSessionConfig().sessionId
+        coroutineScope.launch {
+            store.clearValue(sessionConfigKey, sessionConfigFile)
+            makeNewSessionConfig()
+            sessionId = getSessionConfig().sessionId
+        }
     }
 
     private fun makeNewSessionConfig(): SessionConfig {

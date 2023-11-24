@@ -13,7 +13,6 @@ private const val METAMASK_BIND_DEEPLINK = "$METAMASK_DEEPLINK/bind"
 private const val DEFAULT_SESSION_DURATION: Long = 7 * 24 * 3600 // 7 days default
 
 class Ethereum (private val context: Context): EthereumEventCallback {
-
     private var connectRequestSent = false
     private val communicationClient = CommunicationClient(context, null)
 
@@ -80,12 +79,17 @@ class Ethereum (private val context: Context): EthereumEventCallback {
     private fun getSessionId(): String = communicationClient.sessionId
 
     fun connect(dapp: Dapp, callback: ((Any?) -> Unit)? = null) {
+        if (dapp.validationError != null) {
+            callback?.invoke((dapp.validationError))
+            return
+        }
+
         Logger.log("Ethereum:: connecting...")
+        communicationClient?.dapp = dapp
         connectRequestSent = true
         communicationClient.ethereumEventCallbackRef = WeakReference(this)
         communicationClient.updateSessionDuration(sessionDuration)
         communicationClient.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
-        communicationClient.dapp = dapp
 
         _ethereumState.postValue(
             currentEthereumState.copy(

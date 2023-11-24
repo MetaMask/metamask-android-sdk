@@ -17,7 +17,7 @@ import java.lang.ref.WeakReference
 
 internal class CommunicationClient(context: Context, callback: EthereumEventCallback?)  {
 
-    var sessionId: String
+    var sessionId: String = ""
     private val keyExchange: KeyExchange = KeyExchange()
 
     var dapp: Dapp? = null
@@ -47,7 +47,9 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
 
     init {
         sessionManager = SessionManager(KeyStorage(context))
-        sessionId = sessionManager.sessionId
+        sessionManager.onInitialized = {
+            sessionId = sessionManager.sessionId
+        }
     }
 
     private val serviceConnection = object : ServiceConnection {
@@ -206,7 +208,6 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                         completeRequest(id, account)
                     }
                 }
-
             } else {
                 val result: Map<String, Serializable> = Gson().fromJson(data.toString(), object : TypeToken<Map<String, Serializable>>() {}.type)
                 completeRequest(id, result)

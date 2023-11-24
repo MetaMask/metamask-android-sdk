@@ -6,6 +6,7 @@ import android.security.keystore.KeyProperties
 import android.util.Base64
 import android.util.Base64.decode
 import android.util.Base64.encodeToString
+import kotlinx.coroutines.*
 import java.security.KeyStore
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -17,6 +18,7 @@ internal class KeyStorage(private val context: Context): SecureStorage {
 
     private lateinit var keyStore: KeyStore
     private lateinit var secretKey: SecretKey
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     init {
         loadSecretKey()
@@ -61,12 +63,14 @@ internal class KeyStorage(private val context: Context): SecureStorage {
         val encodedKey = encodedValue(key)
         val encodedFileName = encodedValue(file)
 
-        context.getSharedPreferences(
-            encodedFileName,
-            Context.MODE_PRIVATE)
-            .edit()
-            .putString(encodedKey, null)
-            .apply()
+        coroutineScope.launch {
+            context.getSharedPreferences(
+                encodedFileName,
+                Context.MODE_PRIVATE)
+                .edit()
+                .putString(encodedKey, null)
+                .apply()
+        }
     }
 
     override fun putValue(value: String, key: String, file: String) {
@@ -76,15 +80,17 @@ internal class KeyStorage(private val context: Context): SecureStorage {
         val bytes = value.toByteArray()
         val base64 = encodeToString(bytes, Base64.DEFAULT)
 
-        context.getSharedPreferences(
-            encodedFileName,
-            Context.MODE_PRIVATE)
-            .edit()
-            .putString(encodedKey, base64)
-            .apply()
+        coroutineScope.launch {
+            context.getSharedPreferences(
+                encodedFileName,
+                Context.MODE_PRIVATE)
+                .edit()
+                .putString(encodedKey, base64)
+                .apply()
+        }
     }
 
-    override fun getValue(key: String, file: String): String? {
+    override suspend fun getValue(key: String, file: String): String? {
         val encodedKey = encodedValue(key)
         val encodedFileName = encodedValue(file)
 
