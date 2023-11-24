@@ -38,7 +38,7 @@ class EthereumViewModel @Inject constructor(
         ethereum.clearSession()
     }
 
-    fun sendBatchRequest(messages: List<String>,
+    fun sendBatchSigningRequest(messages: List<String>,
                          address: String,
                          onSuccess: (Any?) -> Unit,
                          onError: (message: String) -> Unit) {

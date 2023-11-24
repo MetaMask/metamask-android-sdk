@@ -55,7 +55,7 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
                     ethereumViewModel.signMessage(message, address, onSuccess, onError)
                 },
                 chainSign = { messages, address, onSuccess, onError ->
-                    ethereumViewModel.sendBatchRequest(messages, address, onSuccess, onError)
+                    ethereumViewModel.sendBatchSigningRequest(messages, address, onSuccess, onError)
                 }
             )
         }
