@@ -17,6 +17,7 @@ import io.metamask.androidsdk.EthereumState
 fun ConnectScreen(
     ethereumState: EthereumState,
     onConnect: (Dapp, onError: (message: String) -> Unit) -> Unit,
+    onConnectSign: () -> Unit,
     onDisconnect: () -> Unit,
     onClearSession: () -> Unit) {
 
@@ -46,6 +47,13 @@ fun ConnectScreen(
                     onConnect(Dapp("Droiddapp", "https://droiddapp.io")) { error ->
                         errorMessage = error
                     }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Switch chain button
+                DappButton(buttonText = stringResource(R.string.connect_sign)) {
+                    onConnectSign()
                 }
             }
 
@@ -79,6 +87,7 @@ fun PreviewConnectClearButtons() {
     ConnectScreen(
         ethereumState = EthereumState("", "", ""),
         onConnect = {_, _ ->},
+        onConnectSign = {},
         onDisconnect = {},
         onClearSession = {}
     )

@@ -21,6 +21,11 @@ import io.metamask.androidsdk.*
 fun SignMessageScreen(
     navController: NavController,
     ethereumState: EthereumState,
+    isConnectSign: Boolean = false,
+    connectSignMessage: (
+        message: String,
+        onSuccess: (result: String) -> Unit,
+        onError: (message: String) -> Unit) -> Unit,
     signMessage: (
         message: String,
         address: String,
@@ -29,7 +34,11 @@ fun SignMessageScreen(
     ) -> Unit
 ) {
     fun signMessage(chainId: String): String {
-        return "{\"domain\":{\"chainId\":\"$chainId\",\"name\":\"Ether Mail\",\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\",\"version\":\"1\"},\"message\":{\"contents\":\"Hello, Busa!\",\"from\":{\"name\":\"Kinno\",\"wallets\":[\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\",\"0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF\"]},\"to\":[{\"name\":\"Busa\",\"wallets\":[\"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB\",\"0xB0BdaBea57B0BDABeA57b0bdABEA57b0BDabEa57\",\"0xB0B0b0b0b0b0B000000000000000000000000000\"]}]},\"primaryType\":\"Mail\",\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Group\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"members\",\"type\":\"Person[]\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person[]\"},{\"name\":\"contents\",\"type\":\"string\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallets\",\"type\":\"address[]\"}]}}"
+        return if(isConnectSign) {
+"He will win who knows when to fight and when not to fight. He will win who knows how to handle both superior and inferior forces."
+        } else {
+            "{\"domain\":{\"chainId\":\"$chainId\",\"name\":\"Ether Mail\",\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\",\"version\":\"1\"},\"message\":{\"contents\":\"Hello, Busa!\",\"from\":{\"name\":\"Kinno\",\"wallets\":[\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\",\"0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF\"]},\"to\":[{\"name\":\"Busa\",\"wallets\":[\"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB\",\"0xB0BdaBea57B0BDABeA57b0bdABEA57b0BDabEa57\",\"0xB0B0b0b0b0b0B000000000000000000000000000\"]}]},\"primaryType\":\"Mail\",\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Group\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"members\",\"type\":\"Person[]\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person[]\"},{\"name\":\"contents\",\"type\":\"string\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallets\",\"type\":\"address[]\"}]}}"
+        }
     }
 
     var message = signMessage(ethereumState.chainId)
@@ -50,7 +59,7 @@ fun SignMessageScreen(
                 .padding(horizontal = 36.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Heading("Sign Message")
+            Heading(if (isConnectSign) { "Connect & Sign Message" } else { "Sign Message"})
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -63,21 +72,36 @@ fun SignMessageScreen(
                 modifier = Modifier.padding(bottom = 36.dp)
             )
 
-            DappButton(buttonText = stringResource(R.string.sign)) {
-                signMessage(
-                    message,
-                    ethereumState.selectedAddress,
-                    { result ->
-                        signResult = result as String
-                        errorMessage = null
-                    },
-                    { error ->
-                        errorMessage = error
-                    }
-                )
+            if (isConnectSign) {
+                DappButton(buttonText = stringResource(R.string.connect_sign)) {
+                    connectSignMessage(
+                        message,
+                        { result ->
+                            signResult = result as String
+                            errorMessage = null
+                        },
+                        { error ->
+                            errorMessage = error
+                        }
+                    )
+                }
+            } else {
+                DappButton(buttonText = stringResource(R.string.sign)) {
+                    signMessage(
+                        message,
+                        ethereumState.selectedAddress,
+                        { result ->
+                            signResult = result as String
+                            errorMessage = null
+                        },
+                        { error ->
+                            errorMessage = error
+                        }
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             DappLabel(
                 text = errorMessage ?: signResult,
@@ -96,6 +120,7 @@ fun PreviewSignMessage() {
     SignMessageScreen(
         rememberNavController(),
         ethereumState = EthereumState("", "", ""),
+        connectSignMessage = {_, _, _ -> },
         signMessage = { _, _, _, _ -> }
     )
 }

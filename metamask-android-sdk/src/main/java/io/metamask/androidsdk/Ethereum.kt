@@ -3,39 +3,40 @@ package io.metamask.androidsdk
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import java.lang.ref.WeakReference
 import java.util.*
 
+private const val METAMASK_DEEPLINK = "https://metamask.app.link"
+private const val METAMASK_BIND_DEEPLINK = "$METAMASK_DEEPLINK/bind"
+private const val DEFAULT_SESSION_DURATION: Long = 7 * 24 * 3600 // 7 days default
+
 class Ethereum (private val context: Context): EthereumEventCallback {
     private var connectRequestSent = false
-    private var communicationClient: CommunicationClient? = CommunicationClient(context, null)
+    private val communicationClient = CommunicationClient(context, null)
 
     // Ethereum LiveData
-    private val _ethereumState: MutableLiveData<EthereumState> = MutableLiveData(EthereumState("", "", ""))
-    val ethereumState: MutableLiveData<EthereumState> get() = _ethereumState
+    private val _ethereumState = MutableLiveData(EthereumState("", "", ""))
+    private val currentEthereumState: EthereumState
+        get() = checkNotNull(ethereumState.value)
+    val ethereumState: LiveData<EthereumState> get() = _ethereumState
 
     // Expose plain variables for developers who prefer not using observing live data via ethereumState
-    var chainId: String = ""
-        private set
-    var selectedAddress = ""
-        private set
+    val chainId: String
+        get() = currentEthereumState.chainId
+    val selectedAddress: String
+        get() = currentEthereumState.selectedAddress
 
     // Toggle SDK tracking
     var enableDebug: Boolean = true
         set(value) {
             field = value
-            communicationClient?.enableDebug = value
+            communicationClient.enableDebug = value
         }
 
     fun enableDebug(enable: Boolean) = apply {
         this.enableDebug = enable
-    }
-
-    companion object {
-        private const val METAMASK_DEEPLINK = "https://metamask.app.link"
-        private const val METAMASK_BIND_DEEPLINK = "$METAMASK_DEEPLINK/bind"
-        private const val DEFAULT_SESSION_DURATION: Long = 7 * 24 * 3600 // 7 days default
     }
 
     private var sessionDuration: Long = DEFAULT_SESSION_DURATION
@@ -43,41 +44,39 @@ class Ethereum (private val context: Context): EthereumEventCallback {
     override fun updateAccount(account: String) {
         Logger.log("Ethereum:: Selected account changed: $account")
         _ethereumState.postValue(
-            _ethereumState.value?.copy(
+            currentEthereumState.copy(
                 selectedAddress = account
             )
         )
-        selectedAddress = account
     }
 
     override fun updateChainId(newChainId: String) {
         Logger.log("Ethereum:: ChainId changed: $newChainId")
         _ethereumState.postValue(
-            _ethereumState.value?.copy(
+            currentEthereumState.copy(
                 chainId = newChainId
             )
         )
-        chainId = newChainId
     }
 
     // Set session duration in seconds
     fun updateSessionDuration(duration: Long = DEFAULT_SESSION_DURATION) = apply {
-        this.sessionDuration = duration
-        communicationClient?.updateSessionDuration(duration)
+        sessionDuration = duration
+        communicationClient.updateSessionDuration(duration)
     }
 
     // Clear persisted session. Subsequent MetaMask connection request will need approval
     fun clearSession() {
         connectRequestSent = false
-        communicationClient?.clearSession()
+        communicationClient.clearSession()
         _ethereumState.postValue(
-            _ethereumState.value?.copy(
+            currentEthereumState.copy(
                 sessionId = getSessionId()
             )
         )
     }
 
-    private fun getSessionId(): String = communicationClient?.sessionId ?: ""
+    private fun getSessionId(): String = communicationClient.sessionId
 
     fun connect(dapp: Dapp, callback: ((Any?) -> Unit)? = null) {
         if (dapp.validationError != null) {
@@ -88,12 +87,12 @@ class Ethereum (private val context: Context): EthereumEventCallback {
         Logger.log("Ethereum:: connecting...")
         communicationClient?.dapp = dapp
         connectRequestSent = true
-        communicationClient?.ethereumEventCallbackRef = WeakReference(this)
-        communicationClient?.updateSessionDuration(sessionDuration)
-        communicationClient?.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
+        communicationClient.ethereumEventCallbackRef = WeakReference(this)
+        communicationClient.updateSessionDuration(sessionDuration)
+        communicationClient.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
 
         _ethereumState.postValue(
-            _ethereumState.value?.copy(
+            currentEthereumState.copy(
                 selectedAddress = "",
                 chainId = ""
             )
@@ -101,18 +100,53 @@ class Ethereum (private val context: Context): EthereumEventCallback {
         requestAccounts(callback)
     }
 
-    fun disconnect() {
-        Logger.log("Ethereum:: disconnecting...")
+    fun connectAndSign(message: String, callback: ((Any?) -> Unit)? = null) {
+        Logger.log("Ethereum:: connect & sign...")
+        connectRequestSent = true
+        communicationClient.ethereumEventCallbackRef = WeakReference(this)
+        communicationClient.updateSessionDuration(sessionDuration)
+        communicationClient.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
 
-        connectRequestSent = false
-        selectedAddress = ""
         _ethereumState.postValue(
-            _ethereumState.value?.copy(
+            currentEthereumState.copy(
                 selectedAddress = "",
                 chainId = ""
             )
         )
-        communicationClient?.unbindService()
+
+        val connectSignRequest = EthereumRequest(
+            UUID.randomUUID().toString(),
+            EthereumMethod.METAMASK_CONNECT_SIGN.value,
+            params = listOf(message)
+        )
+        sendRequest(connectSignRequest) { result ->
+            if (result is RequestError) {
+                communicationClient.trackEvent(Event.SDK_CONNECTION_FAILED, null)
+
+                if (
+                    result.code == ErrorType.USER_REJECTED_REQUEST.code ||
+                    result.code == ErrorType.UNAUTHORISED_REQUEST.code
+                ) {
+                    communicationClient.trackEvent(Event.SDK_CONNECTION_REJECTED, null)
+                }
+            } else {
+                communicationClient.trackEvent(Event.SDK_CONNECTION_AUTHORIZED, null)
+            }
+            callback?.invoke(result)
+        }
+    }
+
+    fun disconnect() {
+        Logger.log("Ethereum:: disconnecting...")
+
+        connectRequestSent = false
+        _ethereumState.postValue(
+            currentEthereumState.copy(
+                selectedAddress = "",
+                chainId = ""
+            )
+        )
+        communicationClient.unbindService()
     }
 
     private fun requestAccounts(callback: ((Any?) -> Unit)? = null) {
@@ -124,16 +158,16 @@ class Ethereum (private val context: Context): EthereumEventCallback {
         )
         sendRequest(accountsRequest) { result ->
             if (result is RequestError) {
-                communicationClient?.trackEvent(Event.SDK_CONNECTION_FAILED, null)
+                communicationClient.trackEvent(Event.SDK_CONNECTION_FAILED, null)
 
                 if (
                     result.code == ErrorType.USER_REJECTED_REQUEST.code ||
                     result.code == ErrorType.UNAUTHORISED_REQUEST.code
                 ) {
-                    communicationClient?.trackEvent(Event.SDK_CONNECTION_REJECTED, null)
+                    communicationClient.trackEvent(Event.SDK_CONNECTION_REJECTED, null)
                 }
             } else {
-                communicationClient?.trackEvent(Event.SDK_CONNECTION_AUTHORIZED, null)
+                communicationClient.trackEvent(Event.SDK_CONNECTION_AUTHORIZED, null)
             }
             callback?.invoke(result)
         }
@@ -149,7 +183,7 @@ class Ethereum (private val context: Context): EthereumEventCallback {
             return
         }
 
-        communicationClient?.sendRequest(request) { response ->
+        communicationClient.sendRequest(request) { response ->
             callback?.invoke(response)
         }
 

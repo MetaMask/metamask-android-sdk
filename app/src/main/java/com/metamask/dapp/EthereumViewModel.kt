@@ -18,7 +18,7 @@ class EthereumViewModel @Inject constructor(
         }
     }
 
-    fun connect(dapp: Dapp, onSuccess: () -> Unit, onError: (message: String) -> Unit) {
+    fun connect(dapp: Dapp, onSuccess: () -> Unit, onError: (String) -> Unit) {
         ethereum.connect(dapp) { result ->
             if (result is RequestError) {
                 Logger.log("Ethereum connection error: ${result.message}")
@@ -26,6 +26,18 @@ class EthereumViewModel @Inject constructor(
             } else {
                 Logger.log("Ethereum connection result: $result")
                 onSuccess()
+            }
+        }
+    }
+
+    fun connectAndSign(message: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
+        ethereum.connectAndSign(message) { result ->
+            if (result is RequestError) {
+                Logger.log("Connect & sign error: ${result.message}")
+                onError(result.message)
+            } else {
+                Logger.log("Connect & sign  result: $result")
+                onSuccess(result as String)
             }
         }
     }

@@ -12,5 +12,6 @@
     <string name="sign">Sign Message</string>
     <string name="send">Send Transaction</string>
     <string name="switch_chain">Switch Chain</string>
+    <string name="connect_sign">Connect and Sign</string>
     <string name="add_chain">Add Chain</string>
 </resources>
