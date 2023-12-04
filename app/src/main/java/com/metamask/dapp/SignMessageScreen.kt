@@ -25,13 +25,13 @@ fun SignMessageScreen(
     signMessage: (
         message: String,
         address: String,
-        onSuccess: (Any?) -> Unit,
+        onSuccess: (String) -> Unit,
         onError: (message: String) -> Unit
     ) -> Unit,
     chainSign: (
         messages: List<String>,
         address: String,
-        onSuccess: (Any?) -> Unit,
+        onSuccess: (List<String>) -> Unit,
         onError: (message: String) -> Unit
     ) -> Unit
 ) {
@@ -66,7 +66,7 @@ fun SignMessageScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             BasicTextField(
-                value = if (isChainedSigning) {chainSignMessages.joinToString("\n=================================\n")} else { message },
+                value = if (isChainedSigning) {chainSignMessages.joinToString("\n\n=================================\n\n")} else { message },
                 textStyle = TextStyle(color = if (isSystemInDarkTheme()) { Color.White} else { Color.Black}),
                  onValueChange = {
                      message = it
@@ -80,8 +80,7 @@ fun SignMessageScreen(
                         chainSignMessages,
                         ethereumState.selectedAddress,
                         { result ->
-                            val results = result as? List<String>
-                            signResult = results?.joinToString("\n=================================\n") ?: ""
+                            signResult = result.joinToString("\n=================================\n")
                             errorMessage = null
                         },
                         { error ->

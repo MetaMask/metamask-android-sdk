@@ -123,12 +123,12 @@ class Ethereum (private val context: Context): EthereumEventCallback {
             EthereumMethod.ETH_REQUEST_ACCOUNTS.value
         )
         sendRequest(accountsRequest) { result ->
-            if (result is RequestError) {
+            if (result is Result.Error) {
                 communicationClient?.trackEvent(Event.SDK_CONNECTION_FAILED, null)
 
                 if (
-                    result.code == ErrorType.USER_REJECTED_REQUEST.code ||
-                    result.code == ErrorType.UNAUTHORISED_REQUEST.code
+                    result.error.code == ErrorType.USER_REJECTED_REQUEST.code ||
+                    result.error.code == ErrorType.UNAUTHORISED_REQUEST.code
                 ) {
                     communicationClient?.trackEvent(Event.SDK_CONNECTION_REJECTED, null)
                 }
@@ -139,7 +139,7 @@ class Ethereum (private val context: Context): EthereumEventCallback {
         }
     }
 
-    fun sendRequest(request: RpcRequest, callback: ((Any?) -> Unit)? = null) {
+    fun sendRequest(request: RpcRequest, callback: ((Result) -> Unit)? = null) {
         Logger.log("Ethereum:: Sending request $request")
 
         if (!connectRequestSent) {
@@ -160,7 +160,7 @@ class Ethereum (private val context: Context): EthereumEventCallback {
         }
     }
 
-    fun sendRequestBatch(requests: List<EthereumRequest>, callback: ((Any?) -> Unit)? = null) {
+    fun sendRequestBatch(requests: List<EthereumRequest>, callback: ((Result) -> Unit)? = null) {
         val batchRequest = BatchRequest(method = EthereumMethod.METAMASK_BATCH.value, params = requests)
         sendRequest(batchRequest, callback)
     }
