@@ -18,8 +18,8 @@ class EthereumViewModel @Inject constructor(
         }
     }
 
-    fun connect(dapp: Dapp, onSuccess: () -> Unit, onError: (String) -> Unit) {
-        ethereum.connect(dapp) { result ->
+    fun connect(onSuccess: () -> Unit, onError: (String) -> Unit) {
+        ethereum.connect() { result ->
             when (result) {
                 is Result.Error -> {
                     Logger.log("Ethereum connection error: ${result.error.message}")

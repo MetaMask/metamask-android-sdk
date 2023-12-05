@@ -6,6 +6,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.metamask.androidsdk.DappMetadata
 import io.metamask.androidsdk.Ethereum
 
 @Module
@@ -13,7 +14,12 @@ import io.metamask.androidsdk.Ethereum
 
 internal object AppModule {
     @Provides
-    fun provideEthereum(@ApplicationContext context: Context): Ethereum {
-        return Ethereum(context)
+    fun provideDappMetadata(): DappMetadata {
+        return DappMetadata("Droiddapp", "https://droiddapp.io")
+    }
+
+    @Provides
+    fun provideEthereum(@ApplicationContext context: Context, dappMetadata: DappMetadata): Ethereum {
+        return Ethereum(context, dappMetadata)
     }
 }

@@ -12,9 +12,11 @@ private const val METAMASK_DEEPLINK = "https://metamask.app.link"
 private const val METAMASK_BIND_DEEPLINK = "$METAMASK_DEEPLINK/bind"
 private const val DEFAULT_SESSION_DURATION: Long = 7 * 24 * 3600 // 7 days default
 
-class Ethereum (private val context: Context): EthereumEventCallback {
+class Ethereum (private val context: Context, private val dappMetadata: DappMetadata): EthereumEventCallback {
     private var connectRequestSent = false
-    private val communicationClient = CommunicationClient(context, null)
+    private val communicationClient: CommunicationClient? by lazy {
+        CommunicationClient(context, null)
+    }
 
     // Ethereum LiveData
     private val _ethereumState = MutableLiveData(EthereumState("", "", ""))
@@ -32,7 +34,7 @@ class Ethereum (private val context: Context): EthereumEventCallback {
     var enableDebug: Boolean = true
         set(value) {
             field = value
-            communicationClient.enableDebug = value
+            communicationClient?.enableDebug = value
         }
 
     fun enableDebug(enable: Boolean) = apply {
@@ -62,13 +64,13 @@ class Ethereum (private val context: Context): EthereumEventCallback {
     // Set session duration in seconds
     fun updateSessionDuration(duration: Long = DEFAULT_SESSION_DURATION) = apply {
         sessionDuration = duration
-        communicationClient.updateSessionDuration(duration)
+        communicationClient?.updateSessionDuration(duration)
     }
 
     // Clear persisted session. Subsequent MetaMask connection request will need approval
     fun clearSession() {
         connectRequestSent = false
-        communicationClient.clearSession()
+        communicationClient?.clearSession()
         _ethereumState.postValue(
             currentEthereumState.copy(
                 sessionId = getSessionId()
@@ -76,21 +78,21 @@ class Ethereum (private val context: Context): EthereumEventCallback {
         )
     }
 
-    private fun getSessionId(): String = communicationClient.sessionId
+    private fun getSessionId(): String = communicationClient?.sessionId ?: ""
 
-    fun connect(dapp: Dapp, callback: ((Result) -> Unit)? = null) {
-        val error = dapp.validationError
+    fun connect(callback: ((Result) -> Unit)? = null) {
+        val error = dappMetadata.validationError
         if (error != null) {
             callback?.invoke((Result.Error(error)))
             return
         }
 
         Logger.log("Ethereum:: connecting...")
-        communicationClient?.dapp = dapp
         connectRequestSent = true
-        communicationClient.ethereumEventCallbackRef = WeakReference(this)
-        communicationClient.updateSessionDuration(sessionDuration)
-        communicationClient.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
+        communicationClient?.dappMetadata = dappMetadata
+        communicationClient?.ethereumEventCallbackRef = WeakReference(this)
+        communicationClient?.updateSessionDuration(sessionDuration)
+        communicationClient?.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
 
         _ethereumState.postValue(
             currentEthereumState.copy(
@@ -104,9 +106,10 @@ class Ethereum (private val context: Context): EthereumEventCallback {
     fun connectAndSign(message: String, callback: ((Result) -> Unit)? = null) {
         Logger.log("Ethereum:: connect & sign...")
         connectRequestSent = true
-        communicationClient.ethereumEventCallbackRef = WeakReference(this)
-        communicationClient.updateSessionDuration(sessionDuration)
-        communicationClient.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
+        communicationClient?.dappMetadata = dappMetadata
+        communicationClient?.ethereumEventCallbackRef = WeakReference(this)
+        communicationClient?.updateSessionDuration(sessionDuration)
+        communicationClient?.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
 
         _ethereumState.postValue(
             currentEthereumState.copy(
@@ -123,17 +126,17 @@ class Ethereum (private val context: Context): EthereumEventCallback {
         sendRequest(connectSignRequest) { result ->
             when (result) {
                 is Result.Error -> {
-                    communicationClient.trackEvent(Event.SDK_CONNECTION_FAILED, null)
+                    communicationClient?.trackEvent(Event.SDK_CONNECTION_FAILED, null)
 
                     if (
                         result.error.code == ErrorType.USER_REJECTED_REQUEST.code ||
                         result.error.code == ErrorType.UNAUTHORISED_REQUEST.code
                     ) {
-                        communicationClient.trackEvent(Event.SDK_CONNECTION_REJECTED, null)
+                        communicationClient?.trackEvent(Event.SDK_CONNECTION_REJECTED, null)
                     }
                 }
                 is Result.Success -> {
-                    communicationClient.trackEvent(Event.SDK_CONNECTION_AUTHORIZED, null)
+                    communicationClient?.trackEvent(Event.SDK_CONNECTION_AUTHORIZED, null)
                 }
             }
             callback?.invoke(result)
@@ -150,7 +153,15 @@ class Ethereum (private val context: Context): EthereumEventCallback {
                 chainId = ""
             )
         )
-        communicationClient.unbindService()
+        communicationClient?.unbindService()
+    }
+
+    private fun requestChainId() {
+        val chainIdRequest = EthereumRequest(
+            UUID.randomUUID().toString(),
+            EthereumMethod.ETH_CHAIN_ID.value
+        )
+        sendRequest(chainIdRequest)
     }
 
     private fun requestAccounts(callback: ((Result) -> Unit)? = null) {
@@ -163,21 +174,22 @@ class Ethereum (private val context: Context): EthereumEventCallback {
         sendRequest(accountsRequest) { result ->
             when (result) {
                 is Result.Error -> {
-                    communicationClient.trackEvent(Event.SDK_CONNECTION_FAILED, null)
+                    communicationClient?.trackEvent(Event.SDK_CONNECTION_FAILED, null)
 
                     if (
                         result.error.code == ErrorType.USER_REJECTED_REQUEST.code ||
                         result.error.code == ErrorType.UNAUTHORISED_REQUEST.code
                     ) {
-                        communicationClient.trackEvent(Event.SDK_CONNECTION_REJECTED, null)
+                        communicationClient?.trackEvent(Event.SDK_CONNECTION_REJECTED, null)
                     }
                 }
                 is Result.Success -> {
-                    communicationClient.trackEvent(Event.SDK_CONNECTION_AUTHORIZED, null)
+                    communicationClient?.trackEvent(Event.SDK_CONNECTION_AUTHORIZED, null)
                 }
             }
             callback?.invoke(result)
         }
+        requestChainId()
     }
 
     fun sendRequest(request: RpcRequest, callback: ((Result) -> Unit)? = null) {
@@ -190,7 +202,7 @@ class Ethereum (private val context: Context): EthereumEventCallback {
             return
         }
 
-        communicationClient.sendRequest(request) { response ->
+        communicationClient?.sendRequest(request) { response ->
             callback?.invoke(response)
         }
 

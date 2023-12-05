@@ -20,9 +20,8 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
         composable(CONNECT.name) {
             ConnectScreen(
                 ethereumState = ethereumState,
-                onConnect = { dapp, onError ->
+                onConnect = { onError ->
                     ethereumViewModel.connect(
-                        dapp,
                         onSuccess = { screenViewModel.setScreen(ACTIONS) },
                         onError) },
                 onConnectSign = { screenViewModel.setScreen(CONNECT_SIGN_MESSAGE) },

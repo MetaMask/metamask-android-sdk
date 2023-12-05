@@ -20,7 +20,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     var sessionId: String = ""
     private val keyExchange: KeyExchange = KeyExchange()
 
-    var dapp: Dapp? = null
+    var dappMetadata: DappMetadata? = null
     var isServiceConnected = false
         private set
 
@@ -99,8 +99,8 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             Event.SDK_CONNECTION_REQUEST_STARTED -> {
                 parameters["commlayer"] = SDKInfo.PLATFORM
                 parameters["sdkVersion"] = SDKInfo.VERSION
-                parameters["url"] = dapp?.url ?: ""
-                parameters["title"] = dapp?.name ?: ""
+                parameters["url"] = dappMetadata?.url ?: ""
+                parameters["title"] = dappMetadata?.name ?: ""
                 parameters["platform"] = SDKInfo.PLATFORM
             }
             else -> Unit
@@ -423,7 +423,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         if (sentOriginatorInfo) { return }
         sentOriginatorInfo = true
 
-        val originatorInfo = OriginatorInfo(dapp?.name, dapp?.url, SDKInfo.PLATFORM, SDKInfo.VERSION)
+        val originatorInfo = OriginatorInfo(dappMetadata?.name, dappMetadata?.url, SDKInfo.PLATFORM, SDKInfo.VERSION)
         val requestInfo = RequestInfo("originator_info", originatorInfo)
         val requestInfoJson = Gson().toJson(requestInfo)
 
