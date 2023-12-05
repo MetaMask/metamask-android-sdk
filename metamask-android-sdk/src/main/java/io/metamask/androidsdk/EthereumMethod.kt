@@ -24,6 +24,7 @@ enum class EthereumMethod(val value: String) {
     ETH_SIGN_TYPED_DATA_V4("eth_signTypedData_v4"),
     ADD_ETHEREUM_CHAIN("wallet_addEthereumChain"),
     METAMASK_BATCH("metamask_batch"),
+    METAMASK_CONNECT_SIGN("metamask_connectSign"),
     METAMASK_CHAIN_CHANGED("metamask_chainChanged"),
     ETH_SEND_RAW_TRANSACTION("eth_sendRawTransaction"),
     SWITCH_ETHEREUM_CHAIN("wallet_switchEthereumChain"),
@@ -46,9 +47,9 @@ enum class EthereumMethod(val value: String) {
 
         fun requiresAuthorisation(method: String): Boolean {
             val authorisationMethods: List<String> = listOf(
-                ETH_SIGN, WATCH_ASSET, PERSONAL_SIGN,
+                ETH_SIGN, WATCH_ASSET, PERSONAL_SIGN, METAMASK_BATCH,
                 ADD_ETHEREUM_CHAIN, SWITCH_ETHEREUM_CHAIN,
-                ETH_SEND_TRANSACTION, ETH_REQUEST_ACCOUNTS, METAMASK_BATCH,
+                ETH_SEND_TRANSACTION, ETH_REQUEST_ACCOUNTS, METAMASK_CONNECT_SIGN,
                 ETH_SIGN_TYPED_DATA, ETH_SIGN_TYPED_DATA_V3, ETH_SIGN_TYPED_DATA_V4
             ).map { it.value }
 
@@ -58,8 +59,8 @@ enum class EthereumMethod(val value: String) {
         fun isResultMethod(method: String): Boolean {
             val resultMethods: List<String> = listOf(
                 ETH_SIGN, ETH_CHAIN_ID, PERSONAL_SIGN,
-                ADD_ETHEREUM_CHAIN, SWITCH_ETHEREUM_CHAIN,
-                ETH_SIGN_TRANSACTION, ETH_SEND_TRANSACTION, METAMASK_BATCH,
+                ADD_ETHEREUM_CHAIN, SWITCH_ETHEREUM_CHAIN, METAMASK_BATCH,
+                ETH_SIGN_TRANSACTION, ETH_SEND_TRANSACTION, METAMASK_CONNECT_SIGN,
                 WATCH_ASSET, ETH_REQUEST_ACCOUNTS, GET_METAMASK_PROVIDER_STATE,
                 ETH_SIGN_TYPED_DATA, ETH_SIGN_TYPED_DATA_V3, ETH_SIGN_TYPED_DATA_V4,
             ).map { it.value }

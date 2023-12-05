@@ -36,7 +36,7 @@ fun SendTransactionScreen(
         amount: String,
         from: String,
         to: String,
-        onSuccess: (Any?) -> Unit,
+        onSuccess: (String) -> Unit,
         onError: (message: String) -> Unit
     ) -> Unit
 ) {

@@ -41,7 +41,7 @@ fun DappActionsScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             // Chained signing button
-            DappButton(buttonText = stringResource(R.string.chained_sign)) {
+            DappButton(buttonText = stringResource(R.string.batch_sign)) {
                 onChainedSign()
             }
 

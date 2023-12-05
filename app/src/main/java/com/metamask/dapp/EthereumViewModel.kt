@@ -18,14 +18,33 @@ class EthereumViewModel @Inject constructor(
         }
     }
 
-    fun connect(dapp: Dapp, onSuccess: () -> Unit, onError: (message: String) -> Unit) {
+    fun connect(dapp: Dapp, onSuccess: () -> Unit, onError: (String) -> Unit) {
         ethereum.connect(dapp) { result ->
-            if (result is RequestError) {
-                Logger.log("Ethereum connection error: ${result.message}")
-                onError(result.message)
-            } else {
-                Logger.log("Ethereum connection result: $result")
-                onSuccess()
+            when (result) {
+                is Result.Error -> {
+                    Logger.log("Ethereum connection error: ${result.error.message}")
+                    onError(result.error.message)
+                }
+                is Result.Success -> {
+                    Logger.log("Ethereum connection result: $result")
+                    onSuccess()
+                }
+            }
+        }
+    }
+
+    fun connectAndSign(message: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
+        ethereum.connectAndSign(message) { result ->
+            when (result) {
+                is Result.Error -> {
+                    Logger.log("Connect & sign error: ${result.error.message}")
+                    onError(result.error.message)
+                }
+                is Result.Success.Item -> {
+                    Logger.log("Connect & sign  result: $result")
+                    onSuccess(result.value)
+                }
+                else -> {}
             }
         }
     }
@@ -56,8 +75,8 @@ class EthereumViewModel @Inject constructor(
         ethereum.sendRequestBatch(requestBatch) { result ->
             when (result) {
                 is Result.Error -> {
-                    onError(result.error.message)
                     Logger.log("Ethereum batch sign error: ${result.error.message}")
+                    onError(result.error.message)
                 }
                 is Result.Success.Items -> {
                     Logger.log("Ethereum batch sign result: $result")
@@ -85,8 +104,8 @@ class EthereumViewModel @Inject constructor(
         ethereum.sendRequest(signRequest) { result ->
             when (result) {
                 is Result.Error -> {
-                    onError(result.error.message)
                     Logger.log("Ethereum sign error: ${result.error.message}")
+                    onError(result.error.message)
                 }
                 is Result.Success.Item -> {
                     Logger.log("Ethereum sign result: $result")
@@ -119,8 +138,8 @@ class EthereumViewModel @Inject constructor(
         ethereum.sendRequest(transactionRequest) { result ->
             when (result) {
                 is Result.Error -> {
-                    onError(result.error.message)
                     Logger.log("Ethereum transaction error: ${result.error.message}")
+                    onError(result.error.message)
                 }
                 is Result.Success.Item -> {
                     Logger.log("Ethereum transaction result: $result")
