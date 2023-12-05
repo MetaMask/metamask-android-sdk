@@ -18,26 +18,33 @@ class EthereumViewModel @Inject constructor(
         }
     }
 
-    fun connect(dapp: Dapp, onSuccess: () -> Unit, onError: (String) -> Unit) {
-        ethereum.connect(dapp) { result ->
-            if (result is RequestError) {
-                Logger.log("Ethereum connection error: ${result.message}")
-                onError(result.message)
-            } else {
-                Logger.log("Ethereum connection result: $result")
-                onSuccess()
+    fun connect(onSuccess: () -> Unit, onError: (String) -> Unit) {
+        ethereum.connect() { result ->
+            when (result) {
+                is Result.Error -> {
+                    Logger.log("Ethereum connection error: ${result.error.message}")
+                    onError(result.error.message)
+                }
+                is Result.Success -> {
+                    Logger.log("Ethereum connection result: $result")
+                    onSuccess()
+                }
             }
         }
     }
 
     fun connectAndSign(message: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
         ethereum.connectAndSign(message) { result ->
-            if (result is RequestError) {
-                Logger.log("Connect & sign error: ${result.message}")
-                onError(result.message)
-            } else {
-                Logger.log("Connect & sign  result: $result")
-                onSuccess(result as String)
+            when (result) {
+                is Result.Error -> {
+                    Logger.log("Connect & sign error: ${result.error.message}")
+                    onError(result.error.message)
+                }
+                is Result.Success.Item -> {
+                    Logger.log("Connect & sign  result: $result")
+                    onSuccess(result.value)
+                }
+                else -> {}
             }
         }
     }
@@ -50,11 +57,41 @@ class EthereumViewModel @Inject constructor(
         ethereum.clearSession()
     }
 
+    fun sendBatchSigningRequest(messages: List<String>,
+                         address: String,
+                         onSuccess: (List<String>) -> Unit,
+                         onError: (message: String) -> Unit) {
+        val requestBatch: MutableList<EthereumRequest> = mutableListOf()
+
+        for (message in messages) {
+            val params: List<String> = listOf(address, message)
+            val ethereumRequest = EthereumRequest(
+                method = EthereumMethod.PERSONAL_SIGN.value,
+                params = params
+            )
+            requestBatch.add(ethereumRequest)
+        }
+
+        ethereum.sendRequestBatch(requestBatch) { result ->
+            when (result) {
+                is Result.Error -> {
+                    Logger.log("Ethereum batch sign error: ${result.error.message}")
+                    onError(result.error.message)
+                }
+                is Result.Success.Items -> {
+                    Logger.log("Ethereum batch sign result: $result")
+                    onSuccess(result.value)
+                }
+                else -> {}
+            }
+        }
+    }
+
     fun signMessage(
         message: String,
         address: String,
-        onSuccess: (Any?) -> Unit,
-        onError: (message: String) -> Unit
+        onSuccess: (String) -> Unit,
+        onError: (String) -> Unit
     ) {
         val params: List<String> = listOf(address, message)
 
@@ -65,12 +102,16 @@ class EthereumViewModel @Inject constructor(
         )
 
         ethereum.sendRequest(signRequest) { result ->
-            if (result is RequestError) {
-                onError(result.message)
-                Logger.log("Ethereum sign error: ${result.message}")
-            } else {
-                Logger.log("Ethereum sign result: $result")
-                onSuccess(result)
+            when (result) {
+                is Result.Error -> {
+                    Logger.log("Ethereum sign error: ${result.error.message}")
+                    onError(result.error.message)
+                }
+                is Result.Success.Item -> {
+                    Logger.log("Ethereum sign result: $result")
+                    onSuccess(result.value)
+                }
+                else -> {}
             }
         }
     }
@@ -79,7 +120,7 @@ class EthereumViewModel @Inject constructor(
         amount: String,
         from: String,
         to: String,
-        onSuccess: (Any?) -> Unit,
+        onSuccess: (String) -> Unit,
         onError: (message: String) -> Unit
     ) {
         val params: MutableMap<String, Any> = mutableMapOf(
@@ -95,12 +136,16 @@ class EthereumViewModel @Inject constructor(
         )
 
         ethereum.sendRequest(transactionRequest) { result ->
-            if (result is RequestError) {
-                Logger.log("Ethereum transaction error: ${result.message}")
-                onError(result.message)
-            } else {
-                Logger.log("Ethereum transaction result: $result")
-                onSuccess(result)
+            when (result) {
+                is Result.Error -> {
+                    Logger.log("Ethereum transaction error: ${result.error.message}")
+                    onError(result.error.message)
+                }
+                is Result.Success.Item -> {
+                    Logger.log("Ethereum transaction result: $result")
+                    onSuccess(result.value)
+                }
+                else -> {}
             }
         }
     }
@@ -117,27 +162,30 @@ class EthereumViewModel @Inject constructor(
         )
 
         ethereum.sendRequest(switchChainRequest) { result ->
-            if (result is RequestError) {
-                if (result.code == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.code == ErrorType.SERVER_ERROR.code) {
-                    val message = "${Network.chainNameFor(chainId)} ($chainId) has not been added to your MetaMask wallet. Add chain?"
+            when (result) {
+                is Result.Error -> {
+                    if (result.error.code == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.error.code == ErrorType.SERVER_ERROR.code) {
+                        val message = "${Network.chainNameFor(chainId)} ($chainId) has not been added to your MetaMask wallet. Add chain?"
 
-                    val action: () -> Unit = {
-                        addEthereumChain(
-                            chainId,
-                            onSuccess = { result ->
-                                onSuccess(result)
-                            },
-                            onError = { error ->
-                                onError(error, null)
-                            }
-                        )
+                        val action: () -> Unit = {
+                            addEthereumChain(
+                                chainId,
+                                onSuccess = { result ->
+                                    onSuccess(result)
+                                },
+                                onError = { error ->
+                                    onError(error, null)
+                                }
+                            )
+                        }
+                        onError(message, action)
+                    } else {
+                        onError("Switch chain error: ${result.error.message}", null)
                     }
-                    onError(message, action)
-                } else {
-                    onError("Switch chain error: ${result.message}", null)
                 }
-            } else {
-                onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
+                is Result.Success -> {
+                    onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
+                }
             }
         }
     }
@@ -160,13 +208,16 @@ class EthereumViewModel @Inject constructor(
         )
 
         ethereum.sendRequest(addChainRequest) { result ->
-            if (result is RequestError) {
-                onError("Add chain error: ${result.message}")
-            } else {
-                if (chainId == ethereum.chainId) {
-                    onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
-                } else {
-                    onSuccess("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
+            when (result) {
+                is Result.Error -> {
+                    onError("Add chain error: ${result.error.message}")
+                }
+                is Result.Success -> {
+                    if (chainId == ethereum.chainId) {
+                        onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
+                    } else {
+                        onSuccess("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
+                    }
                 }
             }
         }

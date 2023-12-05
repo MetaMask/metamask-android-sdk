@@ -16,6 +16,7 @@ import com.metamask.dapp.com.metamask.dapp.AppTopBar
 fun DappActionsScreen(
     navController: NavController,
     onSignMessage: () -> Unit,
+    onChainedSign: () -> Unit,
     onSendTransaction: () -> Unit,
     onSwitchChain: () -> Unit
 ) {
@@ -35,6 +36,13 @@ fun DappActionsScreen(
             // Sign message button
             DappButton(buttonText = stringResource(R.string.sign)) {
                 onSignMessage()
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Chained signing button
+            DappButton(buttonText = stringResource(R.string.batch_sign)) {
+                onChainedSign()
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -61,5 +69,5 @@ fun DappActionsScreen(
 @Preview
 @Composable
 fun PreviewDappActions() {
-    DappActionsScreen(rememberNavController(), {}, {}, {})
+    DappActionsScreen(rememberNavController(), {}, {}, {}, {})
 }

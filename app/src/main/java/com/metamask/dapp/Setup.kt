@@ -12,15 +12,16 @@ import io.metamask.androidsdk.*
 fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel) {
     val navController = rememberNavController()
     val ethereumState by ethereumViewModel.ethereumState.observeAsState(EthereumState("", "", ""))
+    var isBatchSigning by remember { mutableStateOf(false) }
+    
     var isConnectSign by remember { mutableStateOf(false) }
 
     NavHost(navController = navController, startDestination = CONNECT.name) {
         composable(CONNECT.name) {
             ConnectScreen(
                 ethereumState = ethereumState,
-                onConnect = { dapp, onError ->
+                onConnect = { onError ->
                     ethereumViewModel.connect(
-                        dapp,
                         onSuccess = { screenViewModel.setScreen(ACTIONS) },
                         onError) },
                 onConnectSign = { screenViewModel.setScreen(CONNECT_SIGN_MESSAGE) },
@@ -35,7 +36,14 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
         composable(ACTIONS.name) {
             DappActionsScreen(
                 navController,
-                onSignMessage = { screenViewModel.setScreen(SIGN_MESSAGE) },
+                onSignMessage = {
+                    isBatchSigning = false
+                    screenViewModel.setScreen(SIGN_MESSAGE)
+                                },
+                onChainedSign = {
+                    isBatchSigning = true
+                    screenViewModel.setScreen(SIGN_MESSAGE)
+                                },
                 onSendTransaction = { screenViewModel.setScreen(SEND_TRANSACTION) },
                 onSwitchChain = { screenViewModel.setScreen(SWITCH_CHAIN) }
             )
@@ -44,13 +52,18 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
             SignMessageScreen(
                 navController,
                 ethereumState = ethereumState,
+                isBatchSigning,
                 isConnectSign,
                 connectSignMessage = { message, onSuccess, onError ->
                     ethereumViewModel.connectAndSign(message, onSuccess, onError)
                 },
                 signMessage = { message, address, onSuccess, onError ->
                     ethereumViewModel.signMessage(message, address, onSuccess, onError)
-                })
+                },
+                batchSign = { messages, address, onSuccess, onError ->
+                    ethereumViewModel.sendBatchSigningRequest(messages, address, onSuccess, onError)
+                }
+            )
         }
         composable(SEND_TRANSACTION.name) {
             SendTransactionScreen(

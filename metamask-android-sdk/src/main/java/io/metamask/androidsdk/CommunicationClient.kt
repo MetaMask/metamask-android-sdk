@@ -20,7 +20,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     var sessionId: String = ""
     private val keyExchange: KeyExchange = KeyExchange()
 
-    var dapp: Dapp? = null
+    var dappMetadata: DappMetadata? = null
     var isServiceConnected = false
         private set
 
@@ -99,8 +99,8 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             Event.SDK_CONNECTION_REQUEST_STARTED -> {
                 parameters["commlayer"] = SDKInfo.PLATFORM
                 parameters["sdkVersion"] = SDKInfo.VERSION
-                parameters["url"] = dapp?.url ?: ""
-                parameters["title"] = dapp?.name ?: ""
+                parameters["url"] = dappMetadata?.url ?: ""
+                parameters["title"] = dappMetadata?.name ?: ""
                 parameters["platform"] = SDKInfo.PLATFORM
             }
             else -> Unit
@@ -198,19 +198,19 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             if (resultJson.isNotEmpty()) {
                 val result: Map<String, Any?>? = Gson().fromJson(resultJson, object : TypeToken<Map<String, Any?>>() {}.type)
                 if (result != null) {
-                    submittedRequests[id]?.callback?.invoke(result)
-                    completeRequest(id, result)
+                    submittedRequests[id]?.callback?.invoke(Result.Success.ItemMap(result))
+                    completeRequest(id, Result.Success.ItemMap(result))
                 } else {
                     val accounts: List<String>? = Gson().fromJson(resultJson, object : TypeToken<List<String>>() {}.type)
                     val account = accounts?.firstOrNull()
                     if (account != null) {
-                        submittedRequests[id]?.callback?.invoke(account)
-                        completeRequest(id, account)
+                        submittedRequests[id]?.callback?.invoke(Result.Success.Item(account))
+                        completeRequest(id, Result.Success.Item(account))
                     }
                 }
             } else {
                 val result: Map<String, Serializable> = Gson().fromJson(data.toString(), object : TypeToken<Map<String, Serializable>>() {}.type)
-                completeRequest(id, result)
+                completeRequest(id, Result.Success.ItemMap(result))
             }
             return
         }
@@ -226,14 +226,14 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
 
                 if (account != null) {
                     updateAccount(account)
-                    completeRequest(id, account)
+                    completeRequest(id, Result.Success.Item(account))
                 }
 
                 val chainId = resultJson.optString("chainId")
 
                 if (chainId.isNotEmpty()) {
                     updateChainId(chainId)
-                    completeRequest(id, chainId)
+                    completeRequest(id, Result.Success.Item(chainId))
                 }
             }
             EthereumMethod.ETH_REQUEST_ACCOUNTS.value  -> {
@@ -243,7 +243,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
 
                 if (account != null) {
                     updateAccount(account)
-                    completeRequest(id, account)
+                    completeRequest(id, Result.Success.Item(account))
                 } else {
                     Logger.error("CommunicationClient:: Request accounts failure: $result")
                 }
@@ -253,7 +253,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
 
                 if (chainId.isNotEmpty()) {
                     updateChainId(chainId)
-                    completeRequest(id, chainId)
+                    completeRequest(id, Result.Success.Item(chainId))
                 }
             }
             EthereumMethod.ETH_SIGN_TYPED_DATA_V3.value,
@@ -262,18 +262,19 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                 val result = data.optString("result")
 
                 if (result.isNotEmpty()) {
-                    completeRequest(id, result)
+                    completeRequest(id, Result.Success.Item(result))
                 } else {
                     Logger.error("CommunicationClient:: Unexpected response: $data")
                 }
             }
+            EthereumMethod.METAMASK_BATCH.value -> {
+                val result = data.optString("result")
+                val results: List<String> = Gson().fromJson(result, object : TypeToken<List<String>>() {}.type)
+                completeRequest(id, Result.Success.Items(results))
+            }
             else -> {
-                val result = data.opt("result")
-                if (result != null) {
-                    completeRequest(id, result)
-                } else {
-                    Logger.error("Unexpected response: $data")
-                }
+                val result = data.optString("result")
+                completeRequest(id, Result.Success.Item(result))
             }
         }
     }
@@ -291,11 +292,11 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         val errorCode = errorMap["code"] as? Double ?: -1
         val code = errorCode.toInt()
         val message = errorMap["message"] as? String ?: ErrorType.message(code)
-        completeRequest(requestId, RequestError(code, message))
+        completeRequest(requestId, Result.Error(RequestError(code, message)))
         return true
     }
 
-    private fun completeRequest(id: String, result: Any) {
+    private fun completeRequest(id: String, result: Result) {
         if (queuedRequests[id] != null) {
             queuedRequests[id]?.callback?.invoke(result)
             queuedRequests.remove(id)
@@ -376,7 +377,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
     }
 
-    fun sendRequest(request: EthereumRequest, callback: (Any?) -> Unit) {
+    fun sendRequest(request: RpcRequest, callback: (Result) -> Unit) {
         if (request.method == EthereumMethod.GET_METAMASK_PROVIDER_STATE.value) {
             clearPendingRequests()
         }
@@ -402,7 +403,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
     }
 
-    private fun processRequest(request: EthereumRequest, callback: (Any?) -> Unit) {
+    private fun processRequest(request: RpcRequest, callback: (Result) -> Unit) {
         Logger.log("CommunicationClient:: sending request $request")
         if (queuedRequests[request.id] != null) {
             queuedRequests.remove(request.id)
@@ -422,7 +423,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         if (sentOriginatorInfo) { return }
         sentOriginatorInfo = true
 
-        val originatorInfo = OriginatorInfo(dapp?.name, dapp?.url, SDKInfo.PLATFORM, SDKInfo.VERSION)
+        val originatorInfo = OriginatorInfo(dappMetadata?.name, dappMetadata?.url, SDKInfo.PLATFORM, SDKInfo.VERSION)
         val requestInfo = RequestInfo("originator_info", originatorInfo)
         val requestInfoJson = Gson().toJson(requestInfo)
 

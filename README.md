@@ -69,16 +69,21 @@ code to your project file:
 ```kotlin
 @AndroidEntryPoint
 class SomeModel(private val repository: ApplicationRepository) {
-    val ethereum = Ethereum(context)
     
-    val dapp = Dapp("Droid Dapp", "https://droiddapp.com")
+    val dappMetadata = DappMetadata("Droid Dapp", "https://droiddapp.com")
+    val ethereum = Ethereum(context, dappMetadata)
 
     // This is the same as calling eth_requestAccounts
-    ethereum.connect(dapp) { result ->
-        if (result is RequestError) {
-            Log.e(TAG, "Ethereum connection error: ${result.message}")
-        } else {
-            Log.d(TAG, "Ethereum connection result: $result")
+    ethereum.connect() { result ->
+        when (result) {
+            is Result.Error -> {
+                Logger.log("Ethereum connection error: ${result.error.message}")
+                onError(result.error.message)
+            }
+            is Result.Success -> {
+                Logger.log("Ethereum connection result: $result")
+                onSuccess()
+            }
         }
     }
 }
@@ -106,8 +111,8 @@ class EthereumViewModel @Inject constructor(
   }
 
   // Wrapper function to connect the dapp
-  fun connect(dapp: Dapp, callback: ((Any?) -> Unit)?) {
-    ethereum.connect(dapp, callback)
+  fun connect(callback: ((Any?) -> Unit)?) {
+    ethereum.connectcallback)
   }
   
   // Wrapper function call all RPC methods
@@ -122,16 +127,8 @@ To use the ViewModel, add the following code to your project file:
 ```kotlin
 val ethereumViewModel: EthereumViewModel by viewModels()
 
-val dapp = Dapp("Droid Dapp", "https://droiddapp.com")
-
 // This is the same as calling eth_requestAccounts
-ethereum.connect(dapp) { result ->
-    if (result is RequestError) {
-        Log.e(TAG, "Ethereum connection error: ${result.message}")
-    } else {
-        Log.d(TAG, "Ethereum connection result: $result")
-    }
-}
+ethereumViewModel.connect()
 ```
 
 See the example dapp's
@@ -189,10 +186,49 @@ val signRequest = EthereumRequest(
 )
 
 ethereum.sendRequest(signRequest) { result ->
-    if (result is RequestError) {
-        Log.e(TAG, "Ethereum sign error: ${result.message}")
-    } else {
-        Log.d(TAG, "Ethereum sign result: $result")
+    when (result) {
+        is Result.Error -> {
+            Logger.log("Ethereum sign error: ${result.error.message}")
+            onError(result.error.message)
+        }
+        is Result.Success.Item -> {
+            Logger.log("Ethereum sign result: $result")
+            onSuccess(result.value)
+        }
+        else -> {}
+    }
+}
+```
+
+#### Example: Request batching
+
+The following example requests the user to personal sign a batch of messages each of
+[`personal_sign`](https://docs.metamask.io/wallet/reference/personal_sign/).
+
+```kotlin
+val messages: List<String> = listOf("First message", "Second message", "Last message")
+val requestBatch: MutableList<EthereumRequest> = mutableListOf()
+
+for (message in messages) {
+    val params: List<String> = listOf(address, message)
+    val ethereumRequest = EthereumRequest(
+        method = EthereumMethod.PERSONAL_SIGN.value,
+        params = params
+    )
+    requestBatch.add(ethereumRequest)
+}
+
+ethereum.sendRequestBatch(requestBatch) { result ->
+    when (result) {
+        is Result.Error -> {
+            Logger.log("Ethereum batch sign error: ${result.error.message}")
+            onError(result.error.message)
+        }
+        is Result.Success.Items -> {
+            Logger.log("Ethereum batch sign result: $result")
+            onSuccess(result.value)
+        }
+        else -> {}
     }
 }
 ```
@@ -248,27 +284,30 @@ fun switchChain(
     )
 
     ethereum.sendRequest(switchChainRequest) { result ->
-        if (result is RequestError) {
-            if (result.code == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.code == ErrorType.SERVER_ERROR.code) {
-                val message = "${Network.chainNameFor(chainId)} ($chainId) has not been added to your MetaMask wallet. Add chain?"
+        when (result) {
+            is Result.Error -> {
+                if (result.error.code == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.error.code == ErrorType.SERVER_ERROR.code) {
+                    val message = "${Network.chainNameFor(chainId)} ($chainId) has not been added to your MetaMask wallet. Add chain?"
 
-                val action: () -> Unit = {
-                    addEthereumChain(
-                        chainId,
-                        onSuccess = { result ->
-                            onSuccess(result)
-                        },
-                        onError = { error ->
-                            onError(error, null)
-                        }
-                    )
+                    val action: () -> Unit = {
+                        addEthereumChain(
+                            chainId,
+                            onSuccess = { result ->
+                                onSuccess(result)
+                            },
+                            onError = { error ->
+                                onError(error, null)
+                            }
+                        )
+                    }
+                    onError(message, action)
+                } else {
+                    onError("Switch chain error: ${result.error.message}", null)
                 }
-                onError(message, action)
-            } else {
-                onError("Switch chain error: ${result.message}", null)
             }
-        } else {
-            onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
+            is Result.Success -> {
+                onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
+            }
         }
     }
 }
@@ -291,13 +330,16 @@ private fun addEthereumChain(
     )
 
     ethereum.sendRequest(addChainRequest) { result ->
-        if (result is RequestError) {
-            onError("Add chain error: ${result.message}")
-        } else {
-            if (chainId == ethereum.chainId) {
-                onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
-            } else {
-                onSuccess("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
+        when (result) {
+            is Result.Error -> {
+                onError("Add chain error: ${result.error.message}")
+            }
+            is Result.Success -> {
+                if (chainId == ethereum.chainId) {
+                    onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
+                } else {
+                    onSuccess("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
+                }
             }
         }
     }

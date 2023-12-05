@@ -4,7 +4,7 @@ import java.net.MalformedURLException
 import java.net.URL
 
 @Serializable
-data class Dapp(
+data class DappMetadata(
     val name: String,
     val url: String
     ) {
