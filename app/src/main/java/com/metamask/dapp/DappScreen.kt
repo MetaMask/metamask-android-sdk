@@ -5,6 +5,7 @@ enum class DappScreen {
     ACTIONS,
     SIGN_MESSAGE,
     CONNECT_SIGN_MESSAGE,
+    CONNECT_WITH,
     SEND_TRANSACTION,
     SWITCH_CHAIN
 }

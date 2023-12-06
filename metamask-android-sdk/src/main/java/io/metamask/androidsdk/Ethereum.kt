@@ -103,8 +103,35 @@ class Ethereum (private val context: Context, private val dappMetadata: DappMeta
         requestAccounts(callback)
     }
 
+    fun connectWith(request: EthereumRequest, callback: ((Result) -> Unit)? = null) {
+        Logger.log("Ethereum:: connecting with ${request.method}...")
+        Logger.log("Ethereum:: connectRequestSent $connectRequestSent")
+        connectRequestSent = true
+        Logger.log("Ethereum:: connectRequestSent $connectRequestSent")
+        communicationClient?.dappMetadata = dappMetadata
+        communicationClient?.ethereumEventCallbackRef = WeakReference(this)
+        communicationClient?.updateSessionDuration(sessionDuration)
+        communicationClient?.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
+
+        _ethereumState.postValue(
+            currentEthereumState.copy(
+                selectedAddress = "",
+                chainId = ""
+            )
+        )
+        val sendRequest: EthereumRequest = if (request.method == EthereumMethod.METAMASK_CONNECT_WITH.value) {
+            request
+        } else {
+            EthereumRequest(
+                method = EthereumMethod.METAMASK_CONNECT_WITH.value,
+                params = listOf(request)
+            )
+        }
+
+        sendConnectRequest(sendRequest, callback)
+    }
+
     fun connectAndSign(message: String, callback: ((Result) -> Unit)? = null) {
-        Logger.log("Ethereum:: connect & sign...")
         connectRequestSent = true
         communicationClient?.dappMetadata = dappMetadata
         communicationClient?.ethereumEventCallbackRef = WeakReference(this)
@@ -123,7 +150,11 @@ class Ethereum (private val context: Context, private val dappMetadata: DappMeta
             EthereumMethod.METAMASK_CONNECT_SIGN.value,
             params = listOf(message)
         )
-        sendRequest(connectSignRequest) { result ->
+        sendConnectRequest(connectSignRequest, callback)
+    }
+
+    private fun sendConnectRequest(request: EthereumRequest, callback: ((Result) -> Unit)?) {
+        sendRequest(request) { result ->
             when (result) {
                 is Result.Error -> {
                     communicationClient?.trackEvent(Event.SDK_CONNECTION_FAILED, null)
@@ -171,30 +202,12 @@ class Ethereum (private val context: Context, private val dappMetadata: DappMeta
             UUID.randomUUID().toString(),
             EthereumMethod.ETH_REQUEST_ACCOUNTS.value
         )
-        sendRequest(accountsRequest) { result ->
-            when (result) {
-                is Result.Error -> {
-                    communicationClient?.trackEvent(Event.SDK_CONNECTION_FAILED, null)
-
-                    if (
-                        result.error.code == ErrorType.USER_REJECTED_REQUEST.code ||
-                        result.error.code == ErrorType.UNAUTHORISED_REQUEST.code
-                    ) {
-                        communicationClient?.trackEvent(Event.SDK_CONNECTION_REJECTED, null)
-                    }
-                }
-                is Result.Success -> {
-                    communicationClient?.trackEvent(Event.SDK_CONNECTION_AUTHORIZED, null)
-                }
-            }
-            callback?.invoke(result)
-        }
+        sendConnectRequest(accountsRequest, callback)
         requestChainId()
     }
 
     fun sendRequest(request: RpcRequest, callback: ((Result) -> Unit)? = null) {
         Logger.log("Ethereum:: Sending request $request")
-
         if (!connectRequestSent) {
             requestAccounts {
                 sendRequest(request, callback)
@@ -214,7 +227,7 @@ class Ethereum (private val context: Context, private val dappMetadata: DappMeta
     }
 
     fun sendRequestBatch(requests: List<EthereumRequest>, callback: ((Result) -> Unit)? = null) {
-        val batchRequest = BatchRequest(method = EthereumMethod.METAMASK_BATCH.value, params = requests)
+        val batchRequest = AnyRequest(method = EthereumMethod.METAMASK_BATCH.value, params = requests)
         sendRequest(batchRequest, callback)
     }
 

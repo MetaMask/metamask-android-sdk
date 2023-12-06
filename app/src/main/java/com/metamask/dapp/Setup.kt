@@ -13,7 +13,7 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
     val navController = rememberNavController()
     val ethereumState by ethereumViewModel.ethereumState.observeAsState(EthereumState("", "", ""))
     var isBatchSigning by remember { mutableStateOf(false) }
-    
+    var isConnectWith by remember { mutableStateOf(false) }
     var isConnectSign by remember { mutableStateOf(false) }
 
     NavHost(navController = navController, startDestination = CONNECT.name) {
@@ -25,6 +25,10 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
                         onSuccess = { screenViewModel.setScreen(ACTIONS) },
                         onError) },
                 onConnectSign = { screenViewModel.setScreen(CONNECT_SIGN_MESSAGE) },
+                onConnectWith = {
+                    isConnectWith = true
+                    screenViewModel.setScreen(CONNECT_WITH)
+                                },
                 onDisconnect = {
                     ethereumViewModel.disconnect()
                 },
@@ -69,9 +73,14 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
             SendTransactionScreen(
                 navController,
                 ethereumState = ethereumState,
+                isConnectWith,
                 sendTransaction = { amount, from, to, onSuccess, onError ->
                     ethereumViewModel.sendTransaction(amount, from, to, onSuccess, onError)
-                })
+                },
+                connectWithSendTransaction = { amount, from, to, onSuccess, onError ->
+                    ethereumViewModel.connectWithSendTransaction(amount, from, to, onSuccess, onError)
+                }
+            )
         }
         composable(SWITCH_CHAIN.name) {
             SwitchChainScreen(
@@ -94,6 +103,9 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
         CONNECT_SIGN_MESSAGE -> {
             isConnectSign = true
             navController.navigate(SIGN_MESSAGE.name)
+        }
+        CONNECT_WITH -> {
+            navController.navigate(SEND_TRANSACTION.name)
         }
         SIGN_MESSAGE -> {
             navController.navigate(SIGN_MESSAGE.name)

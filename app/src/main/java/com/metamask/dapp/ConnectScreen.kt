@@ -17,6 +17,7 @@ fun ConnectScreen(
     ethereumState: EthereumState,
     onConnect: (onError: (message: String) -> Unit) -> Unit,
     onConnectSign: () -> Unit,
+    onConnectWith: () -> Unit,
     onDisconnect: () -> Unit,
     onClearSession: () -> Unit) {
 
@@ -50,9 +51,16 @@ fun ConnectScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Switch chain button
+                // Connect and sign button
                 DappButton(buttonText = stringResource(R.string.connect_sign)) {
                     onConnectSign()
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Connect with button
+                DappButton(buttonText = stringResource(R.string.connect_with)) {
+                    onConnectWith()
                 }
             }
 
@@ -87,6 +95,7 @@ fun PreviewConnectClearButtons() {
         ethereumState = EthereumState("", "", ""),
         onConnect = {_ ->},
         onConnectSign = {},
+        onConnectWith = {},
         onDisconnect = {},
         onClearSession = {}
     )

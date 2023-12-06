@@ -68,7 +68,7 @@ code to your project file:
 
 ```kotlin
 @AndroidEntryPoint
-class SomeModel(private val repository: ApplicationRepository) {
+class SomeModel(private val context: Context) {
     
     val dappMetadata = DappMetadata("Droid Dapp", "https://droiddapp.com")
     val ethereum = Ethereum(context, dappMetadata)
@@ -112,7 +112,7 @@ class EthereumViewModel @Inject constructor(
 
   // Wrapper function to connect the dapp
   fun connect(callback: ((Any?) -> Unit)?) {
-    ethereum.connectcallback)
+    ethereum.connect(callback)
   }
   
   // Wrapper function call all RPC methods
@@ -203,7 +203,7 @@ ethereum.sendRequest(signRequest) { result ->
 #### Example: Request batching
 
 The following example requests the user to personal sign a batch of messages each of
-[`personal_sign`](https://docs.metamask.io/wallet/reference/personal_sign/).
+[`personal_sign`](https://docs.metamask.io/wallet/reference/personal_sign/) using `metamask_batch` rpc.
 
 ```kotlin
 val messages: List<String> = listOf("First message", "Second message", "Last message")

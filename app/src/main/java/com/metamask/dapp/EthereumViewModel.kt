@@ -33,6 +33,42 @@ class EthereumViewModel @Inject constructor(
         }
     }
 
+    fun connectWith(request: EthereumRequest, onSuccess: (Any?) -> Unit, onError: (String) -> Unit) {
+        ethereum.connectWith(request) { result ->
+            when (result) {
+                is Result.Error -> {
+                    Logger.log("Connectwith error: ${result.error.message}")
+                    onError(result.error.message)
+                }
+                is Result.Success.Item -> {
+                    Logger.log("Connectwith result: $result")
+                    onSuccess(result.value)
+                }
+                else -> {}
+            }
+        }
+    }
+
+    fun connectWithSendTransaction(amount: String,
+                        from: String,
+                        to: String,
+                        onSuccess: (Any?) -> Unit,
+                        onError: (message: String) -> Unit) {
+        val params: MutableMap<String, Any> = mutableMapOf(
+            "from" to from,
+            "to" to to,
+            "amount" to amount
+        )
+
+        val transactionRequest = EthereumRequest(
+            UUID.randomUUID().toString(),
+            EthereumMethod.ETH_SEND_TRANSACTION.value,
+            listOf(params)
+        )
+
+        connectWith(transactionRequest, onSuccess, onError)
+    }
+
     fun connectAndSign(message: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
         ethereum.connectAndSign(message) { result ->
             when (result) {
