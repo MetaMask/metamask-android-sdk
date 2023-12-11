@@ -25,18 +25,25 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.metamask.dapp.com.metamask.dapp.AppTopBar
 import io.metamask.androidsdk.*
-import java.util.*
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SendTransactionScreen(
     navController: NavController,
     ethereumState: EthereumState,
+    isConnectWith: Boolean = false,
     sendTransaction: (
         amount: String,
         from: String,
         to: String,
-        onSuccess: (String) -> Unit,
+        onSuccess: (Any?) -> Unit,
+        onError: (message: String) -> Unit
+    ) -> Unit,
+    connectWithSendTransaction: (
+        amount: String,
+        from: String,
+        to: String,
+        onSuccess: (Any?) -> Unit,
         onError: (message: String) -> Unit
     ) -> Unit
 ) {
@@ -183,16 +190,30 @@ fun SendTransactionScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            DappButton(buttonText = stringResource(R.string.send)) {
-                sendTransaction(amount, from, to,
-                    { result ->
-                        sendResult = result as String
-                        errorMessage = null
-                    },
-                    { error ->
-                        errorMessage = error
-                    }
-                )
+            if (isConnectWith) {
+                DappButton(buttonText = stringResource(R.string.connect_with_send)) {
+                    connectWithSendTransaction(amount, from, to,
+                        { result ->
+                            sendResult = result as String
+                            errorMessage = null
+                        },
+                        { error ->
+                            errorMessage = error
+                        }
+                    )
+                }
+            } else {
+                DappButton(buttonText = stringResource(R.string.send)) {
+                    sendTransaction(amount, from, to,
+                        { result ->
+                            sendResult = result as String
+                            errorMessage = null
+                        },
+                        { error ->
+                            errorMessage = error
+                        }
+                    )
+                }
             }
 
             DappLabel(
@@ -212,6 +233,7 @@ fun PreviewSendTransaction() {
     SendTransactionScreen(
         rememberNavController(),
         ethereumState = EthereumState("", "", ""),
-        sendTransaction = { _, _, _, _, _ -> }
+        sendTransaction = { _, _, _, _, _ -> },
+        connectWithSendTransaction = { _, _, _, _, _ -> },
     )
 }

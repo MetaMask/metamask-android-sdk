@@ -4,7 +4,6 @@ import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.metamask.androidsdk.*
-import java.util.*
 import javax.inject.Inject
 
 @HiltViewModel
@@ -33,8 +32,43 @@ class EthereumViewModel @Inject constructor(
         }
     }
 
-    fun connectAndSign(message: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
-        ethereum.connectAndSign(message) { result ->
+    fun connectWith(request: EthereumRequest, onSuccess: (Any?) -> Unit, onError: (String) -> Unit) {
+        ethereum.connectWith(request) { result ->
+            when (result) {
+                is Result.Error -> {
+                    Logger.log("Connectwith error: ${result.error.message}")
+                    onError(result.error.message)
+                }
+                is Result.Success.Item -> {
+                    Logger.log("Connectwith result: $result")
+                    onSuccess(result.value)
+                }
+                else -> {}
+            }
+        }
+    }
+
+    fun connectWithSendTransaction(amount: String,
+                        from: String,
+                        to: String,
+                        onSuccess: (Any?) -> Unit,
+                        onError: (message: String) -> Unit) {
+        val params: MutableMap<String, Any> = mutableMapOf(
+            "from" to from,
+            "to" to to,
+            "amount" to amount
+        )
+
+        val transactionRequest = EthereumRequest(
+            method = EthereumMethod.ETH_SEND_TRANSACTION.value,
+            params = listOf(params)
+        )
+
+        connectWith(transactionRequest, onSuccess, onError)
+    }
+
+    fun connectSign(message: String, onSuccess: (String) -> Unit, onError: (String) -> Unit) {
+        ethereum.connectSign(message) { result ->
             when (result) {
                 is Result.Error -> {
                     Logger.log("Connect & sign error: ${result.error.message}")
@@ -96,9 +130,8 @@ class EthereumViewModel @Inject constructor(
         val params: List<String> = listOf(address, message)
 
         val signRequest = EthereumRequest(
-            UUID.randomUUID().toString(),
-            EthereumMethod.ETH_SIGN_TYPED_DATA_V4.value,
-            params
+            method = EthereumMethod.ETH_SIGN_TYPED_DATA_V4.value,
+            params = params
         )
 
         ethereum.sendRequest(signRequest) { result ->
@@ -130,9 +163,8 @@ class EthereumViewModel @Inject constructor(
         )
 
         val transactionRequest = EthereumRequest(
-            UUID.randomUUID().toString(),
-            EthereumMethod.ETH_SEND_TRANSACTION.value,
-            listOf(params)
+            method = EthereumMethod.ETH_SEND_TRANSACTION.value,
+            params = listOf(params)
         )
 
         ethereum.sendRequest(transactionRequest) { result ->

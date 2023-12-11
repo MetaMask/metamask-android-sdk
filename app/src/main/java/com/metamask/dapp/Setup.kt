@@ -13,7 +13,7 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
     val navController = rememberNavController()
     val ethereumState by ethereumViewModel.ethereumState.observeAsState(EthereumState("", "", ""))
     var isBatchSigning by remember { mutableStateOf(false) }
-    
+    var isConnectWith by remember { mutableStateOf(false) }
     var isConnectSign by remember { mutableStateOf(false) }
 
     NavHost(navController = navController, startDestination = CONNECT.name) {
@@ -25,6 +25,7 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
                         onSuccess = { screenViewModel.setScreen(ACTIONS) },
                         onError) },
                 onConnectSign = { screenViewModel.setScreen(CONNECT_SIGN_MESSAGE) },
+                onConnectWith = { screenViewModel.setScreen(CONNECT_WITH) },
                 onDisconnect = {
                     ethereumViewModel.disconnect()
                 },
@@ -36,14 +37,8 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
         composable(ACTIONS.name) {
             DappActionsScreen(
                 navController,
-                onSignMessage = {
-                    isBatchSigning = false
-                    screenViewModel.setScreen(SIGN_MESSAGE)
-                                },
-                onChainedSign = {
-                    isBatchSigning = true
-                    screenViewModel.setScreen(SIGN_MESSAGE)
-                                },
+                onSignMessage = { screenViewModel.setScreen(SIGN_MESSAGE) },
+                onChainedSign = { screenViewModel.setScreen(BATCH_SIGN) },
                 onSendTransaction = { screenViewModel.setScreen(SEND_TRANSACTION) },
                 onSwitchChain = { screenViewModel.setScreen(SWITCH_CHAIN) }
             )
@@ -55,7 +50,7 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
                 isBatchSigning,
                 isConnectSign,
                 connectSignMessage = { message, onSuccess, onError ->
-                    ethereumViewModel.connectAndSign(message, onSuccess, onError)
+                    ethereumViewModel.connectSign(message, onSuccess, onError)
                 },
                 signMessage = { message, address, onSuccess, onError ->
                     ethereumViewModel.signMessage(message, address, onSuccess, onError)
@@ -69,9 +64,14 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
             SendTransactionScreen(
                 navController,
                 ethereumState = ethereumState,
+                isConnectWith,
                 sendTransaction = { amount, from, to, onSuccess, onError ->
                     ethereumViewModel.sendTransaction(amount, from, to, onSuccess, onError)
-                })
+                },
+                connectWithSendTransaction = { amount, from, to, onSuccess, onError ->
+                    ethereumViewModel.connectWithSendTransaction(amount, from, to, onSuccess, onError)
+                }
+            )
         }
         composable(SWITCH_CHAIN.name) {
             SwitchChainScreen(
@@ -94,6 +94,14 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
         CONNECT_SIGN_MESSAGE -> {
             isConnectSign = true
             navController.navigate(SIGN_MESSAGE.name)
+        }
+        BATCH_SIGN -> {
+            isBatchSigning = true
+            navController.navigate(SIGN_MESSAGE.name)
+        }
+        CONNECT_WITH -> {
+            isConnectWith = true
+            navController.navigate(SEND_TRANSACTION.name)
         }
         SIGN_MESSAGE -> {
             navController.navigate(SIGN_MESSAGE.name)

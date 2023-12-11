@@ -4,7 +4,6 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.*
 import java.lang.reflect.Type
-import java.util.*
 
 internal class SessionManager(
     private val store: SecureStorage,
@@ -76,7 +75,7 @@ internal class SessionManager(
     }
 
     private fun makeNewSessionConfig(): SessionConfig {
-        val sessionId = UUID.randomUUID().toString()
+        val sessionId = TimeStampGenerator.timestamp()
         val expiryDate = System.currentTimeMillis() + sessionDuration * 1000
         val sessionConfig = SessionConfig(sessionId, expiryDate)
         saveSessionConfig(sessionConfig)

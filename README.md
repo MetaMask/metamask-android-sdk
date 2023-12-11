@@ -31,7 +31,7 @@ add the following entry to the `dependencies` block:
 
 ```gradle title="build.gradle"
 dependencies {
-    implementation 'io.metamask.androidsdk:metamask-android-sdk:0.2.1'
+    implementation 'io.metamask.androidsdk:metamask-android-sdk:0.3.0'
 }
 ```
 
@@ -68,7 +68,7 @@ code to your project file:
 
 ```kotlin
 @AndroidEntryPoint
-class SomeModel(private val repository: ApplicationRepository) {
+class SomeModel(private val context: Context) {
     
     val dappMetadata = DappMetadata("Droid Dapp", "https://droiddapp.com")
     val ethereum = Ethereum(context, dappMetadata)
@@ -78,11 +78,9 @@ class SomeModel(private val repository: ApplicationRepository) {
         when (result) {
             is Result.Error -> {
                 Logger.log("Ethereum connection error: ${result.error.message}")
-                onError(result.error.message)
             }
             is Result.Success -> {
-                Logger.log("Ethereum connection result: $result")
-                onSuccess()
+                Logger.log("Ethereum connection result: ${result.value}")
             }
         }
     }
@@ -98,27 +96,27 @@ You can use a dependency manager such as [Hilt](https://developer.android.com/tr
 to initialize the ViewModel and maintain its state across configuration changes.
 If you use Hilt, your setup might look like the following:
 
-```kotlin title="EthereumViewModel.kt"
+```kotlin
 @HiltViewModel
 class EthereumViewModel @Inject constructor(
-        private val ethereum: Ethereum
+    private val ethereum: Ethereum
 ): ViewModel() {
 
-  val ethereumState = MediatorLiveData<EthereumState>().apply {
-    addSource(ethereum.ethereumState) { newEthereumState ->
-      value = newEthereumState
+    val ethereumState = MediatorLiveData<EthereumState>().apply {
+        addSource(ethereum.ethereumState) { newEthereumState ->
+            value = newEthereumState
+        }
     }
-  }
 
-  // Wrapper function to connect the dapp
-  fun connect(callback: ((Any?) -> Unit)?) {
-    ethereum.connectcallback)
-  }
-  
-  // Wrapper function call all RPC methods
-  fun sendRequest(request: EthereumRequest, callback: ((Any?) -> Unit)?) {
-    ethereum.sendRequest(request, callback)
-  }
+    // Wrapper function to connect the dapp
+    fun connect(callback: ((Result) -> Unit)?) {
+        ethereum.connect(callback)
+    }
+
+    // Wrapper function call all RPC methods
+    fun sendRequest(request: EthereumRequest, callback: ((Result) -> Unit)?) {
+        ethereum.sendRequest(request, callback)
+    }
 }
 ```
 
@@ -169,6 +167,55 @@ ethereum.sendRequest(getBalanceRequest) { result ->
 }
 ```
 
+#### Example: Connect with request
+
+We have provided a convenience method that enables you to connect and make any request in one rpc request using `metamask_connectwith`.
+
+```kotlin
+val params: Map<String, Any> = mutableMapOf(
+    "from" to "", // this will be populated with selected address once connected
+    "to" to "0x0000000000000000000000000000000000000000",
+    "amount" to "0x01"
+)
+
+val transactionRequest = EthereumRequest(
+    method = EthereumMethod.ETH_SEND_TRANSACTION.value,
+    params = listOf(params)
+)
+ethereum.connectWith(transactionRequest) { result ->
+    when (result) {
+        is Result.Error -> {
+            Logger.log("Ethereum connectWith error: ${result.error.message}")
+        }
+        is Result.Success.Item -> {
+            Logger.log("Ethereum connectWith result: ${result.value}")
+        }
+        else -> {}
+    }
+}
+```
+
+#### Example: Connect with sign
+
+We have further provided a specific convenience method that enables you to connect and make a personal sign rpc request using `metamask_connectSign`. 
+In this case you do not need to construct a request, you only provide the message to personal sign. 
+
+```kotlin
+val message = "This is the message to sign"
+
+ethereum.connectSign(message) { result ->
+    when (result) {
+        is Result.Error -> {
+            Logger.log("Ethereum connectSign error: ${result.error.message}")
+        }
+        is Result.Success.Item -> {
+            Logger.log("Ethereum connectSign result: ${result.value}")
+        }
+        else -> {}
+    }
+}
+```
+
 #### Example: Sign message
 
 The following example requests the user sign a message by calling
@@ -189,11 +236,9 @@ ethereum.sendRequest(signRequest) { result ->
     when (result) {
         is Result.Error -> {
             Logger.log("Ethereum sign error: ${result.error.message}")
-            onError(result.error.message)
         }
         is Result.Success.Item -> {
-            Logger.log("Ethereum sign result: $result")
-            onSuccess(result.value)
+            Logger.log("Ethereum sign result: ${result.value}")
         }
         else -> {}
     }
@@ -203,7 +248,7 @@ ethereum.sendRequest(signRequest) { result ->
 #### Example: Request batching
 
 The following example requests the user to personal sign a batch of messages each of
-[`personal_sign`](https://docs.metamask.io/wallet/reference/personal_sign/).
+[`personal_sign`](https://docs.metamask.io/wallet/reference/personal_sign/) using `metamask_batch` rpc.
 
 ```kotlin
 val messages: List<String> = listOf("First message", "Second message", "Last message")
@@ -222,11 +267,9 @@ ethereum.sendRequestBatch(requestBatch) { result ->
     when (result) {
         is Result.Error -> {
             Logger.log("Ethereum batch sign error: ${result.error.message}")
-            onError(result.error.message)
         }
         is Result.Success.Items -> {
-            Logger.log("Ethereum batch sign result: $result")
-            onSuccess(result.value)
+            Logger.log("Ethereum batch sign result: ${result.value}")
         }
         else -> {}
     }

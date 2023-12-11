@@ -1,7 +1,8 @@
 package io.metamask.androidsdk
 
-data class BatchRequest(
+data class AnyRequest(
     override var id: String = TimeStampGenerator.timestamp(),
     override val method: String,
-    override val params: List<EthereumRequest>
+    override val params: Any?
 ) : RpcRequest()
+
