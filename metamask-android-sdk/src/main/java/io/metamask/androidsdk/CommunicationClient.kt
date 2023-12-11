@@ -195,8 +195,6 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         if (!isResultMethod) {
             val resultJson = data.optString("result")
 
-            Logger.log("Mpendulo:: Got resultJson: $resultJson")
-
             if (resultJson.isNotEmpty()) {
                 val result: Map<String, Any?>? = Gson().fromJson(resultJson, object : TypeToken<Map<String, Any?>>() {}.type)
                 if (result != null) {
