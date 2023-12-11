@@ -6,7 +6,6 @@ import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import java.lang.ref.WeakReference
-import java.util.*
 
 private const val METAMASK_DEEPLINK = "https://metamask.app.link"
 private const val METAMASK_BIND_DEEPLINK = "$METAMASK_DEEPLINK/bind"
@@ -131,7 +130,7 @@ class Ethereum (private val context: Context, private val dappMetadata: DappMeta
         sendConnectRequest(sendRequest, callback)
     }
 
-    fun connectAndSign(message: String, callback: ((Result) -> Unit)? = null) {
+    fun connectSign(message: String, callback: ((Result) -> Unit)? = null) {
         connectRequestSent = true
         communicationClient?.dappMetadata = dappMetadata
         communicationClient?.ethereumEventCallbackRef = WeakReference(this)
@@ -146,8 +145,7 @@ class Ethereum (private val context: Context, private val dappMetadata: DappMeta
         )
 
         val connectSignRequest = EthereumRequest(
-            UUID.randomUUID().toString(),
-            EthereumMethod.METAMASK_CONNECT_SIGN.value,
+            method = EthereumMethod.METAMASK_CONNECT_SIGN.value,
             params = listOf(message)
         )
         sendConnectRequest(connectSignRequest, callback)
@@ -189,8 +187,7 @@ class Ethereum (private val context: Context, private val dappMetadata: DappMeta
 
     private fun requestChainId() {
         val chainIdRequest = EthereumRequest(
-            UUID.randomUUID().toString(),
-            EthereumMethod.ETH_CHAIN_ID.value
+            method = EthereumMethod.ETH_CHAIN_ID.value
         )
         sendRequest(chainIdRequest)
     }
@@ -199,8 +196,7 @@ class Ethereum (private val context: Context, private val dappMetadata: DappMeta
         Logger.log("Ethereum:: Requesting ethereum accounts")
 
         val accountsRequest = EthereumRequest(
-            UUID.randomUUID().toString(),
-            EthereumMethod.ETH_REQUEST_ACCOUNTS.value
+            method = EthereumMethod.ETH_REQUEST_ACCOUNTS.value
         )
         sendConnectRequest(accountsRequest, callback)
         requestChainId()
