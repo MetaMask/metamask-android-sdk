@@ -25,7 +25,6 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.metamask.dapp.com.metamask.dapp.AppTopBar
 import io.metamask.androidsdk.*
-import java.util.*
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
