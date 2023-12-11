@@ -48,7 +48,7 @@ import io.metamask.androidsdk.Ethereum
 
 ### 3. Connect your dapp
 
-You can connect your dapp to MetaMask in one of two ways:
+We have provided a convenient way to make rpc requests without having to first make a connect request. Please refer to [Connect With Request](#5-connect-with-request) for examples. Otherwise you can connect your dapp to MetaMask in one of two ways:
 
 1. [Use the `ethereum` provider object directly](#31-use-the-provider-object-directly).
    We recommend using this method in a pure model layer.
@@ -166,53 +166,6 @@ ethereum.sendRequest(getBalanceRequest) { result ->
         }
         is Result.Error -> {
             Logger.log("Ethereum request balance error: ${result.error.message}")
-        }
-    }
-}
-```
-
-#### Example: Connect with request
-
-We have provided a convenience method that enables you to connect and make any request in one rpc request using `metamask_connectwith`.
-
-```kotlin
-val params: Map<String, Any> = mutableMapOf(
-    "from" to "", // this will be populated with selected address once connected
-    "to" to "0x0000000000000000000000000000000000000000",
-    "amount" to "0x01"
-)
-
-val transactionRequest = EthereumRequest(
-    method = EthereumMethod.ETH_SEND_TRANSACTION.value,
-    params = listOf(params)
-)
-ethereum.connectWith(transactionRequest) { result ->
-    when (result) {
-        is Result.Error -> {
-            Logger.log("Ethereum connectWith error: ${result.error.message}")
-        }
-        is Result.Success.Item -> {
-            Logger.log("Ethereum connectWith result: ${result.value}")
-        }
-    }
-}
-```
-
-#### Example: Connect with sign
-
-We have further provided a specific convenience method that enables you to connect and make a personal sign rpc request using `metamask_connectSign`. 
-In this case you do not need to construct a request, you only provide the message to personal sign. 
-
-```kotlin
-val message = "This is the message to sign"
-
-ethereum.connectSign(message) { result ->
-    when (result) {
-        is Result.Error -> {
-            Logger.log("Ethereum connectSign error: ${result.error.message}")
-        }
-        is Result.Success.Item -> {
-            Logger.log("Ethereum connectSign result: ${result.value}")
         }
     }
 }
@@ -392,3 +345,52 @@ private fun addEthereumChain(
     }
 }
 ```
+
+### 5. Connect With Request
+#### Example: Connect with request
+
+We have provided a convenience method that enables you to connect and make any request in one rpc request without having to call `connect()` first.
+
+```kotlin
+val params: Map<String, Any> = mutableMapOf(
+    "from" to "", // this will be populated with selected address once connected
+    "to" to "0x0000000000000000000000000000000000000000",
+    "amount" to "0x01"
+)
+
+val transactionRequest = EthereumRequest(
+    method = EthereumMethod.ETH_SEND_TRANSACTION.value,
+    params = listOf(params)
+)
+ethereum.connectWith(transactionRequest) { result ->
+    when (result) {
+        is Result.Error -> {
+            Logger.log("Ethereum connectWith error: ${result.error.message}")
+        }
+        is Result.Success.Item -> {
+            Logger.log("Ethereum connectWith result: ${result.value}")
+        }
+    }
+}
+```
+
+#### Example: Connect with sign
+
+We have further provided a specific convenience method that enables you to connect and make a personal sign rpc request.
+In this case you do not need to construct a request, you only provide the message to personal sign.
+
+```kotlin
+val message = "This is the message to sign"
+
+ethereum.connectSign(message) { result ->
+    when (result) {
+        is Result.Error -> {
+            Logger.log("Ethereum connectSign error: ${result.error.message}")
+        }
+        is Result.Success.Item -> {
+            Logger.log("Ethereum connectSign result: ${result.value}")
+        }
+    }
+}
+```
+
