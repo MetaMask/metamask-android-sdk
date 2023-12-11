@@ -423,7 +423,12 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         if (sentOriginatorInfo) { return }
         sentOriginatorInfo = true
 
-        val originatorInfo = OriginatorInfo(dappMetadata?.name, dappMetadata?.url, SDKInfo.PLATFORM, SDKInfo.VERSION)
+        val originatorInfo = OriginatorInfo(
+            title = dappMetadata?.name,
+            url = dappMetadata?.url,
+            icon = dappMetadata?.iconUrl ?: dappMetadata?.base64Icon,
+            platform = SDKInfo.PLATFORM,
+            apiVersion = SDKInfo.VERSION)
         val requestInfo = RequestInfo("originator_info", originatorInfo)
         val requestInfoJson = Gson().toJson(requestInfo)
 

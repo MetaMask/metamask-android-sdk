@@ -6,7 +6,9 @@ import java.net.URL
 @Serializable
 data class DappMetadata(
     val name: String,
-    val url: String
+    val url: String,
+    val iconUrl: String? = null,
+    val base64Icon: String? = null
     ) {
     fun hasValidUrl(): Boolean {
         return try {
