@@ -15,7 +15,7 @@ import io.metamask.androidsdk.Ethereum
 internal object AppModule {
     @Provides
     fun provideDappMetadata(): DappMetadata {
-        return DappMetadata("Droiddapp", "https://droiddapp.io")
+        return DappMetadata("Droiddapp", "https://droiddapp.io", iconUrl = "https://cdn.sstatic.net/Sites/stackoverflow/Img/apple-touch-icon.png")
     }
 
     @Provides

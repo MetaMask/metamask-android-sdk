@@ -195,6 +195,8 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         if (!isResultMethod) {
             val resultJson = data.optString("result")
 
+            Logger.log("Mpendulo:: Got resultJson: $resultJson")
+
             if (resultJson.isNotEmpty()) {
                 val result: Map<String, Any?>? = Gson().fromJson(resultJson, object : TypeToken<Map<String, Any?>>() {}.type)
                 if (result != null) {
@@ -423,7 +425,12 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         if (sentOriginatorInfo) { return }
         sentOriginatorInfo = true
 
-        val originatorInfo = OriginatorInfo(dappMetadata?.name, dappMetadata?.url, SDKInfo.PLATFORM, SDKInfo.VERSION)
+        val originatorInfo = OriginatorInfo(
+            title = dappMetadata?.name,
+            url = dappMetadata?.url,
+            icon = dappMetadata?.iconUrl ?: dappMetadata?.base64Icon,
+            platform = SDKInfo.PLATFORM,
+            apiVersion = SDKInfo.VERSION)
         val requestInfo = RequestInfo("originator_info", originatorInfo)
         val requestInfoJson = Gson().toJson(requestInfo)
 
