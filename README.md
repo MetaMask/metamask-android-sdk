@@ -109,12 +109,12 @@ class EthereumViewModel @Inject constructor(
     }
 
     // Wrapper function to connect the dapp
-    fun connect(callback: ((Any?) -> Unit)?) {
+    fun connect(callback: ((Result) -> Unit)?) {
         ethereum.connect(callback)
     }
 
     // Wrapper function call all RPC methods
-    fun sendRequest(request: EthereumRequest, callback: ((Any?) -> Unit)?) {
+    fun sendRequest(request: EthereumRequest, callback: ((Result) -> Unit)?) {
         ethereum.sendRequest(request, callback)
     }
 }
