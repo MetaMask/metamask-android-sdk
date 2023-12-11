@@ -68,7 +68,7 @@ code to your project file:
 
 ```kotlin
 @AndroidEntryPoint
-class SomeModel(private val context: Context) {
+class SomeModel(context: Context) {
     
     val dappMetadata = DappMetadata("Droid Dapp", "https://droiddapp.com")
     val ethereum = Ethereum(context, dappMetadata)
@@ -79,7 +79,7 @@ class SomeModel(private val context: Context) {
             is Result.Error -> {
                 Logger.log("Ethereum connection error: ${result.error.message}")
             }
-            is Result.Success -> {
+            is Result.Success.Item -> {
                 Logger.log("Ethereum connection result: ${result.value}")
             }
         }
@@ -159,10 +159,14 @@ val getBalanceRequest = EthereumRequest(
 
 // Make request
 ethereum.sendRequest(getBalanceRequest) { result ->
-    if (result is RequestError) {
-        // handle error
-    } else {
-        balance = result
+    when (result) {
+        is Result.Success.Item -> {
+            Logger.log("Ethereum account balance: ${result.value}")
+            balance = result.value
+        }
+        is Result.Error -> {
+            Logger.log("Ethereum request balance error: ${result.error.message}")
+        }
     }
 }
 ```
@@ -190,7 +194,6 @@ ethereum.connectWith(transactionRequest) { result ->
         is Result.Success.Item -> {
             Logger.log("Ethereum connectWith result: ${result.value}")
         }
-        else -> {}
     }
 }
 ```
@@ -211,7 +214,6 @@ ethereum.connectSign(message) { result ->
         is Result.Success.Item -> {
             Logger.log("Ethereum connectSign result: ${result.value}")
         }
-        else -> {}
     }
 }
 ```
@@ -240,7 +242,6 @@ ethereum.sendRequest(signRequest) { result ->
         is Result.Success.Item -> {
             Logger.log("Ethereum sign result: ${result.value}")
         }
-        else -> {}
     }
 }
 ```
@@ -271,7 +272,6 @@ ethereum.sendRequestBatch(requestBatch) { result ->
         is Result.Success.Items -> {
             Logger.log("Ethereum batch sign result: ${result.value}")
         }
-        else -> {}
     }
 }
 ```
@@ -300,10 +300,14 @@ val transactionRequest = EthereumRequest(
 
 // Make a transaction request
 ethereum.sendRequest(transactionRequest) { result ->
-    if (result is RequestError) {
-        // handle error
-    } else {
-        Log.d(TAG, "Ethereum transaction result: $result")
+    when (result) {
+        is Result.Success.Item -> {
+            Logger.log("Ethereum transaction result: ${result.value}")
+            balance = result.value
+        }
+        is Result.Error -> {
+            // handle error
+        }
     }
 }
 ```
@@ -377,7 +381,7 @@ private fun addEthereumChain(
             is Result.Error -> {
                 onError("Add chain error: ${result.error.message}")
             }
-            is Result.Success -> {
+            is Result.Success.Item -> {
                 if (chainId == ethereum.chainId) {
                     onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
                 } else {
