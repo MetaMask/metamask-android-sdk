@@ -56,7 +56,7 @@ internal class KeyExchange(private val crypto: Crypto = Crypto()) {
     }
 
     fun complete() {
-        Logger.log("Key exchange complete")
+        Logger.log("KeyExchange:: Key exchange complete")
         setIsKeysExchanged(true)
     }
 
