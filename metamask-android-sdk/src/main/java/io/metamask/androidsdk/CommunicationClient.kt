@@ -130,6 +130,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             }
             MessageType.KEYS_EXCHANGED.value -> {
                 Logger.log("CommunicationClient:: Keys exchanged")
+                keyExchange.complete()
                 sendOriginatorInfo()
             }
             MessageType.READY.value -> {
@@ -189,8 +190,8 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             return
         }
 
-        val request = submittedRequests[id]?.request
-        val isResultMethod = EthereumMethod.isResultMethod(request?.method ?: "")
+        val submittedRequest = submittedRequests[id]?.request ?: return
+        val isResultMethod = EthereumMethod.isResultMethod(submittedRequest.method ?: "")
 
         if (!isResultMethod) {
             val resultJson = data.optString("result")
@@ -215,7 +216,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             return
         }
 
-        when(request?.method) {
+        when(submittedRequest.method) {
             EthereumMethod.GET_METAMASK_PROVIDER_STATE.value -> {
                 val result = data.optString("result")
                 val resultJson = JSONObject(result)
@@ -347,9 +348,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         val keyExchangeMessage = KeyExchangeMessage(type.name, theirPublicKey)
         val nextStep  = keyExchange.nextKeyExchangeMessage(keyExchangeMessage)
 
-        if (
-            type == KeyExchangeMessageType.KEY_HANDSHAKE_SYNACK ||
-            type == KeyExchangeMessageType.KEY_HANDSHAKE_ACK) {
+        if (type == KeyExchangeMessageType.KEY_HANDSHAKE_ACK) {
             keyExchange.complete()
         }
 
@@ -359,7 +358,6 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                 put(KeyExchange.TYPE, nextStep.type)
             }.toString()
 
-            Logger.log("Sending key exchange message $exchangeMessage")
             sendKeyExchangeMesage(exchangeMessage)
         }
     }
