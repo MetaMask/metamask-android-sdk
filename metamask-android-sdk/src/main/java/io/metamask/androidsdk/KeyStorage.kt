@@ -59,6 +59,19 @@ internal class KeyStorage(private val context: Context): SecureStorage {
         return keyGenerator.generateKey()
     }
 
+    override fun clear(file: String) {
+        val encodedFileName = encodedValue(file)
+
+        coroutineScope.launch {
+            context.getSharedPreferences(
+                encodedFileName,
+                Context.MODE_PRIVATE)
+                .edit()
+                .clear()
+                .apply()
+        }
+    }
+
     override fun clearValue(key: String, file: String) {
         val encodedKey = encodedValue(key)
         val encodedFileName = encodedValue(file)

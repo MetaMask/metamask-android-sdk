@@ -3,7 +3,7 @@ package io.metamask.androidsdk
 import io.metamask.ecies.Ecies
 import kotlinx.coroutines.*
 
-internal class Crypto {
+class Crypto {
     private lateinit var ecies: Ecies
     var onInitialized: () -> Unit = {}
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
