@@ -9,6 +9,7 @@ import org.junit.Before
 import org.junit.Test
 import java.util.concurrent.CompletableFuture
 
+@RunWith(AndroidJUnit4::class)
 class CryptoTests {
     private lateinit var crypto: Crypto
     lateinit var privateKey: String
