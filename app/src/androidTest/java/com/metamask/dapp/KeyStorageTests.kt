@@ -1,4 +1,4 @@
-package io.metamask.androidsdk
+import io.metamask.androidsdk.*
 
 import org.junit.Test
 import org.junit.Before
