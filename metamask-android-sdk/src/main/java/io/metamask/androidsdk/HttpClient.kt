@@ -35,7 +35,7 @@ internal class HttpClient {
             }
 
             override fun onResponse(call: Call, response: Response) {
-
+                response.body?.close()
             }
         })
     }
