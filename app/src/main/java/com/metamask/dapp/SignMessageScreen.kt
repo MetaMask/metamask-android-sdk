@@ -21,7 +21,6 @@ import io.metamask.androidsdk.*
 fun SignMessageScreen(
     navController: NavController,
     ethereumState: EthereumState,
-    isBatchSigning: Boolean,
     isConnectSign: Boolean = false,
     connectSignMessage: (
         message: String,
@@ -31,12 +30,6 @@ fun SignMessageScreen(
         message: String,
         address: String,
         onSuccess: (String) -> Unit,
-        onError: (message: String) -> Unit
-    ) -> Unit,
-    batchSign: (
-        messages: List<String>,
-        address: String,
-        onSuccess: (List<String>) -> Unit,
         onError: (message: String) -> Unit
     ) -> Unit
 ) {
@@ -75,9 +68,9 @@ fun SignMessageScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             BasicTextField(
-                value = if (isBatchSigning) {batchSignMessages.joinToString("\n\n=================================\n\n")} else { message },
+                value = message,
                 textStyle = TextStyle(color = if (isSystemInDarkTheme()) { Color.White} else { Color.Black}),
-                 onValueChange = {
+                onValueChange = {
                      message = it
                 },
                 modifier = Modifier.padding(bottom = 36.dp)
@@ -89,20 +82,6 @@ fun SignMessageScreen(
                         message,
                         { result ->
                             signResult = result as String
-                            errorMessage = null
-                        },
-                        { error ->
-                            errorMessage = error
-                        }
-                    )
-                }
-            } else if (isBatchSigning) {
-                DappButton(buttonText = stringResource(R.string.batch_sign)) {
-                    batchSign(
-                        batchSignMessages,
-                        ethereumState.selectedAddress,
-                        { result ->
-                            signResult = result.joinToString("\n=================================\n")
                             errorMessage = null
                         },
                         { error ->
@@ -147,7 +126,6 @@ fun PreviewSignMessage() {
         ethereumState = EthereumState("", "", ""),
         false,
         signMessage = { _, _, _, _ -> },
-        batchSign = { _, _, _, _ -> },
         connectSignMessage = {_, _, _ -> }
     )
 }

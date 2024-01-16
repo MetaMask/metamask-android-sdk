@@ -12,7 +12,6 @@ import io.metamask.androidsdk.*
 fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel) {
     val navController = rememberNavController()
     val ethereumState by ethereumViewModel.ethereumState.observeAsState(EthereumState("", "", ""))
-    var isBatchSigning by remember { mutableStateOf(false) }
     var isConnectWith by remember { mutableStateOf(false) }
     var isConnectSign by remember { mutableStateOf(false) }
 
@@ -47,15 +46,20 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
             SignMessageScreen(
                 navController,
                 ethereumState = ethereumState,
-                isBatchSigning,
                 isConnectSign,
                 connectSignMessage = { message, onSuccess, onError ->
                     ethereumViewModel.connectSign(message, onSuccess, onError)
                 },
                 signMessage = { message, address, onSuccess, onError ->
                     ethereumViewModel.signMessage(message, address, onSuccess, onError)
-                },
-                batchSign = { messages, address, onSuccess, onError ->
+                }
+            )
+        }
+        composable(BATCH_SIGN.name) {
+            BatchSignMessageScreen(
+                navController,
+                ethereumState = ethereumState,
+                batchSign = { messages, address, onSuccess, onError, ->
                     ethereumViewModel.sendBatchSigningRequest(messages, address, onSuccess, onError)
                 }
             )
@@ -96,8 +100,7 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
             navController.navigate(SIGN_MESSAGE.name)
         }
         BATCH_SIGN -> {
-            isBatchSigning = true
-            navController.navigate(SIGN_MESSAGE.name)
+            navController.navigate(BATCH_SIGN.name)
         }
         CONNECT_WITH -> {
             isConnectWith = true
