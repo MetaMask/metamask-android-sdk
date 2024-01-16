@@ -39,7 +39,8 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
                 onSignMessage = { screenViewModel.setScreen(SIGN_MESSAGE) },
                 onChainedSign = { screenViewModel.setScreen(BATCH_SIGN) },
                 onSendTransaction = { screenViewModel.setScreen(SEND_TRANSACTION) },
-                onSwitchChain = { screenViewModel.setScreen(SWITCH_CHAIN) }
+                onSwitchChain = { screenViewModel.setScreen(SWITCH_CHAIN) },
+                onReadOnlyCalls = { screenViewModel.setScreen(READ_ONLY_CALLS) }
             )
         }
         composable(SIGN_MESSAGE.name) {
@@ -86,6 +87,22 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
                 }
             )
         }
+
+        composable(READ_ONLY_CALLS.name) {
+            ReadOnlyCallsScreen(
+                navController,
+                ethereumState = ethereumState,
+                getBalance = { address, onSuccess, onError ->
+                    ethereumViewModel.getBalance(address, onSuccess, onError)
+                },
+                getGasPrice = { onSuccess, onError ->
+                    ethereumViewModel.gasPrice(onSuccess, onError)
+                },
+                getWeb3ClientVersion = { onSuccess, onError ->
+                    ethereumViewModel.web3ClientVersion(onSuccess, onError)
+                }
+            )
+        }
     }
 
     when(screenViewModel.currentScreen.value) {
@@ -114,6 +131,9 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
         }
         SWITCH_CHAIN -> {
             navController.navigate(SWITCH_CHAIN.name)
+        }
+        READ_ONLY_CALLS -> {
+            navController.navigate(READ_ONLY_CALLS.name)
         }
     }
 }

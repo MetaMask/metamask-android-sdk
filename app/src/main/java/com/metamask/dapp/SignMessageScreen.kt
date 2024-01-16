@@ -45,11 +45,6 @@ fun SignMessageScreen(
     var signResult by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val transactionData = "{\"data\":\"0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675\",\"from\": \"0x0000000000000000000000000000000000000000\",\"gas\": \"0x76c0\",\"gasPrice\": \"0x9184e72a000\",\"to\": \"0xd46e8dd67c5d32be8058bb8eb970870f07244567\",\"value\": \"0x9184e72a\"}"
-    val helloWorld = "Hello, world, signing in!"
-    val byeWorld = "Last message to sign!"
-    val batchSignMessages: List<String> = listOf(helloWorld, transactionData, byeWorld)
-
     LaunchedEffect(ethereumState.chainId) {
         message = signMessage(ethereumState.chainId)
     }
