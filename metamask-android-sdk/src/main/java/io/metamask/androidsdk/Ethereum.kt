@@ -11,7 +11,10 @@ private const val METAMASK_DEEPLINK = "https://metamask.app.link"
 private const val METAMASK_BIND_DEEPLINK = "$METAMASK_DEEPLINK/bind"
 private const val DEFAULT_SESSION_DURATION: Long = 7 * 24 * 3600 // 7 days default
 
-class Ethereum (private val context: Context, private val dappMetadata: DappMetadata): EthereumEventCallback {
+class Ethereum (
+    private val context: Context,
+    private val dappMetadata: DappMetadata,
+    private val infuraProvider: InfuraProvider): EthereumEventCallback {
     private var connectRequestSent = false
     private val communicationClient: CommunicationClient? by lazy {
         CommunicationClient(context, null)
@@ -42,6 +45,8 @@ class Ethereum (private val context: Context, private val dappMetadata: DappMeta
 
     private var sessionDuration: Long = DEFAULT_SESSION_DURATION
 
+    private var infuraAPIKey: String? = null
+
     override fun updateAccount(account: String) {
         Logger.log("Ethereum:: Selected account changed: $account")
         _ethereumState.postValue(
@@ -60,6 +65,10 @@ class Ethereum (private val context: Context, private val dappMetadata: DappMeta
         )
     }
 
+    fun setInfuraApiKey(key: String) {
+        infuraAPIKey = key
+    }
+
     // Set session duration in seconds
     fun updateSessionDuration(duration: Long = DEFAULT_SESSION_DURATION) = apply {
         sessionDuration = duration
@@ -69,12 +78,13 @@ class Ethereum (private val context: Context, private val dappMetadata: DappMeta
     // Clear persisted session. Subsequent MetaMask connection request will need approval
     fun clearSession() {
         connectRequestSent = false
-        communicationClient?.clearSession()
-        _ethereumState.postValue(
-            currentEthereumState.copy(
-                sessionId = getSessionId()
+        communicationClient?.clearSession {
+            _ethereumState.postValue(
+                currentEthereumState.copy(
+                    sessionId = getSessionId()
+                )
             )
-        )
+        }
     }
 
     private fun getSessionId(): String = communicationClient?.sessionId ?: ""
@@ -211,14 +221,18 @@ class Ethereum (private val context: Context, private val dappMetadata: DappMeta
             return
         }
 
-        communicationClient?.sendRequest(request) { response ->
-            callback?.invoke(response)
-        }
-
         val authorise = requiresAuthorisation(request.method)
 
-        if (authorise) {
-            openMetaMask()
+        if (EthereumMethod.isReadOnly(request.method) && infuraProvider.supportsChain(chainId)) {
+            Logger.log("Ethereum:: Using Infura API for method ${request.method} on chain ${chainId}")
+            infuraProvider.makeRequest(request, chainId, callback)
+        } else {
+            communicationClient?.sendRequest(request) { response ->
+                callback?.invoke(response)
+            }
+            if (authorise) {
+                openMetaMask()
+            }
         }
     }
 
@@ -239,10 +253,7 @@ class Ethereum (private val context: Context, private val dappMetadata: DappMeta
         return if (EthereumMethod.hasMethod(method)) {
             EthereumMethod.requiresAuthorisation(method)
         } else {
-            when(connectRequestSent) {
-                true -> false
-                else -> true
-            }
+            !connectRequestSent
         }
     }
 }
