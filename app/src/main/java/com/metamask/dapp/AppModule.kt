@@ -9,6 +9,7 @@ import dagger.hilt.components.SingletonComponent
 import io.metamask.androidsdk.DappMetadata
 import io.metamask.androidsdk.Ethereum
 import io.metamask.androidsdk.InfuraProvider
+import io.metamask.androidsdk.SDKOptions
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -21,6 +22,6 @@ internal object AppModule {
 
     @Provides
     fun provideEthereum(@ApplicationContext context: Context, dappMetadata: DappMetadata): Ethereum {
-        return Ethereum(context, dappMetadata, infuraProvider = InfuraProvider(infuraAPIKey = "1234567890"))
+        return Ethereum(context, dappMetadata, SDKOptions(infuraAPIKey = "1234567890"))
     }
 }

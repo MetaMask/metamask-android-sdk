@@ -18,7 +18,8 @@ fun DappActionsScreen(
     onSignMessage: () -> Unit,
     onChainedSign: () -> Unit,
     onSendTransaction: () -> Unit,
-    onSwitchChain: () -> Unit
+    onSwitchChain: () -> Unit,
+    onReadOnlyCalls: () -> Unit
 ) {
     Surface {
         AppTopBar(navController)
@@ -59,6 +60,13 @@ fun DappActionsScreen(
                 onSwitchChain()
             }
 
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Read only RPC calls
+            DappButton(buttonText = stringResource(R.string.read_only_calls)) {
+                onReadOnlyCalls()
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
@@ -69,5 +77,5 @@ fun DappActionsScreen(
 @Preview
 @Composable
 fun PreviewDappActions() {
-    DappActionsScreen(rememberNavController(), {}, {}, {}, {})
+    DappActionsScreen(rememberNavController(), {}, {}, {}, {}, {})
 }

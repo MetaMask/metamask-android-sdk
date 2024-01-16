@@ -14,10 +14,18 @@ private const val DEFAULT_SESSION_DURATION: Long = 7 * 24 * 3600 // 7 days defau
 class Ethereum (
     private val context: Context,
     private val dappMetadata: DappMetadata,
-    private val infuraProvider: InfuraProvider): EthereumEventCallback {
+    private val sdkOptions: SDKOptions? = null): EthereumEventCallback {
     private var connectRequestSent = false
     private val communicationClient: CommunicationClient? by lazy {
         CommunicationClient(context, null)
+    }
+
+    private val infuraProvider: InfuraProvider? = sdkOptions?.let {
+        if (it.infuraAPIKey.isNotEmpty()) {
+            InfuraProvider(it.infuraAPIKey)
+        } else {
+            null
+        }
     }
 
     // Ethereum LiveData
@@ -63,10 +71,6 @@ class Ethereum (
                 chainId = newChainId
             )
         )
-    }
-
-    fun setInfuraApiKey(key: String) {
-        infuraAPIKey = key
     }
 
     // Set session duration in seconds
@@ -221,18 +225,14 @@ class Ethereum (
             return
         }
 
-        val authorise = requiresAuthorisation(request.method)
-
-        if (EthereumMethod.isReadOnly(request.method) && infuraProvider.supportsChain(chainId)) {
+        if (EthereumMethod.isReadOnly(request.method) && infuraProvider?.supportsChain(chainId) == true) {
             Logger.log("Ethereum:: Using Infura API for method ${request.method} on chain ${chainId}")
-            infuraProvider.makeRequest(request, chainId, callback)
+            infuraProvider?.makeRequest(request, chainId, callback)
         } else {
             communicationClient?.sendRequest(request) { response ->
                 callback?.invoke(response)
             }
-            if (authorise) {
-                openMetaMask()
-            }
+            openMetaMask()
         }
     }
 

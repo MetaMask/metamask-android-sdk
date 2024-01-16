@@ -8,5 +8,6 @@ enum class DappScreen {
     CONNECT_SIGN_MESSAGE,
     CONNECT_WITH,
     SEND_TRANSACTION,
-    SWITCH_CHAIN
+    SWITCH_CHAIN,
+    READ_ONLY_CALLS
 }
