@@ -21,6 +21,6 @@ internal object AppModule {
 
     @Provides
     fun provideEthereum(@ApplicationContext context: Context, dappMetadata: DappMetadata): Ethereum {
-        return Ethereum(context, dappMetadata, infuraProvider = InfuraProvider(infuraAPIKey = "66730f93f60248a698535d89f0f85554"))
+        return Ethereum(context, dappMetadata, infuraProvider = InfuraProvider(infuraAPIKey = "1234567890"))
     }
 }
