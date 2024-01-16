@@ -112,10 +112,12 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         sessionManager.updateSessionDuration(duration)
     }
 
-    fun clearSession() {
-        sessionManager.clearSession()
-        sessionId = sessionManager.sessionId
-        keyExchange.reset()
+    fun clearSession(onComplete: () -> Unit) {
+        sessionManager.clearSession {
+            sessionId = sessionManager.sessionId
+            keyExchange.reset()
+            onComplete()
+        }
     }
 
     private fun handleMessage(message: String) {

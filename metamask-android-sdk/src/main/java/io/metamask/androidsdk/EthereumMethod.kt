@@ -50,11 +50,15 @@ enum class EthereumMethod(val value: String) {
             val authorisationMethods: List<String> = listOf(
                 ETH_SIGN, WATCH_ASSET, PERSONAL_SIGN, METAMASK_BATCH,
                 ADD_ETHEREUM_CHAIN, SWITCH_ETHEREUM_CHAIN, METAMASK_CONNECT_WITH,
-                ETH_SEND_TRANSACTION, ETH_REQUEST_ACCOUNTS, METAMASK_CONNECT_SIGN,
+                ETH_SEND_TRANSACTION, ETH_SIGN_TRANSACTION, ETH_REQUEST_ACCOUNTS, METAMASK_CONNECT_SIGN,
                 ETH_SIGN_TYPED_DATA, ETH_SIGN_TYPED_DATA_V3, ETH_SIGN_TYPED_DATA_V4
             ).map { it.value }
 
             return authorisationMethods.contains(method)
+        }
+
+        fun isReadOnly(method: String): Boolean {
+            return !requiresAuthorisation(method)
         }
 
         fun isResultMethod(method: String): Boolean {
