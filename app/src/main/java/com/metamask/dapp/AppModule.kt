@@ -22,6 +22,6 @@ internal object AppModule {
 
     @Provides
     fun provideEthereum(@ApplicationContext context: Context, dappMetadata: DappMetadata): Ethereum {
-        return Ethereum(context, dappMetadata, SDKOptions(infuraAPIKey = "1234567890"))
+        return Ethereum(context, dappMetadata)
     }
 }
