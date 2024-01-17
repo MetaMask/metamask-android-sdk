@@ -118,6 +118,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             keyExchange.reset()
             onComplete()
         }
+        sentOriginatorInfo = false
     }
 
     private fun handleMessage(message: String) {
