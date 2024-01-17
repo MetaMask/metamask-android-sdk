@@ -53,13 +53,12 @@ class Ethereum (
 
     private var sessionDuration: Long = DEFAULT_SESSION_DURATION
 
-    private var infuraAPIKey: String? = null
-
     override fun updateAccount(account: String) {
         Logger.log("Ethereum:: Selected account changed: $account")
         _ethereumState.postValue(
             currentEthereumState.copy(
-                selectedAddress = account
+                selectedAddress = account,
+                sessionId = communicationClient?.sessionId ?: ""
             )
         )
     }
@@ -68,7 +67,8 @@ class Ethereum (
         Logger.log("Ethereum:: ChainId changed: $newChainId")
         _ethereumState.postValue(
             currentEthereumState.copy(
-                chainId = newChainId
+                chainId = newChainId,
+                sessionId = communicationClient?.sessionId ?: ""
             )
         )
     }
@@ -85,13 +85,11 @@ class Ethereum (
         communicationClient?.clearSession {
             _ethereumState.postValue(
                 currentEthereumState.copy(
-                    sessionId = getSessionId()
+                    sessionId = communicationClient?.sessionId ?: ""
                 )
             )
         }
     }
-
-    private fun getSessionId(): String = communicationClient?.sessionId ?: ""
 
     fun connect(callback: ((Result) -> Unit)? = null) {
         val error = dappMetadata.validationError
@@ -118,9 +116,7 @@ class Ethereum (
 
     fun connectWith(request: EthereumRequest, callback: ((Result) -> Unit)? = null) {
         Logger.log("Ethereum:: connecting with ${request.method}...")
-        Logger.log("Ethereum:: connectRequestSent $connectRequestSent")
         connectRequestSent = true
-        Logger.log("Ethereum:: connectRequestSent $connectRequestSent")
         communicationClient?.dappMetadata = dappMetadata
         communicationClient?.ethereumEventCallbackRef = WeakReference(this)
         communicationClient?.updateSessionDuration(sessionDuration)

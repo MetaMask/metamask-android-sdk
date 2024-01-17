@@ -194,7 +194,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
 
         val submittedRequest = submittedRequests[id]?.request ?: return
-        val isResultMethod = EthereumMethod.isResultMethod(submittedRequest.method ?: "")
+        val isResultMethod = EthereumMethod.isResultMethod(submittedRequest.method)
 
         if (!isResultMethod) {
             val resultJson = data.optString("result")
