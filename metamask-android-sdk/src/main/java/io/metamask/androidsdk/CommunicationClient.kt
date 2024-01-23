@@ -446,10 +446,13 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     private fun bindService() {
         Logger.log("CommunicationClient:: Binding service")
 
+        val buildType = System.getenv("METAMASK_BUILD_TYPE")
+        val isQA = buildType == "qa"
+
         val serviceIntent = Intent()
             .setComponent(
                 ComponentName(
-                    "io.metamask",
+                    if (isQA) "io.metamask.qa" else "io.metamask",
                     "io.metamask.nativesdk.MessageService"
                 )
             )
