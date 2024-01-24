@@ -456,6 +456,8 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     }
 
     private fun bindService() {
+        Logger.log("CommunicationClient:: Binding service")
+        
         val serviceIntent = Intent()
             .setComponent(
                 ComponentName(
