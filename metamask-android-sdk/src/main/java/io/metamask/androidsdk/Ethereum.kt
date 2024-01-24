@@ -81,14 +81,7 @@ class Ethereum (
 
     // Clear persisted session. Subsequent MetaMask connection request will need approval
     fun clearSession() {
-        connectRequestSent = false
-        communicationClient?.clearSession {
-            _ethereumState.postValue(
-                currentEthereumState.copy(
-                    sessionId = communicationClient?.sessionId ?: ""
-                )
-            )
-        }
+        disconnect(true)
     }
 
     fun connect(callback: ((Result) -> Unit)? = null) {
@@ -182,17 +175,29 @@ class Ethereum (
         }
     }
 
-    fun disconnect() {
+    fun disconnect(clearSession: Boolean = false) {
         Logger.log("Ethereum:: disconnecting...")
-
         connectRequestSent = false
+        communicationClient?.resetState()
+        communicationClient?.unbindService()
+
+        if (clearSession) {
+            communicationClient?.clearSession {
+                resetEthereumState()
+            }
+        } else {
+            resetEthereumState()
+        }
+    }
+
+    private fun resetEthereumState() {
         _ethereumState.postValue(
             currentEthereumState.copy(
                 selectedAddress = "",
+                sessionId = communicationClient?.sessionId ?: "",
                 chainId = ""
             )
         )
-        communicationClient?.unbindService()
     }
 
     private fun requestChainId() {

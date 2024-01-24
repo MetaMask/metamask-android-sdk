@@ -53,6 +53,13 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
     }
 
+    fun resetState() {
+        sentOriginatorInfo = false
+        submittedRequests.clear()
+        queuedRequests.clear()
+        requestJobs.clear()
+    }
+
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             messageService = IMessegeService.Stub.asInterface(service)
