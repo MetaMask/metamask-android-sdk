@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
@@ -443,16 +444,22 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         sendMessage(messageJson)
     }
 
+    private fun isQA(): Boolean {
+        val packageManager = appContextRef.get()?.packageManager
+
+        return try {
+            packageManager?.getPackageInfo("io.metamask.qa", PackageManager.PackageInfoFlags.of(0))
+            true
+        } catch (e: PackageManager.NameNotFoundException) {
+            false
+        }
+    }
+
     private fun bindService() {
-        Logger.log("CommunicationClient:: Binding service")
-
-        val buildType = System.getenv("METAMASK_BUILD_TYPE")
-        val isQA = buildType == "qa"
-
         val serviceIntent = Intent()
             .setComponent(
                 ComponentName(
-                    if (isQA) "io.metamask.qa" else "io.metamask",
+                    if (isQA()) "io.metamask.qa" else "io.metamask",
                     "io.metamask.nativesdk.MessageService"
                 )
             )
