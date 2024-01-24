@@ -26,9 +26,11 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
                 onConnectSign = { screenViewModel.setScreen(CONNECT_SIGN_MESSAGE) },
                 onConnectWith = { screenViewModel.setScreen(CONNECT_WITH) },
                 onDisconnect = {
+                    screenViewModel.setScreen(CONNECT)
                     ethereumViewModel.disconnect()
                 },
                 onClearSession = {
+                    screenViewModel.setScreen(CONNECT)
                     ethereumViewModel.clearSession()
                 }
             )
