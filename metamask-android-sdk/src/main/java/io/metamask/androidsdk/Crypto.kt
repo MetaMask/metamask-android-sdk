@@ -3,9 +3,9 @@ package io.metamask.androidsdk
 import io.metamask.ecies.Ecies
 import kotlinx.coroutines.*
 
-class Crypto {
+class Crypto : Encryption {
     private lateinit var ecies: Ecies
-    var onInitialized: () -> Unit = {}
+    override var onInitialized: () -> Unit = {}
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     init {
@@ -15,19 +15,19 @@ class Crypto {
         }
     }
 
-    fun generatePrivateKey(): String {
+    override fun generatePrivateKey(): String {
         return ecies.privateKey()
     }
 
-    fun publicKey(privateKey: String): String {
+    override fun publicKey(privateKey: String): String {
         return ecies.publicKeyFrom(privateKey)
     }
 
-    fun encrypt(publicKey: String, message: String): String {
+    override fun encrypt(publicKey: String, message: String): String {
         return ecies.encrypt(publicKey, message)
     }
 
-    fun decrypt(privateKey: String, message: String): String {
+    override fun decrypt(privateKey: String, message: String): String {
         return ecies.decrypt(privateKey, message)
     }
 }
