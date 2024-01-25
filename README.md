@@ -31,7 +31,7 @@ add the following entry to the `dependencies` block:
 
 ```gradle title="build.gradle"
 dependencies {
-    implementation 'io.metamask.androidsdk:metamask-android-sdk:0.3.0'
+    implementation 'io.metamask.androidsdk:metamask-android-sdk:0.4.0'
 }
 ```
 
@@ -71,7 +71,8 @@ code to your project file:
 class SomeModel(context: Context) {
     
     val dappMetadata = DappMetadata("Droid Dapp", "https://droiddapp.com")
-    val ethereum = Ethereum(context, dappMetadata)
+    val infuraAPIKey = "1234567890" // We use Infura API for read-only RPCs for a seamless user experience 
+    val ethereum = Ethereum(context, dappMetadata, SDKOptions(infuraAPIKey))
 
     // This is the same as calling eth_requestAccounts
     ethereum.connect() { result ->
@@ -140,7 +141,8 @@ using `ethereum.sendRequest()`.
 #### Example: Get account balance
 
 The following example gets the user's account balance by calling
-[`eth_getBalance`](https://docs.metamask.io/wallet/reference/eth_getbalance/).
+[`eth_getBalance`](https://docs.metamask.io/wallet/reference/eth_getbalance/). 
+This is a read-only rpc ("direct call"), which uses the Infura API if an infuraAPIKey is provided in the SDKOptions - which we highly recommend as it provides a seamless use experience. 
 
 ```kotlin
 var balance: String? = null

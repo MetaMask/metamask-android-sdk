@@ -9,7 +9,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import io.metamask.androidsdk.DappMetadata
 import io.metamask.androidsdk.EthereumState
 
 @Composable
@@ -82,6 +81,7 @@ fun ConnectScreen(
 
             DappLabel(
                 text = ethereumState.sessionId,
+                color = Color.Unspecified,
                 modifier = Modifier.padding(bottom = bottomMargin)
             )
         }

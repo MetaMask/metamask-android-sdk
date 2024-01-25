@@ -21,7 +21,6 @@ import io.metamask.androidsdk.*
 fun SignMessageScreen(
     navController: NavController,
     ethereumState: EthereumState,
-    isBatchSigning: Boolean,
     isConnectSign: Boolean = false,
     connectSignMessage: (
         message: String,
@@ -31,12 +30,6 @@ fun SignMessageScreen(
         message: String,
         address: String,
         onSuccess: (String) -> Unit,
-        onError: (message: String) -> Unit
-    ) -> Unit,
-    batchSign: (
-        messages: List<String>,
-        address: String,
-        onSuccess: (List<String>) -> Unit,
         onError: (message: String) -> Unit
     ) -> Unit
 ) {
@@ -51,11 +44,6 @@ fun SignMessageScreen(
     var message = signMessage(ethereumState.chainId)
     var signResult by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-
-    val transactionData = "{\"data\":\"0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675\",\"from\": \"0x0000000000000000000000000000000000000000\",\"gas\": \"0x76c0\",\"gasPrice\": \"0x9184e72a000\",\"to\": \"0xd46e8dd67c5d32be8058bb8eb970870f07244567\",\"value\": \"0x9184e72a\"}"
-    val helloWorld = "Hello, world, signing in!"
-    val byeWorld = "Last message to sign!"
-    val batchSignMessages: List<String> = listOf(helloWorld, transactionData, byeWorld)
 
     LaunchedEffect(ethereumState.chainId) {
         message = signMessage(ethereumState.chainId)
@@ -75,9 +63,9 @@ fun SignMessageScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             BasicTextField(
-                value = if (isBatchSigning) {batchSignMessages.joinToString("\n\n=================================\n\n")} else { message },
+                value = message,
                 textStyle = TextStyle(color = if (isSystemInDarkTheme()) { Color.White} else { Color.Black}),
-                 onValueChange = {
+                onValueChange = {
                      message = it
                 },
                 modifier = Modifier.padding(bottom = 36.dp)
@@ -89,20 +77,6 @@ fun SignMessageScreen(
                         message,
                         { result ->
                             signResult = result as String
-                            errorMessage = null
-                        },
-                        { error ->
-                            errorMessage = error
-                        }
-                    )
-                }
-            } else if (isBatchSigning) {
-                DappButton(buttonText = stringResource(R.string.batch_sign)) {
-                    batchSign(
-                        batchSignMessages,
-                        ethereumState.selectedAddress,
-                        { result ->
-                            signResult = result.joinToString("\n=================================\n")
                             errorMessage = null
                         },
                         { error ->
@@ -147,7 +121,6 @@ fun PreviewSignMessage() {
         ethereumState = EthereumState("", "", ""),
         false,
         signMessage = { _, _, _, _ -> },
-        batchSign = { _, _, _, _ -> },
         connectSignMessage = {_, _, _ -> }
     )
 }

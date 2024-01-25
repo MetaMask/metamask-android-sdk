@@ -17,4 +17,8 @@
     <string name="connect_sign">Connect and Sign</string>
     <string name="connect_with">Connect With Request</string>
     <string name="add_chain">Add Chain</string>
+    <string name="get_balance">Get Balance</string>
+    <string name="get_gas_price">Get Gas Price</string>
+    <string name="get_web3_client_version">Get Web3 Client Version</string>
+    <string name="read_only_calls">Read Only Calls</string>
 </resources>

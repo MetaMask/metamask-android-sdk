@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
@@ -52,28 +53,34 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
     }
 
+    fun resetState() {
+        sentOriginatorInfo = false
+        submittedRequests.clear()
+        queuedRequests.clear()
+        requestJobs.clear()
+    }
+
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             messageService = IMessegeService.Stub.asInterface(service)
             messageService?.registerCallback(messageServiceCallback)
             isServiceConnected = true
-            Log.d(TAG,"CommunicationClient:: Service connected $name")
             initiateKeyExchange()
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             messageService = null
             isServiceConnected = false
-            Log.e(TAG,"CommunicationClient:: Service disconnected $name")
+            Logger.error("CommunicationClient:: Service disconnected $name")
             trackEvent(Event.SDK_DISCONNECTED, null)
         }
 
         override fun onBindingDied(name: ComponentName?) {
-            Logger.log("CommunicationClient:: binding died: $name")
+            Logger.error("CommunicationClient:: binding died: $name")
         }
 
         override fun onNullBinding(name: ComponentName?) {
-            Logger.log("CommunicationClient:: null binding: $name")
+            Logger.error("CommunicationClient:: null binding: $name")
         }
     }
 
@@ -112,10 +119,13 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         sessionManager.updateSessionDuration(duration)
     }
 
-    fun clearSession() {
-        sessionManager.clearSession()
-        sessionId = sessionManager.sessionId
-        keyExchange.reset()
+    fun clearSession(onComplete: () -> Unit) {
+        sessionManager.clearSession {
+            sessionId = sessionManager.sessionId
+            keyExchange.reset()
+            onComplete()
+        }
+        sentOriginatorInfo = false
     }
 
     private fun handleMessage(message: String) {
@@ -191,7 +201,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
 
         val submittedRequest = submittedRequests[id]?.request ?: return
-        val isResultMethod = EthereumMethod.isResultMethod(submittedRequest.method ?: "")
+        val isResultMethod = EthereumMethod.isResultMethod(submittedRequest.method)
 
         if (!isResultMethod) {
             val resultJson = data.optString("result")
@@ -440,13 +450,24 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         sendMessage(messageJson)
     }
 
+    private fun isQA(): Boolean {
+        val packageManager = appContextRef.get()?.packageManager
+
+        return try {
+            packageManager?.getPackageInfo("io.metamask.qa", PackageManager.PackageInfoFlags.of(0))
+            true
+        } catch (e: PackageManager.NameNotFoundException) {
+            false
+        }
+    }
+
     private fun bindService() {
         Logger.log("CommunicationClient:: Binding service")
-
+        
         val serviceIntent = Intent()
             .setComponent(
                 ComponentName(
-                    "io.metamask",
+                    if (isQA()) "io.metamask.qa" else "io.metamask",
                     "io.metamask.nativesdk.MessageService"
                 )
             )

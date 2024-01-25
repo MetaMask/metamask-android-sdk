@@ -66,11 +66,12 @@ internal class SessionManager(
         store.putValue(sessionConfigJson, sessionConfigKey, sessionConfigFile)
     }
 
-    fun clearSession() {
+    fun clearSession(onComplete: () -> Unit) {
         coroutineScope.launch {
             store.clearValue(sessionConfigKey, sessionConfigFile)
             makeNewSessionConfig()
             sessionId = getSessionConfig().sessionId
+            onComplete()
         }
     }
 

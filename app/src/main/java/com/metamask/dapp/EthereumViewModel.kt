@@ -24,10 +24,11 @@ class EthereumViewModel @Inject constructor(
                     Logger.log("Ethereum connection error: ${result.error.message}")
                     onError(result.error.message)
                 }
-                is Result.Success -> {
-                    Logger.log("Ethereum connection result: $result")
+                is Result.Success.Item -> {
+                    Logger.log("Ethereum connection result: ${result.value}")
                     onSuccess()
                 }
+                else -> { }
             }
         }
     }
@@ -142,6 +143,85 @@ class EthereumViewModel @Inject constructor(
                 }
                 is Result.Success.Item -> {
                     Logger.log("Ethereum sign result: $result")
+                    onSuccess(result.value)
+                }
+                else -> {}
+            }
+        }
+    }
+
+    fun getBalance(
+        address: String,
+        onSuccess: (String) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val params: List<String> = listOf(address, "latest")
+
+        val getBalanceRequest = EthereumRequest(
+            method = EthereumMethod.ETH_GET_BALANCE.value,
+            params = params
+        )
+
+        ethereum.sendRequest(getBalanceRequest) { result ->
+            when (result) {
+                is Result.Error -> {
+                    Logger.log("Ethereum get balance error: ${result.error.message}")
+                    onError(result.error.message)
+                }
+                is Result.Success.Item -> {
+                    Logger.log("Ethereum get balance result: $result")
+                    onSuccess(result.value)
+                }
+                else -> {}
+            }
+        }
+    }
+
+    fun gasPrice(
+        onSuccess: (String) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val params: List<String> = listOf()
+
+        val gasPriceRequest = EthereumRequest(
+            method = EthereumMethod.ETH_GAS_PRICE.value,
+            params = params
+        )
+
+        ethereum.sendRequest(gasPriceRequest) { result ->
+            when (result) {
+                is Result.Error -> {
+                    Logger.log("Ethereum gas price error: ${result.error.message}")
+                    onError(result.error.message)
+                }
+                is Result.Success.Item -> {
+                    Logger.log("Ethereum gas price result: $result")
+                    onSuccess(result.value)
+                }
+                else -> {}
+            }
+        }
+    }
+
+    fun web3ClientVersion(
+        onSuccess: (String) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val params: List<String> = listOf()
+
+        val gasPriceRequest = EthereumRequest(
+            method = EthereumMethod.WEB3_CLIENT_VERSION.value,
+            params = params
+        )
+
+        ethereum.sendRequest(gasPriceRequest) { result ->
+            when (result) {
+                is Result.Error -> {
+                    Logger.log("Ethereum web3 client version error: ${result.error.message}")
+                    onError(result.error.message)
+                }
+                is Result.Success.Item -> {
+                    Logger.log("Ethereum web3 client version result: $result")
                     onSuccess(result.value)
                 }
                 else -> {}

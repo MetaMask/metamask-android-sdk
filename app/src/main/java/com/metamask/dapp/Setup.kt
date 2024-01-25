@@ -12,7 +12,6 @@ import io.metamask.androidsdk.*
 fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel) {
     val navController = rememberNavController()
     val ethereumState by ethereumViewModel.ethereumState.observeAsState(EthereumState("", "", ""))
-    var isBatchSigning by remember { mutableStateOf(false) }
     var isConnectWith by remember { mutableStateOf(false) }
     var isConnectSign by remember { mutableStateOf(false) }
 
@@ -27,9 +26,11 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
                 onConnectSign = { screenViewModel.setScreen(CONNECT_SIGN_MESSAGE) },
                 onConnectWith = { screenViewModel.setScreen(CONNECT_WITH) },
                 onDisconnect = {
+                    screenViewModel.setScreen(CONNECT)
                     ethereumViewModel.disconnect()
                 },
                 onClearSession = {
+                    screenViewModel.setScreen(CONNECT)
                     ethereumViewModel.clearSession()
                 }
             )
@@ -40,22 +41,28 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
                 onSignMessage = { screenViewModel.setScreen(SIGN_MESSAGE) },
                 onChainedSign = { screenViewModel.setScreen(BATCH_SIGN) },
                 onSendTransaction = { screenViewModel.setScreen(SEND_TRANSACTION) },
-                onSwitchChain = { screenViewModel.setScreen(SWITCH_CHAIN) }
+                onSwitchChain = { screenViewModel.setScreen(SWITCH_CHAIN) },
+                onReadOnlyCalls = { screenViewModel.setScreen(READ_ONLY_CALLS) }
             )
         }
         composable(SIGN_MESSAGE.name) {
             SignMessageScreen(
                 navController,
                 ethereumState = ethereumState,
-                isBatchSigning,
                 isConnectSign,
                 connectSignMessage = { message, onSuccess, onError ->
                     ethereumViewModel.connectSign(message, onSuccess, onError)
                 },
                 signMessage = { message, address, onSuccess, onError ->
                     ethereumViewModel.signMessage(message, address, onSuccess, onError)
-                },
-                batchSign = { messages, address, onSuccess, onError ->
+                }
+            )
+        }
+        composable(BATCH_SIGN.name) {
+            BatchSignMessageScreen(
+                navController,
+                ethereumState = ethereumState,
+                batchSign = { messages, address, onSuccess, onError, ->
                     ethereumViewModel.sendBatchSigningRequest(messages, address, onSuccess, onError)
                 }
             )
@@ -82,6 +89,22 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
                 }
             )
         }
+
+        composable(READ_ONLY_CALLS.name) {
+            ReadOnlyCallsScreen(
+                navController,
+                ethereumState = ethereumState,
+                getBalance = { address, onSuccess, onError ->
+                    ethereumViewModel.getBalance(address, onSuccess, onError)
+                },
+                getGasPrice = { onSuccess, onError ->
+                    ethereumViewModel.gasPrice(onSuccess, onError)
+                },
+                getWeb3ClientVersion = { onSuccess, onError ->
+                    ethereumViewModel.web3ClientVersion(onSuccess, onError)
+                }
+            )
+        }
     }
 
     when(screenViewModel.currentScreen.value) {
@@ -96,8 +119,7 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
             navController.navigate(SIGN_MESSAGE.name)
         }
         BATCH_SIGN -> {
-            isBatchSigning = true
-            navController.navigate(SIGN_MESSAGE.name)
+            navController.navigate(BATCH_SIGN.name)
         }
         CONNECT_WITH -> {
             isConnectWith = true
@@ -111,6 +133,9 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
         }
         SWITCH_CHAIN -> {
             navController.navigate(SWITCH_CHAIN.name)
+        }
+        READ_ONLY_CALLS -> {
+            navController.navigate(READ_ONLY_CALLS.name)
         }
     }
 }
