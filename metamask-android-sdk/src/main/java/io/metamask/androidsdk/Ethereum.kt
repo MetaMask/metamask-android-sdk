@@ -14,7 +14,7 @@ private const val DEFAULT_SESSION_DURATION: Long = 7 * 24 * 3600 // 7 days defau
 class Ethereum (
     private val context: Context,
     private val dappMetadata: DappMetadata,
-    private val sdkOptions: SDKOptions? = null): EthereumEventCallback {
+    sdkOptions: SDKOptions? = null): EthereumEventCallback {
     private var connectRequestSent = false
     private val communicationClient: CommunicationClient? by lazy {
         CommunicationClient(context, null)
@@ -227,8 +227,8 @@ class Ethereum (
         }
 
         if (EthereumMethod.isReadOnly(request.method) && infuraProvider?.supportsChain(chainId) == true) {
-            Logger.log("Ethereum:: Using Infura API for method ${request.method} on chain ${chainId}")
-            infuraProvider?.makeRequest(request, chainId, callback)
+            Logger.log("Ethereum:: Using Infura API for method ${request.method} on chain $chainId")
+            infuraProvider.makeRequest(request, chainId, callback)
         } else {
             communicationClient?.sendRequest(request) { response ->
                 callback?.invoke(response)
@@ -248,13 +248,5 @@ class Ethereum (
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(deeplinkUrl))
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         context.startActivity(intent)
-    }
-
-    private fun requiresAuthorisation(method: String): Boolean {
-        return if (EthereumMethod.hasMethod(method)) {
-            EthereumMethod.requiresAuthorisation(method)
-        } else {
-            !connectRequestSent
-        }
     }
 }

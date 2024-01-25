@@ -65,23 +65,22 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             messageService = IMessegeService.Stub.asInterface(service)
             messageService?.registerCallback(messageServiceCallback)
             isServiceConnected = true
-            Log.d(TAG,"CommunicationClient:: Service connected $name")
             initiateKeyExchange()
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             messageService = null
             isServiceConnected = false
-            Log.e(TAG,"CommunicationClient:: Service disconnected $name")
+            Logger.error("CommunicationClient:: Service disconnected $name")
             trackEvent(Event.SDK_DISCONNECTED, null)
         }
 
         override fun onBindingDied(name: ComponentName?) {
-            Logger.log("CommunicationClient:: binding died: $name")
+            Logger.error("CommunicationClient:: binding died: $name")
         }
 
         override fun onNullBinding(name: ComponentName?) {
-            Logger.log("CommunicationClient:: null binding: $name")
+            Logger.error("CommunicationClient:: null binding: $name")
         }
     }
 
