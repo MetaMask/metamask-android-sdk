@@ -59,6 +59,18 @@ class KeyStorageTests {
         delay(1000)
 
         val result = getValue(testKey)
+        Assert.assertNotNull(result)
+    }
+
+    @Test
+    fun testGetValue() = runBlocking {
+        val testValue = "testValue"
+        val testKey = "testKey"
+
+        putValue(testValue, testKey)
+        delay(1000)
+
+        val result = getValue(testKey)
         Assert.assertEquals(testValue, result)
     }
 
