@@ -36,7 +36,7 @@ internal class SessionManager(
         }
     }
 
-    private suspend fun getSessionConfig(reset: Boolean = false): SessionConfig {
+    suspend fun getSessionConfig(reset: Boolean = false): SessionConfig {
         if (reset) {
             store.clearValue(sessionConfigKey, sessionConfigFile)
             return makeNewSessionConfig()
@@ -51,7 +51,7 @@ internal class SessionManager(
             val sessionConfig: SessionConfig = Gson().fromJson(sessionConfigJson, type)
 
             if (sessionConfig.isValid()) {
-                sessionConfig
+                SessionConfig(sessionConfig.sessionId, System.currentTimeMillis() + sessionDuration * 1000)
             } else {
                 makeNewSessionConfig()
             }
@@ -61,7 +61,7 @@ internal class SessionManager(
         }
     }
 
-    private fun saveSessionConfig(sessionConfig: SessionConfig) {
+    fun saveSessionConfig(sessionConfig: SessionConfig) {
         val sessionConfigJson = Gson().toJson(sessionConfig)
         store.putValue(sessionConfigJson, sessionConfigKey, sessionConfigFile)
     }
@@ -75,7 +75,7 @@ internal class SessionManager(
         }
     }
 
-    private fun makeNewSessionConfig(): SessionConfig {
+    fun makeNewSessionConfig(): SessionConfig {
         val sessionId = TimeStampGenerator.timestamp()
         val expiryDate = System.currentTimeMillis() + sessionDuration * 1000
         val sessionConfig = SessionConfig(sessionId, expiryDate)

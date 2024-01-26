@@ -11,7 +11,7 @@ import java.security.KeyStore
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 
-internal class KeyStorage(private val context: Context): SecureStorage {
+class KeyStorage(private val context: Context): SecureStorage {
 
     private val keyStoreAlias = context.packageName
     private val androidKeyStore = "AndroidKeyStore"
@@ -39,7 +39,7 @@ internal class KeyStorage(private val context: Context): SecureStorage {
         return base64.replace('/', '_').replace('=', '-').lowercase()
     }
 
-    private fun loadSecretKey() {
+    override fun loadSecretKey() {
         keyStore = KeyStore.getInstance(androidKeyStore)
         keyStore.load(null)
         secretKey = secretKeyEntry?.secretKey ?: generateSecretKey()
@@ -57,6 +57,19 @@ internal class KeyStorage(private val context: Context): SecureStorage {
 
         keyGenerator.init(keyGenParameterSpec)
         return keyGenerator.generateKey()
+    }
+
+    override fun clear(file: String) {
+        val encodedFileName = encodedValue(file)
+
+        coroutineScope.launch {
+            context.getSharedPreferences(
+                encodedFileName,
+                Context.MODE_PRIVATE)
+                .edit()
+                .clear()
+                .apply()
+        }
     }
 
     override fun clearValue(key: String, file: String) {
