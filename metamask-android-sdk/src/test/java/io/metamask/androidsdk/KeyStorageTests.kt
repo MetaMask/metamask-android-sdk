@@ -1,27 +1,19 @@
-import io.metamask.androidsdk.*
+package io.metamask.androidsdk
 
-import org.junit.Test
-import org.junit.Before
-import org.junit.Assert.*
-import org.junit.runner.RunWith
-
-import android.content.Context
-import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.junit.Assert
+import org.junit.Before
+import org.junit.Test
 
-@RunWith(AndroidJUnit4::class)
 class KeyStorageTests {
     private lateinit var keyStorage: SecureStorage
     private val testFile = "testFile"
 
-    private lateinit var context: Context
 
     @Before
     fun setUp() {
-        context = InstrumentationRegistry.getInstrumentation().targetContext
-        keyStorage = KeyStorage(context)
+        keyStorage = MockKeyStorage()
         keyStorage.clear(testFile)
     }
 
@@ -35,7 +27,7 @@ class KeyStorageTests {
         delay(1000)
 
         val result = getValue(testKey)
-        assertEquals(null, result)
+        Assert.assertEquals(null, result)
     }
 
     @Test
@@ -54,8 +46,8 @@ class KeyStorageTests {
 
         val result1 = getValue(testKey1)
         val result2 = getValue(testKey2)
-        assertEquals(null, result1)
-        assertEquals(null, result2)
+        Assert.assertEquals(null, result1)
+        Assert.assertEquals(null, result2)
     }
 
     @Test
@@ -67,7 +59,7 @@ class KeyStorageTests {
         delay(1000)
 
         val result = getValue(testKey)
-        assertEquals(testValue, result)
+        Assert.assertEquals(testValue, result)
     }
 
     @Test
@@ -75,7 +67,7 @@ class KeyStorageTests {
         val testKey = "testRandomKey"
 
         val result = getValue(testKey)
-        assertEquals(null, result)
+        Assert.assertEquals(null, result)
     }
 
     // Helper methods

@@ -39,7 +39,7 @@ class KeyStorage(private val context: Context): SecureStorage {
         return base64.replace('/', '_').replace('=', '-').lowercase()
     }
 
-    private fun loadSecretKey() {
+    override fun loadSecretKey() {
         keyStore = KeyStore.getInstance(androidKeyStore)
         keyStore.load(null)
         secretKey = secretKeyEntry?.secretKey ?: generateSecretKey()
