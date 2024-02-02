@@ -64,8 +64,15 @@ class InfuraProvider(private val infuraAPIKey: String) {
         return !rpcUrls[chainId].isNullOrEmpty()
     }
 
-    fun makeRequest(request: RpcRequest, chainId: String, callback: ((Result) -> Unit)?) {
+    fun makeRequest(request: RpcRequest, chainId: String, dappMetadata: DappMetadata, callback: ((Result) -> Unit)?) {
         val httpClient = HttpClient()
+
+        val devicePlatformInfo = DeviceInfo.platformDescription
+        val headers = mapOf(
+            "Metamask-Sdk-Info" to "Sdk/Android SdkVersion/${SDKInfo.VERSION} Platform/$devicePlatformInfo dApp/${dappMetadata.url} dAppTitle/${dappMetadata.name}"
+        )
+        httpClient.addHeaders(headers)
+
         val params: MutableMap<String, Any> = mutableMapOf()
         params["method"] = request.method
         params["jsonrpc"] = "2.0"
