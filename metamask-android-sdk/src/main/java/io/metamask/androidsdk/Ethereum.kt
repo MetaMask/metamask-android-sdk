@@ -228,7 +228,7 @@ class Ethereum (
 
         if (EthereumMethod.isReadOnly(request.method) && infuraProvider?.supportsChain(chainId) == true) {
             Logger.log("Ethereum:: Using Infura API for method ${request.method} on chain $chainId")
-            infuraProvider.makeRequest(request, chainId, callback)
+            infuraProvider.makeRequest(request, chainId, dappMetadata, callback)
         } else {
             communicationClient?.sendRequest(request) { response ->
                 callback?.invoke(response)
