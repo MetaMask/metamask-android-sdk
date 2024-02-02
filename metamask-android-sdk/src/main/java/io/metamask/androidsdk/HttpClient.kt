@@ -9,6 +9,15 @@ import java.io.IOException
 
 internal class HttpClient {
     private val client = OkHttpClient()
+    private var additionalHeaders: Headers = Headers.headersOf("Accept", "application/json", "Content-Type", "application/json")
+
+    fun addHeaders(headers: Map<String, String>) {
+        additionalHeaders = additionalHeaders.newBuilder().apply {
+            headers.forEach { (key, value) ->
+                add(key, value)
+            }
+        }.build()
+    }
 
     fun newCall(baseUrl: String, parameters: Map<String, Any>? = null, callback: ((String?, IOException?) -> Unit)? = null) {
         val json = JSONObject(parameters).toString()
@@ -16,7 +25,7 @@ internal class HttpClient {
         val requestBody = json.toRequestBody("application/json".toMediaTypeOrNull())
         val request = Request.Builder()
             .url(baseUrl)
-            .headers(Headers.headersOf("Accept", "application/json", "Content-Type", "application/json"))
+            .headers(additionalHeaders)
             .post(requestBody)
             .build()
 
