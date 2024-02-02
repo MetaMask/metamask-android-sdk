@@ -29,8 +29,6 @@ internal class HttpClient {
             .post(requestBody)
             .build()
 
-        Logger.log("Request headers: ${request.headers}")
-
         client.newCall(request).enqueue(object: Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.e(TAG,"HttpClient: error ${e.message}")
