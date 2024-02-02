@@ -209,12 +209,12 @@ class EthereumViewModel @Inject constructor(
     ) {
         val params: List<String> = listOf()
 
-        val gasPriceRequest = EthereumRequest(
+        val web3ClientVersionRequest = EthereumRequest(
             method = EthereumMethod.WEB3_CLIENT_VERSION.value,
             params = params
         )
 
-        ethereum.sendRequest(gasPriceRequest) { result ->
+        ethereum.sendRequest(web3ClientVersionRequest) { result ->
             when (result) {
                 is Result.Error -> {
                     Logger.log("Ethereum web3 client version error: ${result.error.message}")

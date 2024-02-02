@@ -5,9 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
+import androidx.annotation.RequiresApi
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import io.metamask.nativesdk.IMessegeService
@@ -450,6 +452,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         sendMessage(messageJson)
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun isQA(): Boolean {
         val packageManager = appContextRef.get()?.packageManager
 
