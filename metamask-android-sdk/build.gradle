@@ -15,7 +15,7 @@ android {
         targetSdk 33
 
         ext.versionCode = 1
-        ext.versionName = "0.4.0"
+        ext.versionName = "0.4.1"
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         consumerProguardFiles 'consumer-rules.pro'
@@ -55,13 +55,14 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.test.ext:junit-ktx:1.1.5'
     testImplementation 'junit:junit:4.13.2'
+    implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.7.0"
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 }
 
 ext {
     PUBLISH_GROUP_ID = 'io.metamask.androidsdk'
-    PUBLISH_VERSION = '0.4.0'
+    PUBLISH_VERSION = '0.4.1'
     PUBLISH_ARTIFACT_ID = 'metamask-android-sdk'
 }
 

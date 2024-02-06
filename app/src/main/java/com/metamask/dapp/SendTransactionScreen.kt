@@ -24,7 +24,9 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.metamask.dapp.com.metamask.dapp.AppTopBar
-import io.metamask.androidsdk.*
+import io.metamask.androidsdk.EthereumState
+import io.metamask.androidsdk.Result
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -32,25 +34,14 @@ fun SendTransactionScreen(
     navController: NavController,
     ethereumState: EthereumState,
     isConnectWith: Boolean = false,
-    sendTransaction: (
-        amount: String,
-        from: String,
-        to: String,
-        onSuccess: (Any?) -> Unit,
-        onError: (message: String) -> Unit
-    ) -> Unit,
-    connectWithSendTransaction: (
-        amount: String,
-        from: String,
-        to: String,
-        onSuccess: (Any?) -> Unit,
-        onError: (message: String) -> Unit
-    ) -> Unit
+    sendTransaction: suspend (amount: String, from: String, to: String) -> Result,
+    connectWithSendTransaction: suspend (amount: String, from: String, to: String) -> Result
 ) {
     var amount by remember { mutableStateOf("0x01") }
     var from by remember { mutableStateOf(ethereumState.selectedAddress) }
     var to by remember { mutableStateOf("0x0000000000000000000000000000000000000000") }
     var sendResult by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -192,27 +183,33 @@ fun SendTransactionScreen(
 
             if (isConnectWith) {
                 DappButton(buttonText = stringResource(R.string.connect_with_send)) {
-                    connectWithSendTransaction(amount, from, to,
-                        { result ->
-                            sendResult = result as String
-                            errorMessage = null
-                        },
-                        { error ->
-                            errorMessage = error
+                    coroutineScope.launch {
+                        when (val result = connectWithSendTransaction(amount, from, to)) {
+                            is Result.Success.Item -> {
+                                errorMessage = null
+                                sendResult = result.value
+                            }
+                            is Result.Error -> {
+                                errorMessage = result.error.message
+                            }
+                            else -> {}
                         }
-                    )
+                    }
                 }
             } else {
                 DappButton(buttonText = stringResource(R.string.send)) {
-                    sendTransaction(amount, from, to,
-                        { result ->
-                            sendResult = result as String
-                            errorMessage = null
-                        },
-                        { error ->
-                            errorMessage = error
+                    coroutineScope.launch {
+                        when (val result = sendTransaction(amount, from, to)) {
+                            is Result.Success.Item -> {
+                                errorMessage = null
+                                sendResult = result.value
+                            }
+                            is Result.Error -> {
+                                errorMessage = result.error.message
+                            }
+                            else -> {}
                         }
-                    )
+                    }
                 }
             }
 
@@ -233,7 +230,7 @@ fun PreviewSendTransaction() {
     SendTransactionScreen(
         rememberNavController(),
         ethereumState = EthereumState("", "", ""),
-        sendTransaction = { _, _, _, _, _ -> },
-        connectWithSendTransaction = { _, _, _, _, _ -> },
+        sendTransaction = { _, _, _ -> Result.Success.Item("") },
+        connectWithSendTransaction = { _, _, _ -> Result.Success.Item("") },
     )
 }

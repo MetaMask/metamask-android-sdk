@@ -1,37 +1,59 @@
 package com.metamask.dapp
 
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.metamask.dapp.DappScreen.*
-import io.metamask.androidsdk.*
+import io.metamask.androidsdk.EthereumState
+import io.metamask.androidsdk.Result
 
 @Composable
-fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel) {
+fun Setup(ethereumViewModel: EthereumFlowViewModel, screenViewModel: ScreenViewModel) {
     val navController = rememberNavController()
-    val ethereumState by ethereumViewModel.ethereumState.observeAsState(EthereumState("", "", ""))
+
+    val ethereumState by ethereumViewModel.ethereumFlow.collectAsState(initial = EthereumState("", "", ""))
+
     var isConnectWith by remember { mutableStateOf(false) }
     var isConnectSign by remember { mutableStateOf(false) }
+
+    var isConnecting by remember { mutableStateOf(false) }
+    var isConnectSigning by remember { mutableStateOf(false) }
+    var connectError by remember { mutableStateOf<String?>(null) }
+    var signMessage by remember { mutableStateOf("") }
+
+    // Connect
+    LaunchedEffect(isConnecting) {
+        if (isConnecting) {
+            when (val result = ethereumViewModel.connect()) {
+                is Result.Success -> {
+                    screenViewModel.setScreen(ACTIONS)
+                }
+                is Result.Error -> {
+                    connectError = result.error.message
+                }
+            }
+            isConnecting = false
+        }
+    }
 
     NavHost(navController = navController, startDestination = CONNECT.name) {
         composable(CONNECT.name) {
             ConnectScreen(
                 ethereumState = ethereumState,
-                onConnect = { onError ->
-                    ethereumViewModel.connect(
-                        onSuccess = { screenViewModel.setScreen(ACTIONS) },
-                        onError) },
-                onConnectSign = { screenViewModel.setScreen(CONNECT_SIGN_MESSAGE) },
-                onConnectWith = { screenViewModel.setScreen(CONNECT_WITH) },
-                onDisconnect = {
+                connect = {
+                    isConnecting = true
+                    ethereumViewModel.connect()
+                          },
+                connectSign = { screenViewModel.setScreen(CONNECT_SIGN_MESSAGE) },
+                connectWith = { screenViewModel.setScreen(CONNECT_WITH) },
+                disconnect = {
                     screenViewModel.setScreen(CONNECT)
                     ethereumViewModel.disconnect()
                 },
-                onClearSession = {
+                clearSession = {
                     screenViewModel.setScreen(CONNECT)
-                    ethereumViewModel.clearSession()
+                    ethereumViewModel.disconnect(clearSession = true)
                 }
             )
         }
@@ -50,11 +72,12 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
                 navController,
                 ethereumState = ethereumState,
                 isConnectSign,
-                connectSignMessage = { message, onSuccess, onError ->
-                    ethereumViewModel.connectSign(message, onSuccess, onError)
+                connectSignMessage = { message ->
+                    isConnectSigning = true
+                    ethereumViewModel.connectSign(message)
                 },
-                signMessage = { message, address, onSuccess, onError ->
-                    ethereumViewModel.signMessage(message, address, onSuccess, onError)
+                signMessage = { message, address ->
+                    ethereumViewModel.signMessage(message, address)
                 }
             )
         }
@@ -62,8 +85,8 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
             BatchSignMessageScreen(
                 navController,
                 ethereumState = ethereumState,
-                batchSign = { messages, address, onSuccess, onError, ->
-                    ethereumViewModel.sendBatchSigningRequest(messages, address, onSuccess, onError)
+                batchSign = { messages, address ->
+                    ethereumViewModel.sendBatchSigningRequest(messages, address)
                 }
             )
         }
@@ -72,11 +95,11 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
                 navController,
                 ethereumState = ethereumState,
                 isConnectWith,
-                sendTransaction = { amount, from, to, onSuccess, onError ->
-                    ethereumViewModel.sendTransaction(amount, from, to, onSuccess, onError)
+                sendTransaction = { amount, from, to ->
+                    ethereumViewModel.sendTransaction(amount, from, to)
                 },
-                connectWithSendTransaction = { amount, from, to, onSuccess, onError ->
-                    ethereumViewModel.connectWithSendTransaction(amount, from, to, onSuccess, onError)
+                connectWithSendTransaction = { amount, from, to ->
+                    ethereumViewModel.connectWithSendTransaction(amount, from, to)
                 }
             )
         }
@@ -84,8 +107,8 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
             SwitchChainScreen(
                 navController,
                 ethereumState = ethereumState,
-                switchChain = { chainId, onSuccess, onError ->
-                    ethereumViewModel.switchChain(chainId, onSuccess, onError)
+                switchChain = { chainId ->
+                    ethereumViewModel.switchChain(chainId)
                 }
             )
         }
@@ -94,14 +117,14 @@ fun Setup(ethereumViewModel: EthereumViewModel, screenViewModel: ScreenViewModel
             ReadOnlyCallsScreen(
                 navController,
                 ethereumState = ethereumState,
-                getBalance = { address, onSuccess, onError ->
-                    ethereumViewModel.getBalance(address, onSuccess, onError)
+                getBalance = { address ->
+                    ethereumViewModel.getBalance(address)
                 },
-                getGasPrice = { onSuccess, onError ->
-                    ethereumViewModel.gasPrice(onSuccess, onError)
+                getGasPrice = {
+                    ethereumViewModel.gasPrice()
                 },
-                getWeb3ClientVersion = { onSuccess, onError ->
-                    ethereumViewModel.web3ClientVersion(onSuccess, onError)
+                getWeb3ClientVersion = {
+                    ethereumViewModel.web3ClientVersion()
                 }
             )
         }

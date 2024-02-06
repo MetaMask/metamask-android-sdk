@@ -11,12 +11,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.metamask.dapp.ui.theme.MetaMaskAndroidSDKClientTheme
 import dagger.hilt.android.AndroidEntryPoint
-import io.metamask.androidsdk.Logger
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val ethereumViewModel: EthereumViewModel by viewModels()
+    private val ethereumViewModel: EthereumFlowViewModel by viewModels()
     private val screenViewModel: ScreenViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {

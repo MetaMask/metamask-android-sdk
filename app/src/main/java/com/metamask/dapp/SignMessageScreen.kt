@@ -15,23 +15,17 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.metamask.dapp.com.metamask.dapp.AppTopBar
-import io.metamask.androidsdk.*
+import io.metamask.androidsdk.EthereumState
+import io.metamask.androidsdk.Result
+import kotlinx.coroutines.launch
 
 @Composable
 fun SignMessageScreen(
     navController: NavController,
     ethereumState: EthereumState,
     isConnectSign: Boolean = false,
-    connectSignMessage: (
-        message: String,
-        onSuccess: (result: String) -> Unit,
-        onError: (message: String) -> Unit) -> Unit,
-    signMessage: (
-        message: String,
-        address: String,
-        onSuccess: (String) -> Unit,
-        onError: (message: String) -> Unit
-    ) -> Unit
+    connectSignMessage: suspend (message: String) -> Result,
+    signMessage: suspend (message: String, address: String) -> Result
 ) {
     fun signMessage(chainId: String): String {
         return if(isConnectSign) {
@@ -44,6 +38,7 @@ fun SignMessageScreen(
     var message = signMessage(ethereumState.chainId)
     var signResult by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(ethereumState.chainId) {
         message = signMessage(ethereumState.chainId)
@@ -73,30 +68,32 @@ fun SignMessageScreen(
 
             if (isConnectSign) {
                 DappButton(buttonText = stringResource(R.string.connect_sign)) {
-                    connectSignMessage(
-                        message,
-                        { result ->
-                            signResult = result as String
-                            errorMessage = null
-                        },
-                        { error ->
-                            errorMessage = error
+                    coroutineScope.launch {
+                        val result = connectSignMessage(message)
+                        errorMessage = when (result) {
+                            is Result.Success -> {
+                                null
+                            }
+                            is Result.Error -> {
+                                result.error.message
+                            }
                         }
-                    )
+                    }
                 }
             } else {
                 DappButton(buttonText = stringResource(R.string.sign)) {
-                    signMessage(
-                        message,
-                        ethereumState.selectedAddress,
-                        { result ->
-                            signResult = result as String
-                            errorMessage = null
-                        },
-                        { error ->
-                            errorMessage = error
+                    coroutineScope.launch {
+                        when (val result = signMessage(message, ethereumState.selectedAddress)) {
+                            is Result.Success.Item -> {
+                                errorMessage = null
+                                signResult = result.value
+                            }
+                            is Result.Error -> {
+                                errorMessage = result.error.message
+                            }
+                            else -> {}
                         }
-                    )
+                    }
                 }
             }
 
@@ -120,7 +117,7 @@ fun PreviewSignMessage() {
         rememberNavController(),
         ethereumState = EthereumState("", "", ""),
         false,
-        signMessage = { _, _, _, _ -> },
-        connectSignMessage = {_, _, _ -> }
+        signMessage = { _, _ -> Result.Success.Item("") },
+        connectSignMessage = { _ -> Result.Success.Item("") }
     )
 }

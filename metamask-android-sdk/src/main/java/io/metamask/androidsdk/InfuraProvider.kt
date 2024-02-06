@@ -81,8 +81,14 @@ class InfuraProvider(private val infuraAPIKey: String) {
 
         httpClient.newCall("${rpcUrls[chainId]}", parameters = params) { response, ioException ->
             if (response != null) {
-                val result = JSONObject(response).optString("result") ?: ""
-                callback?.invoke(Result.Success.Item(result))
+                Logger.log("InfuraProvider:: response $response")
+                try {
+                    val result = JSONObject(response).optString("result") ?: ""
+                    callback?.invoke(Result.Success.Item(result))
+                } catch (e: Exception) {
+                    Logger.error("InfuraProvider:: error: ${e.message}")
+                    callback?.invoke(Result.Error(RequestError(-1, response)))
+                }
             } else if (ioException != null) {
                 callback?.invoke(Result.Success.Item(ioException.message ?: ""))
             }

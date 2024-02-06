@@ -1,15 +1,13 @@
 package com.metamask.dapp
 
 import android.content.Context
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import io.metamask.androidsdk.DappMetadata
-import io.metamask.androidsdk.Ethereum
-import io.metamask.androidsdk.InfuraProvider
-import io.metamask.androidsdk.SDKOptions
+import io.metamask.androidsdk.*
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -24,4 +22,16 @@ internal object AppModule {
     fun provideEthereum(@ApplicationContext context: Context, dappMetadata: DappMetadata): Ethereum {
         return Ethereum(context, dappMetadata, SDKOptions(infuraAPIKey = "#####"))
     }
+
+    @Provides
+    fun provideEthereumFlow(ethereum: Ethereum): EthereumFlow {
+        return EthereumFlow(ethereum)
+    }
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class EthereumModule {
+    @Binds
+    abstract fun bindEthereum(ethereumflow: EthereumFlow): EthereumFlowWrapper
 }
