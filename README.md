@@ -63,7 +63,7 @@ We have provided a convenient way to make rpc requests without having to first m
 
 #### 3.1. Use the provider object directly
 
-Use the `ethereum` provider object directly to connect your dapp to MetaMask by adding the following
+The SDK supports both callbacks and coroutines. If using callbacks use `Ethereum` object and if using coroutines use `EthereumFlow` object. Use the `Ethereum` or `EthereumFlow`  provider object directly to connect your dapp to MetaMask by adding the following
 code to your project file:
 
 ```kotlin
@@ -72,8 +72,10 @@ class SomeModel(context: Context) {
     
     val dappMetadata = DappMetadata("Droid Dapp", "https://droiddapp.com")
     val infuraAPIKey = "1234567890" // We use Infura API for read-only RPCs for a seamless user experience 
+    
+    // A) Using callbacks
     val ethereum = Ethereum(context, dappMetadata, SDKOptions(infuraAPIKey))
-
+    
     // This is the same as calling eth_requestAccounts
     ethereum.connect() { result ->
         when (result) {
@@ -85,17 +87,34 @@ class SomeModel(context: Context) {
             }
         }
     }
+    
+    // B) Using coroutines
+    
+    val coroutineScope = rememberCoroutineScope()
+    
+    // This is the same as calling eth_requestAccounts
+    coroutineScope.launch {
+        when (val result = ethereum.connect()) {
+            is Result.Error -> {
+                Logger.log("Ethereum connection error: ${result.error.message}")
+            }
+            is Result.Success.Item -> {
+                Logger.log("Ethereum connection result: ${result.value}")
+            }
+        }    
+    }
 }
 ```
 
 #### 3.2. Use a ViewModel
 
 To connect your dapp to MetaMask using a ViewModel, create a ViewModel that injects the
-`ethereum` provider object, then add wrapper functions for each Ethereum method you wish to call.
+`Ethereum/EthereumFlow` provider object, then add wrapper functions for each Ethereum method you wish to call. The example dapp uses `EthereumViewModel` for the callback API and `EthereumFlowViewModel` for the coroutine API. The rest of the examples use the coroutine option
 
 You can use a dependency manager such as [Hilt](https://developer.android.com/training/dependency-injection/hilt-android)
 to initialize the ViewModel and maintain its state across configuration changes.
 If you use Hilt, your setup might look like the following:
+##### A) Using callbacks
 
 ```kotlin
 @HiltViewModel
@@ -121,10 +140,29 @@ class EthereumViewModel @Inject constructor(
 }
 ```
 
+##### B) Using coroutines
+```kotlin
+@HiltViewModel
+class EthereumFlowViewModel @Inject constructor(
+    private val ethereum: EthereumFlowWrapper
+): ViewModel() {
+
+    val ethereumFlow: Flow<EthereumState> get() = ethereum.ethereumState
+
+    suspend fun connect(): Result {
+        return ethereum.connect()
+    }
+
+    suspend fun sendRequest(request: EthereumRequest): Result {
+        return ethereum.sendRequest(request)
+    }
+}
+```
+
 To use the ViewModel, add the following code to your project file:
 
 ```kotlin
-val ethereumViewModel: EthereumViewModel by viewModels()
+val ethereumViewModel: EthereumFlowViewModel by viewModels()
 
 // This is the same as calling eth_requestAccounts
 ethereumViewModel.connect()
@@ -141,8 +179,8 @@ using `ethereum.sendRequest()`.
 #### Example: Get account balance
 
 The following example gets the user's account balance by calling
-[`eth_getBalance`](https://docs.metamask.io/wallet/reference/eth_getbalance/). 
-This is a read-only rpc ("direct call"), which uses the Infura API if an infuraAPIKey is provided in the SDKOptions - which we highly recommend as it provides a seamless use experience. 
+[`eth_getBalance`](https://docs.metamask.io/wallet/reference/eth_getbalance/).
+This is a read-only rpc ("direct call"), which uses the Infura API if an infuraAPIKey is provided in the SDKOptions - which we highly recommend as it provides a seamless use experience.
 
 ```kotlin
 var balance: String? = null
@@ -160,15 +198,13 @@ val getBalanceRequest = EthereumRequest(
 )
 
 // Make request
-ethereum.sendRequest(getBalanceRequest) { result ->
-    when (result) {
-        is Result.Success.Item -> {
-            Logger.log("Ethereum account balance: ${result.value}")
-            balance = result.value
-        }
-        is Result.Error -> {
-            Logger.log("Ethereum request balance error: ${result.error.message}")
-        }
+when (val result = ethereum.sendRequest(getBalanceRequest)) {
+    is Result.Success.Item -> {
+        Logger.log("Ethereum account balance: ${result.value}")
+        balance = result.value
+    }
+    is Result.Error -> {
+        Logger.log("Ethereum request balance error: ${result.error.message}")
     }
 }
 ```
@@ -189,14 +225,12 @@ val signRequest = EthereumRequest(
     params = params
 )
 
-ethereum.sendRequest(signRequest) { result ->
-    when (result) {
-        is Result.Error -> {
-            Logger.log("Ethereum sign error: ${result.error.message}")
-        }
-        is Result.Success.Item -> {
-            Logger.log("Ethereum sign result: ${result.value}")
-        }
+when (val result = ethereum.sendRequest(signRequest)) {
+    is Result.Error -> {
+        Logger.log("Ethereum sign error: ${result.error.message}")
+    }
+    is Result.Success.Item -> {
+        Logger.log("Ethereum sign result: ${result.value}")
     }
 }
 ```
@@ -219,14 +253,12 @@ for (message in messages) {
     requestBatch.add(ethereumRequest)
 }
 
-ethereum.sendRequestBatch(requestBatch) { result ->
-    when (result) {
-        is Result.Error -> {
-            Logger.log("Ethereum batch sign error: ${result.error.message}")
-        }
-        is Result.Success.Items -> {
-            Logger.log("Ethereum batch sign result: ${result.value}")
-        }
+when (val result = ethereum.sendRequestBatch(requestBatch)) {
+    is Result.Error -> {
+        Logger.log("Ethereum batch sign error: ${result.error.message}")
+    }
+    is Result.Success.Items -> {
+        Logger.log("Ethereum batch sign result: ${result.value}")
     }
 }
 ```
@@ -254,15 +286,13 @@ val transactionRequest = EthereumRequest(
 )
 
 // Make a transaction request
-ethereum.sendRequest(transactionRequest) { result ->
-    when (result) {
-        is Result.Success.Item -> {
-            Logger.log("Ethereum transaction result: ${result.value}")
-            balance = result.value
-        }
-        is Result.Error -> {
-            // handle error
-        }
+when (val result = ethereum.sendRequest(transactionRequest)) {
+    is Result.Success.Item -> {
+        Logger.log("Ethereum transaction result: ${result.value}")
+        balance = result.value
+    }
+    is Result.Error -> {
+        // handle error
     }
 }
 ```
@@ -274,51 +304,46 @@ The following example switches to a new Ethereum chain by calling
 and [`wallet_addEthereumChain`](https://docs.metamask.io/wallet/reference/wallet_addethereumchain/).
 
 ```kotlin
-fun switchChain(
-    chainId: String,
-    onSuccess: (message: String) -> Unit,
-    onError: (message: String, action: (() -> Unit)?) -> Unit
-) {
+suspend fun switchChain(chainId: String) : SwitchChainResult {
     val switchChainParams: Map<String, String> = mapOf("chainId" to chainId)
     val switchChainRequest = EthereumRequest(
         method = EthereumMethod.SWITCH_ETHEREUM_CHAIN.value,
         params = listOf(switchChainParams)
     )
 
-    ethereum.sendRequest(switchChainRequest) { result ->
-        when (result) {
-            is Result.Error -> {
-                if (result.error.code == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.error.code == ErrorType.SERVER_ERROR.code) {
-                    val message = "${Network.chainNameFor(chainId)} ($chainId) has not been added to your MetaMask wallet. Add chain?"
-
-                    val action: () -> Unit = {
-                        addEthereumChain(
-                            chainId,
-                            onSuccess = { result ->
-                                onSuccess(result)
-                            },
-                            onError = { error ->
-                                onError(error, null)
+    return when (val result = ethereum.sendRequest(switchChainRequest)) {
+        is Result.Error -> {
+            if (result.error.code == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.error.code == ErrorType.SERVER_ERROR.code) {
+                val message = "${Network.chainNameFor(chainId)} ($chainId) has not been added to your MetaMask wallet. Add chain?"
+                SwitchChainResult.Error(message) {
+                    CoroutineScope(Dispatchers.Main).launch {
+                        when (val addChainResult = addEthereumChain(chainId)) {
+                            is Result.Error -> {
+                                SwitchChainResult.Error(addChainResult.error.message, null)
                             }
-                        )
+                            is Result.Success -> {
+                                if (chainId == ethereum.chainId) {
+                                    SwitchChainResult.Success(
+                                        "Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)"
+                                    )
+                                } else {
+                                    SwitchChainResult.Success("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
+                                }
+                            }
+                        }
                     }
-                    onError(message, action)
-                } else {
-                    onError("Switch chain error: ${result.error.message}", null)
                 }
+            } else {
+                SwitchChainResult.Error("Add chain error: ${result.error.message}", null)
             }
-            is Result.Success -> {
-                onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
-            }
+        }
+        is Result.Success -> {
+            SwitchChainResult.Success("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
         }
     }
 }
 
-private fun addEthereumChain(
-    chainId: String,
-    onSuccess: (message: String) -> Unit,
-    onError: (message: String) -> Unit
-) {
+private suspend fun addEthereumChain(chainId: String) : Result {
     Logger.log("Adding chainId: $chainId")
 
     val addChainParams: Map<String, Any> = mapOf(
@@ -331,17 +356,15 @@ private fun addEthereumChain(
         params = listOf(addChainParams)
     )
 
-    ethereum.sendRequest(addChainRequest) { result ->
-        when (result) {
-            is Result.Error -> {
-                onError("Add chain error: ${result.error.message}")
-            }
-            is Result.Success.Item -> {
-                if (chainId == ethereum.chainId) {
-                    onSuccess("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
-                } else {
-                    onSuccess("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
-                }
+    return when (val result = ethereum.sendRequest(addChainRequest)) {
+        is Result.Error -> {
+            Result.Error(RequestError(result.error.code, "Add chain error: ${result.error.message}"))
+        }
+        is Result.Success -> {
+            if (chainId == ethereum.chainId) {
+                Result.Success.Item("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
+            } else {
+                Result.Success.Item("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
             }
         }
     }
@@ -384,15 +407,12 @@ In this case you do not need to construct a request, you only provide the messag
 ```kotlin
 val message = "This is the message to sign"
 
-ethereum.connectSign(message) { result ->
-    when (result) {
-        is Result.Error -> {
-            Logger.log("Ethereum connectSign error: ${result.error.message}")
-        }
-        is Result.Success.Item -> {
-            Logger.log("Ethereum connectSign result: ${result.value}")
-        }
+when (val result = ethereum.connectSign(message)) {
+    is Result.Error -> {
+        Logger.log("Ethereum connectSign error: ${result.error.message}")
+    }
+    is Result.Success.Item -> {
+        Logger.log("Ethereum connectSign result: ${result.value}")
     }
 }
 ```
-
