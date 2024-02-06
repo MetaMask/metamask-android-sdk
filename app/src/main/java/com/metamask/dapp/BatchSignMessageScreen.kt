@@ -16,17 +16,14 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.metamask.dapp.com.metamask.dapp.AppTopBar
 import io.metamask.androidsdk.EthereumState
+import io.metamask.androidsdk.Result
+import kotlinx.coroutines.launch
 
 @Composable
 fun BatchSignMessageScreen(
     navController: NavController,
     ethereumState: EthereumState,
-    batchSign: (
-        messages: List<String>,
-        address: String,
-        onSuccess: (List<String>) -> Unit,
-        onError: (message: String) -> Unit
-    ) -> Unit
+    batchSign: suspend (messages: List<String>, address: String) -> Result
 ) {
     var signResult by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -35,6 +32,7 @@ fun BatchSignMessageScreen(
     val helloWorld = "Hello, world, signing in!"
     val byeWorld = "Last message to sign!"
     val batchSignMessages: List<String> = listOf(helloWorld, transactionData, byeWorld)
+    val coroutineScope = rememberCoroutineScope()
 
     Surface {
         AppTopBar(navController)
@@ -57,17 +55,18 @@ fun BatchSignMessageScreen(
             )
 
             DappButton(buttonText = stringResource(R.string.batch_sign)) {
-                batchSign(
-                    batchSignMessages,
-                    ethereumState.selectedAddress,
-                    { result ->
-                        signResult = result.joinToString("\n=================================\n")
-                        errorMessage = null
-                    },
-                    { error ->
-                        errorMessage = error
+                coroutineScope.launch {
+                    when (val result = batchSign(batchSignMessages, ethereumState.selectedAddress)) {
+                        is Result.Success.Items -> {
+                            errorMessage = null
+                            signResult = result.value.joinToString("\n=================================\n")
+                        }
+                        is Result.Error -> {
+                            errorMessage = result.error.message
+                        }
+                        else -> {}
                     }
-                )
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -89,6 +88,6 @@ fun PreviewBatchSignMessage() {
     BatchSignMessageScreen(
         rememberNavController(),
         ethereumState = EthereumState("", "", ""),
-        batchSign = { _, _, _, _ -> }
+        batchSign = { _, _ -> Result.Success.Items(listOf()) }
     )
 }

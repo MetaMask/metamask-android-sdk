@@ -16,7 +16,7 @@ import io.metamask.androidsdk.Logger
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val ethereumViewModel: EthereumViewModel by viewModels()
+    private val ethereumViewModel: EthereumFlowViewModel by viewModels()
     private val screenViewModel: ScreenViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -4,20 +4,18 @@ import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.metamask.androidsdk.*
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import javax.inject.Inject
 
 @HiltViewModel
 class EthereumFlowViewModel @Inject constructor(
     private val ethereum: EthereumFlowWrapper
 ): ViewModel() {
-
-    val ethereumState = MediatorLiveData<EthereumState>().apply {
-        addSource(ethereum.ethereumState) { newEthereumState ->
-            value = newEthereumState
-        }
-    }
+    
+    val ethereumFlow: Flow<EthereumState> get() = ethereum.ethereumState
 
     suspend fun connect() : Result {
         return ethereum.connect()
@@ -29,6 +27,23 @@ class EthereumFlowViewModel @Inject constructor(
 
     suspend fun connectSign(message: String) : Result {
         return ethereum.connectSign(message)
+    }
+
+    suspend fun connectWithSendTransaction(amount: String,
+                                           from: String,
+                                           to: String) : Result {
+        val params: MutableMap<String, Any> = mutableMapOf(
+            "from" to from,
+            "to" to to,
+            "amount" to amount
+        )
+
+        val transactionRequest = EthereumRequest(
+            method = EthereumMethod.ETH_SEND_TRANSACTION.value,
+            params = listOf(params)
+        )
+
+        return connectWith(transactionRequest)
     }
 
     suspend fun sendRequestBatch(requests: List<EthereumRequest>) : Result {
@@ -131,57 +146,31 @@ class EthereumFlowViewModel @Inject constructor(
         return when (val result = ethereum.sendRequest(switchChainRequest)) {
             is Result.Error -> {
                 if (result.error.code == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.error.code == ErrorType.SERVER_ERROR.code) {
-                    SwitchChainResult.AddChainAction({
-                        val result = suspendCancellableCoroutine<> {
-                            addEthereumChain(chainId)
-                        }
-                        when (result) {
-                            is Result.Error -> {
-                                return SwitchChainResult.Error(result.error)
-                            }
-                        }
-                    })
-                }
-                SwitchChainResult.Error(RequestError(result.error.code, "Add chain error: ${result.error.message}"))
-            }
-            is Result.Success -> {
-                if (chainId == ethereum.chainId) {
-                    SwitchChainResult.Success("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
-                } else {
-                    SwitchChainResult.Success("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
-                }
-            }
-        }
-
-        when (result) {
-            is Result.Error -> {
-                if (result.error.code == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.error.code == ErrorType.SERVER_ERROR.code) {
                     val message = "${Network.chainNameFor(chainId)} ($chainId) has not been added to your MetaMask wallet. Add chain?"
-
-                    val action: () -> Unit = {
-                        val result = addEthereumChain(chainId)
-                        when (result) {
-                            is Result.Error -> {
-                                return SwitchChainResult.Error(result.error)
+                    SwitchChainResult.Error(message) {
+                        CoroutineScope(Dispatchers.Main).launch {
+                            when (val addChainResult = addEthereumChain(chainId)) {
+                                is Result.Error -> {
+                                    SwitchChainResult.Error(addChainResult.error.message, null)
+                                }
+                                is Result.Success -> {
+                                    if (chainId == ethereum.chainId) {
+                                        SwitchChainResult.Success(
+                                            "Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)"
+                                        )
+                                    } else {
+                                        SwitchChainResult.Success("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
+                                    }
+                                }
                             }
                         }
-                        addEthereumChain(
-                            chainId,
-                            onSuccess = { result ->
-                                onSuccess(result)
-                            },
-                            onError = { error ->
-                                onError(error, null)
-                            }
-                        )
                     }
-                    onError(message, action)
                 } else {
-                    return SwitchChainResult.Error(RequestError(-1, message = "Switch chain error: ${result.error.message}"))
+                    SwitchChainResult.Error("Add chain error: ${result.error.message}", null)
                 }
             }
             is Result.Success -> {
-                return Result.Success.Item("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
+                SwitchChainResult.Success("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
             }
         }
     }
@@ -219,7 +208,6 @@ class EthereumFlowViewModel @Inject constructor(
 }
 
 sealed class SwitchChainResult {
-    data class Success(val result: String) : SwitchChainResult()
-    data class AddChainAction(val action: () -> Unit) : SwitchChainResult()
-    data class Error(val error: RequestError): SwitchChainResult()
+    data class Success(val value: String) : SwitchChainResult()
+    data class Error(val error: String, val action: (() -> Unit)?): SwitchChainResult()
 }

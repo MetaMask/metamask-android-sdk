@@ -17,7 +17,7 @@ interface EthereumFlowWrapper {
     suspend fun sendRequestBatch(requests: List<EthereumRequest>) : Result
 }
 
-internal class EthereumFlow
+class EthereumFlow
 constructor(
     private val ethereum: Ethereum,
 ) : EthereumFlowWrapper {

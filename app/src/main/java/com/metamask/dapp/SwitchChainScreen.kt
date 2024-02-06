@@ -14,17 +14,14 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.metamask.dapp.com.metamask.dapp.AppTopBar
 import io.metamask.androidsdk.*
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SwitchChainScreen(
     navController: NavController,
     ethereumState: EthereumState,
-    switchChain: (
-        chainId: String,
-        onSuccess: (message: String) -> Unit,
-        onError: (message: String, action: (() -> Unit)?) -> Unit
-    ) -> Unit
+    switchChain: suspend (chainId: String) -> SwitchChainResult,
 ) {
     var networks by remember { mutableStateOf(
         enumValues<Network>()
@@ -38,6 +35,7 @@ fun SwitchChainScreen(
     var snackbarData by remember { mutableStateOf<SnackbarData?>(null) }
     var resultMessage by remember { mutableStateOf<String?>(null) }
     var currentChainId by remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(ethereumState.chainId) {
         // Collect the ethereumState.chainId whenever it changes
@@ -124,15 +122,17 @@ fun SwitchChainScreen(
                 if(snackbarData?.action != null) {
                     snackbarData?.action?.invoke()
                 } else {
-                    switchChain(
-                        targetNetwork.chainId,  { message ->
-                            resultMessage = message
-                            snackbarData = null
-                        }, { error, action ->
-                            snackbarData = SnackbarData(error, action)
-                            resultMessage = null
+                    coroutineScope.launch {
+                        when (val result = switchChain(targetNetwork.chainId)) {
+                            is SwitchChainResult.Success -> {
+                                snackbarData = null
+                                resultMessage = result.value
+                            }
+                            is SwitchChainResult.Error -> {
+                                snackbarData = SnackbarData(result.error, result.action)
+                            }
                         }
-                    )
+                    }
                 }
             }
 
@@ -155,6 +155,6 @@ fun PreviewSwitchChain() {
     SwitchChainScreen(
         rememberNavController(),
         ethereumState = EthereumState("", "", ""),
-        switchChain = { _, _, _ -> }
+        switchChain = { _ -> SwitchChainResult.Success("")}
     )
 }

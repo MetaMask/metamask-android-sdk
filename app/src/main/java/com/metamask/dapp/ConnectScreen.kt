@@ -10,20 +10,23 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.metamask.androidsdk.EthereumState
+import io.metamask.androidsdk.Result
+import kotlinx.coroutines.launch
 
 @Composable
 fun ConnectScreen(
     ethereumState: EthereumState,
-    onConnect: (onError: (message: String) -> Unit) -> Unit,
-    onConnectSign: () -> Unit,
-    onConnectWith: () -> Unit,
-    onDisconnect: () -> Unit,
-    onClearSession: () -> Unit) {
+    connect: suspend () -> Result,
+    connectSign: () -> Unit,
+    connectWith: () -> Unit,
+    disconnect: () -> Unit,
+    clearSession: () -> Unit) {
 
     val bottomMargin = 24.dp
     val connected = ethereumState.selectedAddress.isNotEmpty()
 
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val coroutineScope = rememberCoroutineScope()
 
     Surface {
         Column(
@@ -39,12 +42,17 @@ fun ConnectScreen(
             // Connect button
             if (connected) {
                 DappButton(buttonText = stringResource(R.string.disconnect)) {
-                    onDisconnect()
+                    disconnect()
                 }
             } else {
                 DappButton(buttonText = stringResource(R.string.connect)) {
-                    onConnect() { error ->
-                        errorMessage = error
+                    coroutineScope.launch {
+                        errorMessage = when(val result = connect()) {
+                            is Result.Error -> {
+                                result.error.message
+                            }
+                            else -> { null }
+                        }
                     }
                 }
 
@@ -52,14 +60,14 @@ fun ConnectScreen(
 
                 // Connect and sign button
                 DappButton(buttonText = stringResource(R.string.connect_sign)) {
-                    onConnectSign()
+                    connectSign()
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Connect with button
                 DappButton(buttonText = stringResource(R.string.connect_with)) {
-                    onConnectWith()
+                    connectWith()
                 }
             }
 
@@ -73,7 +81,7 @@ fun ConnectScreen(
 
             // Clear session button
             DappButton(buttonText = stringResource(R.string.clear_session)) {
-                onClearSession()
+                clearSession()
                 errorMessage = null
             }
 
@@ -93,10 +101,10 @@ fun ConnectScreen(
 fun PreviewConnectClearButtons() {
     ConnectScreen(
         ethereumState = EthereumState("", "", ""),
-        onConnect = {_ ->},
-        onConnectSign = {},
-        onConnectWith = {},
-        onDisconnect = {},
-        onClearSession = {}
+        connect = { -> Result.Success.Item("")},
+        connectSign = { },
+        connectWith = { },
+        disconnect = { },
+        clearSession = { }
     )
 }
