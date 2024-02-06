@@ -1,13 +1,12 @@
 package com.metamask.dapp
 
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.metamask.dapp.DappScreen.*
-import io.metamask.androidsdk.*
-import kotlinx.coroutines.runBlocking
+import io.metamask.androidsdk.EthereumState
+import io.metamask.androidsdk.Result
 
 @Composable
 fun Setup(ethereumViewModel: EthereumFlowViewModel, screenViewModel: ScreenViewModel) {

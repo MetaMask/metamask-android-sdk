@@ -24,7 +24,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.metamask.dapp.com.metamask.dapp.AppTopBar
-import io.metamask.androidsdk.*
+import io.metamask.androidsdk.EthereumState
+import io.metamask.androidsdk.Result
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalComposeUiApi::class)

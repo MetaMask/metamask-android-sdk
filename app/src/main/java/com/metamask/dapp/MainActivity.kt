@@ -11,7 +11,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.metamask.dapp.ui.theme.MetaMaskAndroidSDKClientTheme
 import dagger.hilt.android.AndroidEntryPoint
-import io.metamask.androidsdk.Logger
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
