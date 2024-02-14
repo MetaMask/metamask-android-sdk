@@ -60,6 +60,7 @@ fun Setup(ethereumViewModel: EthereumFlowViewModel, screenViewModel: ScreenViewM
         composable(ACTIONS.name) {
             DappActionsScreen(
                 navController,
+                ethereumState = ethereumState,
                 onSignMessage = { screenViewModel.setScreen(SIGN_MESSAGE) },
                 onChainedSign = { screenViewModel.setScreen(BATCH_SIGN) },
                 onSendTransaction = { screenViewModel.setScreen(SEND_TRANSACTION) },
