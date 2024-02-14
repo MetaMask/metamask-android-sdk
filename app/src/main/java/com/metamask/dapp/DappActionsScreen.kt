@@ -5,16 +5,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.metamask.dapp.com.metamask.dapp.AppTopBar
+import io.metamask.androidsdk.EthereumState
 
 @Composable
 fun DappActionsScreen(
     navController: NavController,
+    ethereumState: EthereumState,
     onSignMessage: () -> Unit,
     onChainedSign: () -> Unit,
     onSendTransaction: () -> Unit,
@@ -31,6 +34,12 @@ fun DappActionsScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Heading("Dapp Actions")
+
+            DappLabel(
+                text = ethereumState.selectedAddress,
+                color = Color.Unspecified,
+                modifier = Modifier.padding(bottom = 36.dp)
+            )
 
             Spacer(modifier = Modifier.weight(1f))
 
@@ -77,5 +86,5 @@ fun DappActionsScreen(
 @Preview
 @Composable
 fun PreviewDappActions() {
-    DappActionsScreen(rememberNavController(), {}, {}, {}, {}, {})
+    DappActionsScreen(rememberNavController(), EthereumState("","",""), {}, {}, {}, {}, {})
 }
