@@ -16,6 +16,7 @@ import com.metamask.dapp.com.metamask.dapp.AppTopBar
 import io.metamask.androidsdk.EthereumState
 import io.metamask.androidsdk.Network
 import kotlinx.coroutines.launch
+import io.metamask.androidsdk.Result
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -121,7 +122,17 @@ fun SwitchChainScreen(
                 else { stringResource(R.string.switch_chain) }
             ) {
                 if(snackbarData?.action != null) {
-                    snackbarData?.action?.invoke()
+                    snackbarData?.action?.invoke {  result ->
+                        when (result) {
+                            is Result.Error -> {
+                                resultMessage = result.error.message
+                            }
+                            is Result.Success.Item -> {
+                                resultMessage = result.value
+                            }
+                            else -> {}
+                        }
+                    }
                 } else {
                     coroutineScope.launch {
                         when (val result = switchChain(targetNetwork.chainId)) {
@@ -130,7 +141,8 @@ fun SwitchChainScreen(
                                 resultMessage = result.value
                             }
                             is SwitchChainResult.Error -> {
-                                snackbarData = SnackbarData(result.error, result.action)
+                                SnackbarData(result.error, result.action)
+                                resultMessage = null
                             }
                         }
                     }

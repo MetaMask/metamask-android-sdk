@@ -72,46 +72,19 @@ class EthereumFlowViewModel @Inject constructor(
         message: String,
         address: String,
     ) : Result {
-        val params: List<String> = listOf(address, message)
-
-        val signRequest = EthereumRequest(
-            method = EthereumMethod.ETH_SIGN_TYPED_DATA_V4.value,
-            params = params
-        )
-        return ethereum.sendRequest(signRequest)
+        return ethereum.ethSignTypedDataV4(typedData = message, address)
     }
 
-    suspend fun getBalance(address: String) : Result {
-        val params: List<String> = listOf(address, "latest")
-
-        val getBalanceRequest = EthereumRequest(
-            method = EthereumMethod.ETH_GET_BALANCE.value,
-            params = params
-        )
-
-        return ethereum.sendRequest(getBalanceRequest)
+    suspend fun getBalance(address: String, block: String = "latest") : Result {
+        return ethereum.getEthBalance(address, block)
     }
 
     suspend fun gasPrice() : Result {
-        val params: List<String> = listOf()
-
-        val gasPriceRequest = EthereumRequest(
-            method = EthereumMethod.ETH_GAS_PRICE.value,
-            params = params
-        )
-
-        return ethereum.sendRequest(gasPriceRequest)
+        return ethereum.getEthGasPrice()
     }
 
     suspend fun web3ClientVersion() : Result {
-        val params: List<String> = listOf()
-
-        val web3ClientVersionRequest = EthereumRequest(
-            method = EthereumMethod.WEB3_CLIENT_VERSION.value,
-            params = params
-        )
-
-        return ethereum.sendRequest(web3ClientVersionRequest)
+        return ethereum.getWeb3ClientVersion()
     }
 
     suspend fun sendTransaction(
@@ -119,28 +92,11 @@ class EthereumFlowViewModel @Inject constructor(
         from: String,
         to: String,
     ) : Result {
-        val params: MutableMap<String, Any> = mutableMapOf(
-            "from" to from,
-            "to" to to,
-            "amount" to amount
-        )
-
-        val transactionRequest = EthereumRequest(
-            method = EthereumMethod.ETH_SEND_TRANSACTION.value,
-            params = listOf(params)
-        )
-
-        return ethereum.sendRequest(transactionRequest)
+        return ethereum.sendTransaction(from = from, to = to, amount = amount)
     }
 
     suspend fun switchChain(chainId: String) : SwitchChainResult {
-        val switchChainParams: Map<String, String> = mapOf("chainId" to chainId)
-        val switchChainRequest = EthereumRequest(
-            method = EthereumMethod.SWITCH_ETHEREUM_CHAIN.value,
-            params = listOf(switchChainParams)
-        )
-
-        return when (val result = ethereum.sendRequest(switchChainRequest)) {
+        return when (val result = ethereum.switchEthereumChain(chainId)) {
             is Result.Error -> {
                 if (result.error.code == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.error.code == ErrorType.SERVER_ERROR.code) {
                     val message = "${Network.chainNameFor(chainId)} ($chainId) has not been added to your MetaMask wallet. Add chain?"
@@ -152,10 +108,12 @@ class EthereumFlowViewModel @Inject constructor(
                                 }
                                 is Result.Success -> {
                                     if (chainId == ethereum.chainId) {
+                                        Logger.log("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
                                         SwitchChainResult.Success(
                                             "Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)"
                                         )
                                     } else {
+                                        Logger.log("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
                                         SwitchChainResult.Success("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
                                     }
                                 }
@@ -163,10 +121,12 @@ class EthereumFlowViewModel @Inject constructor(
                         }
                     }
                 } else {
+                    Logger.error("Add chain error: ${result.error.message}")
                     SwitchChainResult.Error("Add chain error: ${result.error.message}", null)
                 }
             }
             is Result.Success -> {
+                Logger.log("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
                 SwitchChainResult.Success("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
             }
         }
@@ -175,17 +135,7 @@ class EthereumFlowViewModel @Inject constructor(
     private suspend fun addEthereumChain(chainId: String) : Result {
         Logger.log("Adding chainId: $chainId")
 
-        val addChainParams: Map<String, Any> = mapOf(
-            "chainId" to chainId,
-            "chainName" to Network.chainNameFor(chainId),
-            "rpcUrls" to Network.rpcUrls(Network.fromChainId(chainId))
-        )
-        val addChainRequest = EthereumRequest(
-            method = EthereumMethod.ADD_ETHEREUM_CHAIN.value,
-            params = listOf(addChainParams)
-        )
-
-        return when (val result = ethereum.sendRequest(addChainRequest)) {
+        return when (val result = ethereum.addEthereumChain(targetChainId = chainId, rpcUrls = Network.rpcUrls(Network.fromChainId(chainId)))) {
             is Result.Error -> {
                 Result.Error(RequestError(result.error.code, "Add chain error: ${result.error.message}"))
             }
@@ -206,5 +156,5 @@ class EthereumFlowViewModel @Inject constructor(
 
 sealed class SwitchChainResult {
     data class Success(val value: String) : SwitchChainResult()
-    data class Error(val error: String, val action: (() -> Unit)?): SwitchChainResult()
+    data class Error(val error: String, val action: ((callback: (Result) -> Unit) -> Unit)?): SwitchChainResult()
 }
