@@ -131,7 +131,7 @@ constructor(
     override suspend fun personalSign(message: String, address: String) : Result =
         ethereumRequest(method = EthereumMethod.PERSONAL_SIGN, params = listOf(address, message))
 
-    override suspend fun ethSignTypedDataV4(typedData: Any, address: String, ) : Result =
+    override suspend fun ethSignTypedDataV4(typedData: Any, address: String) : Result =
         ethereumRequest(method = EthereumMethod.ETH_SIGN_TYPED_DATA_V4, params = listOf(address, typedData))
 
     override suspend fun sendTransaction(from: String, to: String, amount: String) : Result =

@@ -107,6 +107,12 @@ class Ethereum (
         requestAccounts(callback)
     }
 
+    /*
+    ===================
+    Convenience Methods
+    ===================
+     */
+
     fun connectWith(request: EthereumRequest, callback: ((Result) -> Unit)? = null) {
         Logger.log("Ethereum:: connecting with ${request.method}...")
         connectRequestSent = true
@@ -152,6 +158,81 @@ class Ethereum (
             params = listOf(message)
         )
         sendConnectRequest(connectSignRequest, callback)
+    }
+
+    private fun ethereumRequest(method: EthereumMethod, params: Any?, callback: ((Result) -> Unit)?) {
+        sendRequest(
+            EthereumRequest(method = method.value, params = params),
+            callback
+        )
+    }
+
+    fun getChainId(callback: ((Result) -> Unit)?) {
+        ethereumRequest(method = EthereumMethod.ETH_CHAIN_ID, params = null, callback)
+    }
+
+    fun getEthAccounts(callback: ((Result) -> Unit)?) {
+        ethereumRequest(method = EthereumMethod.ETH_ACCOUNTS, params = null, callback)
+    }
+
+    fun getEthBalance(address: String, block: String, callback: ((Result) -> Unit)? = null) {
+        ethereumRequest(EthereumMethod.ETH_GET_BALANCE, params = listOf(address, block), callback)
+    }
+
+    fun getEthBlockNumber(callback: ((Result) -> Unit)?) {
+        ethereumRequest(method = EthereumMethod.ETH_BLOCK_NUMBER, params = null, callback)
+    }
+
+    fun getEthEstimateGas(callback: ((Result) -> Unit)?) {
+        ethereumRequest(method = EthereumMethod.ETH_ESTIMATE_GAS, params = null, callback)
+    }
+
+    fun getWeb3ClientVersion(callback: ((Result) -> Unit)?) {
+        ethereumRequest(method = EthereumMethod.WEB3_CLIENT_VERSION, params = listOf<String>(), callback)
+    }
+
+    fun personalSign(message: String, address: String, callback: ((Result) -> Unit)?) {
+        ethereumRequest(method = EthereumMethod.PERSONAL_SIGN, params = listOf(address, message), callback)
+    }
+
+    fun ethSignTypedDataV4(typedData: Any, address: String, callback: ((Result) -> Unit)?) {
+        ethereumRequest(method = EthereumMethod.ETH_SIGN_TYPED_DATA_V4, params = listOf(address, typedData), callback)
+    }
+
+    fun sendTransaction(from: String, to: String, amount: String, callback: ((Result) -> Unit)?) {
+        ethereumRequest(method = EthereumMethod.ETH_SEND_TRANSACTION, params = listOf(mutableMapOf(
+            "from" to from,
+            "to" to to,
+            "amount" to amount
+        )), callback)
+    }
+
+    fun sendRawTransaction(signedTransaction: String, callback: ((Result) -> Unit)?) {
+        ethereumRequest(method = EthereumMethod.ETH_SEND_RAW_TRANSACTION, params = listOf(signedTransaction), callback)
+    }
+
+    fun getBlockTransactionCountByNumber(blockNumber: String, callback: ((Result) -> Unit)?) {
+        ethereumRequest(method = EthereumMethod.ETH_GET_BLOCK_TRANSACTION_COUNT_BY_NUMBER, params = listOf(blockNumber), callback)
+    }
+
+    fun getBlockTransactionCountByHash(blockHash: String, callback: ((Result) -> Unit)?) {
+        ethereumRequest(method = EthereumMethod.ETH_GET_BLOCK_TRANSACTION_COUNT_BY_HASH, params = listOf(blockHash), callback)
+    }
+
+    fun getTransactionCount(address: String, tagOrblockNumber: String, callback: ((Result) -> Unit)?) {
+        ethereumRequest(method = EthereumMethod.ETH_GET_TRANSACTION_COUNT, params = listOf(address, tagOrblockNumber), callback)
+    }
+
+    fun addEthereumChain(targetChainId: String, rpcUrls: List<String>?, callback: ((Result) -> Unit)?) {
+        ethereumRequest(method = EthereumMethod.ADD_ETHEREUM_CHAIN, params = listOf(mapOf(
+            "chainId" to targetChainId,
+            "chainName" to Network.chainNameFor(targetChainId),
+            "rpcUrls" to (rpcUrls ?: Network.rpcUrls(Network.fromChainId(targetChainId)))
+        )), callback)
+    }
+
+    fun switchEthereumChain(targetChainId: String, callback: ((Result) -> Unit)?) {
+        ethereumRequest(method = EthereumMethod.SWITCH_ETHEREUM_CHAIN, params = listOf(mapOf("chainId" to targetChainId)), callback)
     }
 
     private fun sendConnectRequest(request: EthereumRequest, callback: ((Result) -> Unit)?) {
