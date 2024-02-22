@@ -1,12 +1,8 @@
 package com.metamask.dapp
 
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.metamask.androidsdk.*
-import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

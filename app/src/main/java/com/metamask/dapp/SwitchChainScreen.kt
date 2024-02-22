@@ -17,7 +17,6 @@ import io.metamask.androidsdk.ErrorType
 import io.metamask.androidsdk.EthereumState
 import io.metamask.androidsdk.Network
 import kotlinx.coroutines.launch
-import io.metamask.androidsdk.Result
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
