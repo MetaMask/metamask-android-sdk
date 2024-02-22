@@ -31,7 +31,7 @@ add the following entry to the `dependencies` block:
 
 ```gradle title="build.gradle"
 dependencies {
-    implementation 'io.metamask.androidsdk:metamask-android-sdk:0.4.1'
+    implementation 'io.metamask.androidsdk:metamask-android-sdk:0.5.0'
 }
 ```
 
