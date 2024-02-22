@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.metamask.dapp.com.metamask.dapp.AppTopBar
+import io.metamask.androidsdk.ErrorType
 import io.metamask.androidsdk.EthereumState
 import io.metamask.androidsdk.Network
 import kotlinx.coroutines.launch
@@ -24,6 +25,7 @@ fun SwitchChainScreen(
     navController: NavController,
     ethereumState: EthereumState,
     switchChain: suspend (chainId: String) -> SwitchChainResult,
+    addChain: suspend (chainId: String) -> SwitchChainResult
 ) {
     var networks by remember { mutableStateOf(
         enumValues<Network>()
@@ -32,10 +34,11 @@ fun SwitchChainScreen(
     ) }
 
     var expanded by remember { mutableStateOf(false) }
+    var requiresAddChain by remember { mutableStateOf(false) }
     var targetNetwork by remember { mutableStateOf(networks[0]) }
 
-    var snackbarData by remember { mutableStateOf<SnackbarData?>(null) }
     var resultMessage by remember { mutableStateOf<String?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     var currentChainId by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
 
@@ -117,32 +120,35 @@ fun SwitchChainScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             DappButton(
-                buttonText = if(snackbarData?.action != null)
+                buttonText = if(requiresAddChain)
                 { stringResource(R.string.add_chain) }
                 else { stringResource(R.string.switch_chain) }
             ) {
-                if(snackbarData?.action != null) {
-                    snackbarData?.action?.invoke {  result ->
-                        when (result) {
-                            is Result.Error -> {
-                                resultMessage = result.error.message
-                            }
-                            is Result.Success.Item -> {
-                                resultMessage = result.value
-                            }
-                            else -> {}
-                        }
-                    }
-                } else {
-                    coroutineScope.launch {
-                        when (val result = switchChain(targetNetwork.chainId)) {
+                coroutineScope.launch {
+                    if (requiresAddChain) {
+                        when(val addChainResult = addChain(targetNetwork.chainId)) {
                             is SwitchChainResult.Success -> {
-                                snackbarData = null
-                                resultMessage = result.value
+                                errorMessage = null
+                                resultMessage = addChainResult.value
                             }
                             is SwitchChainResult.Error -> {
-                                SnackbarData(result.error, result.action)
                                 resultMessage = null
+                                errorMessage =addChainResult.message
+                            }
+                        }
+                    } else {
+                        when (val result = switchChain(targetNetwork.chainId)) {
+                            is SwitchChainResult.Success -> {
+                                resultMessage = result.value
+                                errorMessage = null
+                            }
+                            is SwitchChainResult.Error -> {
+                                resultMessage = null
+                                errorMessage = result.message
+
+                                if (result.error == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.error == ErrorType.SERVER_ERROR.code) {
+                                    requiresAddChain = true
+                                }
                             }
                         }
                     }
@@ -152,8 +158,8 @@ fun SwitchChainScreen(
             Spacer(modifier = Modifier.height(4.dp))
 
             DappLabel(
-                text = resultMessage ?: snackbarData?.message ?: "",
-                color = if (snackbarData?.action != null) { Color.Red } else { Color.Unspecified },
+                text = errorMessage ?: resultMessage ?: "",
+                color = if (errorMessage != null) { Color.Red } else { Color.Unspecified },
                 modifier = Modifier.padding(bottom = 36.dp)
             )
 
@@ -168,6 +174,7 @@ fun PreviewSwitchChain() {
     SwitchChainScreen(
         rememberNavController(),
         ethereumState = EthereumState("", "", ""),
-        switchChain = { _ -> SwitchChainResult.Success("")}
+        switchChain = { _ -> SwitchChainResult.Success("")},
+        addChain = { _ -> SwitchChainResult.Success("")}
     )
 }

@@ -135,7 +135,7 @@ constructor(
         ethereumRequest(method = EthereumMethod.ETH_SIGN_TYPED_DATA_V4, params = listOf(address, typedData))
 
     override suspend fun sendTransaction(from: String, to: String, amount: String) : Result =
-        ethereumRequest(method = EthereumMethod.ETH_SEND_TRANSACTION, params = listOf(mutableMapOf(
+        ethereumRequest(method = EthereumMethod.ETH_SEND_TRANSACTION, params = listOf(mapOf(
             "from" to from,
             "to" to to,
             "amount" to amount

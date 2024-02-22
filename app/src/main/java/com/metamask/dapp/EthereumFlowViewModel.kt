@@ -1,6 +1,9 @@
 package com.metamask.dapp
 
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.metamask.androidsdk.*
 import kotlinx.coroutines.*
@@ -11,7 +14,6 @@ import javax.inject.Inject
 class EthereumFlowViewModel @Inject constructor(
     private val ethereum: EthereumFlowWrapper
 ): ViewModel() {
-    
     val ethereumFlow: Flow<EthereumState> get() = ethereum.ethereumState
 
     suspend fun connect() : Result {
@@ -100,29 +102,9 @@ class EthereumFlowViewModel @Inject constructor(
             is Result.Error -> {
                 if (result.error.code == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.error.code == ErrorType.SERVER_ERROR.code) {
                     val message = "${Network.chainNameFor(chainId)} ($chainId) has not been added to your MetaMask wallet. Add chain?"
-                    SwitchChainResult.Error(message) {
-                        CoroutineScope(Dispatchers.Main).launch {
-                            when (val addChainResult = addEthereumChain(chainId)) {
-                                is Result.Error -> {
-                                    SwitchChainResult.Error(addChainResult.error.message, null)
-                                }
-                                is Result.Success -> {
-                                    if (chainId == ethereum.chainId) {
-                                        Logger.log("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
-                                        SwitchChainResult.Success(
-                                            "Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)"
-                                        )
-                                    } else {
-                                        Logger.log("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
-                                        SwitchChainResult.Success("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    SwitchChainResult.Error(result.error.code, message)
                 } else {
-                    Logger.error("Add chain error: ${result.error.message}")
-                    SwitchChainResult.Error("Add chain error: ${result.error.message}", null)
+                    SwitchChainResult.Error(result.error.code,"Add chain error: ${result.error.message}")
                 }
             }
             is Result.Success -> {
@@ -132,18 +114,18 @@ class EthereumFlowViewModel @Inject constructor(
         }
     }
 
-    private suspend fun addEthereumChain(chainId: String) : Result {
+    suspend fun addEthereumChain(chainId: String) : SwitchChainResult {
         Logger.log("Adding chainId: $chainId")
 
         return when (val result = ethereum.addEthereumChain(targetChainId = chainId, rpcUrls = Network.rpcUrls(Network.fromChainId(chainId)))) {
             is Result.Error -> {
-                Result.Error(RequestError(result.error.code, "Add chain error: ${result.error.message}"))
+                SwitchChainResult.Error(result.error.code,"Add chain error: ${result.error.message}")
             }
             is Result.Success -> {
                 if (chainId == ethereum.chainId) {
-                    Result.Success.Item("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
+                    SwitchChainResult.Success("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
                 } else {
-                    Result.Success.Item("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
+                    SwitchChainResult.Success("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
                 }
             }
         }
@@ -156,5 +138,5 @@ class EthereumFlowViewModel @Inject constructor(
 
 sealed class SwitchChainResult {
     data class Success(val value: String) : SwitchChainResult()
-    data class Error(val error: String, val action: ((callback: (Result) -> Unit) -> Unit)?): SwitchChainResult()
+    data class Error(val error: Int, val message: String): SwitchChainResult()
 }

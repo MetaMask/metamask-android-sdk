@@ -85,6 +85,7 @@ class Ethereum (
     }
 
     fun connect(callback: ((Result) -> Unit)? = null) {
+        connectRequestSent = true
         val error = dappMetadata.validationError
         if (error != null) {
             callback?.invoke((Result.Error(error)))
@@ -92,7 +93,6 @@ class Ethereum (
         }
 
         Logger.log("Ethereum:: connecting...")
-        connectRequestSent = true
         communicationClient?.dappMetadata = dappMetadata
         communicationClient?.ethereumEventCallbackRef = WeakReference(this)
         communicationClient?.updateSessionDuration(sessionDuration)
@@ -290,6 +290,7 @@ class Ethereum (
 
     private fun requestAccounts(callback: ((Result) -> Unit)? = null) {
         Logger.log("Ethereum:: Requesting ethereum accounts")
+        connectRequestSent = true
 
         val accountsRequest = EthereumRequest(
             method = EthereumMethod.ETH_REQUEST_ACCOUNTS.value

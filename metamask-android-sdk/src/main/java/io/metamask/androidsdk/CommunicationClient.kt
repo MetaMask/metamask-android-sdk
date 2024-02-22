@@ -305,6 +305,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         val errorCode = errorMap["code"] as? Double ?: -1
         val code = errorCode.toInt()
         val message = errorMap["message"] as? String ?: ErrorType.message(code)
+        Logger.error("CommunicationClient:: Got error $message")
         completeRequest(requestId, Result.Error(RequestError(code, message)))
         return true
     }
@@ -370,6 +371,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                 put(KeyExchange.TYPE, nextStep.type)
             }.toString()
 
+            Logger.log("Sending key exchange ${nextStep.type}")
             sendKeyExchangeMesage(exchangeMessage)
         }
     }
@@ -501,12 +503,11 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             put(KeyExchange.TYPE, KeyExchangeMessageType.KEY_HANDSHAKE_SYN.name)
         }
 
+        Logger.log("Sending key exchange ${KeyExchangeMessageType.KEY_HANDSHAKE_SYN}")
         sendKeyExchangeMesage(keyExchange.toString())
     }
 
     private fun sendKeyExchangeMesage(message: String) {
-        Logger.log("Sending key exchange $message")
-
         val bundle = Bundle().apply {
             putString(KEY_EXCHANGE, message)
         }

@@ -19,7 +19,7 @@ fun Setup(ethereumViewModel: EthereumFlowViewModel, screenViewModel: ScreenViewM
 
     var isConnecting by remember { mutableStateOf(false) }
     var isConnectSigning by remember { mutableStateOf(false) }
-    var connectError by remember { mutableStateOf<String?>(null) }
+    var connectResult by remember { mutableStateOf<Result>(Result.Success.Item("")) }
     var signMessage by remember { mutableStateOf("") }
 
     // Connect
@@ -27,10 +27,11 @@ fun Setup(ethereumViewModel: EthereumFlowViewModel, screenViewModel: ScreenViewM
         if (isConnecting) {
             when (val result = ethereumViewModel.connect()) {
                 is Result.Success -> {
+                    connectResult = result
                     screenViewModel.setScreen(ACTIONS)
                 }
                 is Result.Error -> {
-                    connectError = result.error.message
+                    connectResult = result
                 }
             }
             isConnecting = false
@@ -43,7 +44,7 @@ fun Setup(ethereumViewModel: EthereumFlowViewModel, screenViewModel: ScreenViewM
                 ethereumState = ethereumState,
                 connect = {
                     isConnecting = true
-                    ethereumViewModel.connect()
+                    connectResult
                           },
                 connectSign = { screenViewModel.setScreen(CONNECT_SIGN_MESSAGE) },
                 connectWith = { screenViewModel.setScreen(CONNECT_WITH) },
@@ -110,6 +111,9 @@ fun Setup(ethereumViewModel: EthereumFlowViewModel, screenViewModel: ScreenViewM
                 ethereumState = ethereumState,
                 switchChain = { chainId ->
                     ethereumViewModel.switchChain(chainId)
+                },
+                addChain = { chainId ->
+                    ethereumViewModel.addEthereumChain(chainId)
                 }
             )
         }
