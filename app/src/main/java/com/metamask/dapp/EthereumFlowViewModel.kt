@@ -95,6 +95,9 @@ class EthereumFlowViewModel @Inject constructor(
 
     suspend fun switchChain(chainId: String) : SwitchChainResult {
         return when (val result = ethereum.switchEthereumChain(chainId)) {
+            is Result.Success -> {
+                SwitchChainResult.Success("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
+            }
             is Result.Error -> {
                 if (result.error.code == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.error.code == ErrorType.SERVER_ERROR.code) {
                     val message = "${Network.chainNameFor(chainId)} ($chainId) has not been added to your MetaMask wallet. Add chain?"
@@ -102,10 +105,6 @@ class EthereumFlowViewModel @Inject constructor(
                 } else {
                     SwitchChainResult.Error(result.error.code,"Add chain error: ${result.error.message}")
                 }
-            }
-            is Result.Success -> {
-                Logger.log("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
-                SwitchChainResult.Success("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
             }
         }
     }
