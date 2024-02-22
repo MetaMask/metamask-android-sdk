@@ -31,7 +31,7 @@ add the following entry to the `dependencies` block:
 
 ```gradle title="build.gradle"
 dependencies {
-    implementation 'io.metamask.androidsdk:metamask-android-sdk:0.5.0'
+    implementation 'io.metamask.androidsdk:metamask-android-sdk:0.4.1'
 }
 ```
 
@@ -174,7 +174,7 @@ See the example dapp's
 ### 4. Call methods
 
 You can now call any [JSON-RPC API method](https://docs.metamask.io/wallet/reference/eth_subscribe/)
-using `ethereum.sendRequest()`.
+using `ethereum.sendRequest()`. We also have convenience methods for most common RPC calls so that you don't have to manually construct requests.
 
 #### Example: Get account balance
 
@@ -183,22 +183,10 @@ The following example gets the user's account balance by calling
 This is a read-only rpc ("direct call"), which uses the Infura API if an infuraAPIKey is provided in the SDKOptions - which we highly recommend as it provides a seamless use experience.
 
 ```kotlin
-var balance: String? = null
-
-// Create parameters
-val params: List<String> = listOf(
-    ethereum.selectedAddress,
-    "latest" // "latest", "earliest" or "pending" (optional)
-    )
-
-// Create request
-val getBalanceRequest = EthereumRequest(
-    method = EthereumMethod.ETHGETBALANCE.value,
-    params = params
-)
+val balance = ethereum.getEthBalance(ethereum.selectedAddress, "latest")
 
 // Make request
-when (val result = ethereum.sendRequest(getBalanceRequest)) {
+when (balance) {
     is Result.Success.Item -> {
         Logger.log("Ethereum account balance: ${result.value}")
         balance = result.value
@@ -217,15 +205,10 @@ The following example requests the user sign a message by calling
 ```kotlin
 val message = "{\"domain\":{\"chainId\":\"${ethereum.chainId}\",\"name\":\"Ether Mail\",\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\",\"version\":\"1\"},\"message\":{\"contents\":\"Hello, Busa!\",\"from\":{\"name\":\"Kinno\",\"wallets\":[\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\",\"0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF\"]},\"to\":[{\"name\":\"Busa\",\"wallets\":[\"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB\",\"0xB0BdaBea57B0BDABeA57b0bdABEA57b0BDabEa57\",\"0xB0B0b0b0b0b0B000000000000000000000000000\"]}]},\"primaryType\":\"Mail\",\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Group\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"members\",\"type\":\"Person[]\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person[]\"},{\"name\":\"contents\",\"type\":\"string\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallets\",\"type\":\"address[]\"}]}}"
 
-val from = ethereum.selectedAddress
-val params: List<String> = listOf(from, message)
+val address = ethereum.selectedAddress
+val result = ethereum.ethSignTypedDataV4(message, address)
 
-val signRequest = EthereumRequest(
-    method = EthereumMethod.ETH_SIGN_TYPED_DATA_V4.value,
-    params = params
-)
-
-when (val result = ethereum.sendRequest(signRequest)) {
+when (result) {
     is Result.Error -> {
         Logger.log("Ethereum sign error: ${result.error.message}")
     }
@@ -273,20 +256,9 @@ The following example sends a transaction by calling
 val from = ethereum.selectedAddress
 val to = "0x0000000000000000000000000000000000000000"
 val amount = "0x01"
-val params: Map<String, Any> = mapOf(
-    "from" to from,
-    "to" to to,
-    "amount" to amount
-)
-
-// Create request
-val transactionRequest = EthereumRequest(
-    method = EthereumMethod.ETH_SEND_TRANSACTION.value,
-    params = listOf(params)
-)
 
 // Make a transaction request
-when (val result = ethereum.sendRequest(transactionRequest)) {
+when (val result = ethereum.sendTransaction(from, to, amount)) {
     is Result.Success.Item -> {
         Logger.log("Ethereum transaction result: ${result.value}")
         balance = result.value
@@ -304,68 +276,18 @@ The following example switches to a new Ethereum chain by calling
 and [`wallet_addEthereumChain`](https://docs.metamask.io/wallet/reference/wallet_addethereumchain/).
 
 ```kotlin
-suspend fun switchChain(chainId: String) : SwitchChainResult {
-    val switchChainParams: Map<String, String> = mapOf("chainId" to chainId)
-    val switchChainRequest = EthereumRequest(
-        method = EthereumMethod.SWITCH_ETHEREUM_CHAIN.value,
-        params = listOf(switchChainParams)
-    )
+val result = ethereum.switchEthereumChain(chainId)
 
-    return when (val result = ethereum.sendRequest(switchChainRequest)) {
-        is Result.Error -> {
-            if (result.error.code == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.error.code == ErrorType.SERVER_ERROR.code) {
-                val message = "${Network.chainNameFor(chainId)} ($chainId) has not been added to your MetaMask wallet. Add chain?"
-                SwitchChainResult.Error(message) {
-                    CoroutineScope(Dispatchers.Main).launch {
-                        when (val addChainResult = addEthereumChain(chainId)) {
-                            is Result.Error -> {
-                                SwitchChainResult.Error(addChainResult.error.message, null)
-                            }
-                            is Result.Success -> {
-                                if (chainId == ethereum.chainId) {
-                                    SwitchChainResult.Success(
-                                        "Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)"
-                                    )
-                                } else {
-                                    SwitchChainResult.Success("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
-                                }
-                            }
-                        }
-                    }
-                }
-            } else {
-                SwitchChainResult.Error("Add chain error: ${result.error.message}", null)
-            }
-        }
-        is Result.Success -> {
-            SwitchChainResult.Success("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
-        }
+when(result) {
+    is Result.Success -> {
+        SwitchChainResult.Success("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
     }
-}
-
-private suspend fun addEthereumChain(chainId: String) : Result {
-    Logger.log("Adding chainId: $chainId")
-
-    val addChainParams: Map<String, Any> = mapOf(
-        "chainId" to chainId,
-        "chainName" to Network.chainNameFor(chainId),
-        "rpcUrls" to Network.rpcUrls(Network.fromChainId(chainId))
-    )
-    val addChainRequest = EthereumRequest(
-        method = EthereumMethod.ADD_ETHEREUM_CHAIN.value,
-        params = listOf(addChainParams)
-    )
-
-    return when (val result = ethereum.sendRequest(addChainRequest)) {
-        is Result.Error -> {
-            Result.Error(RequestError(result.error.code, "Add chain error: ${result.error.message}"))
-        }
-        is Result.Success -> {
-            if (chainId == ethereum.chainId) {
-                Result.Success.Item("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
-            } else {
-                Result.Success.Item("Successfully added ${Network.chainNameFor(chainId)} ($chainId)")
-            }
+    is Result.Error -> {
+        if (result.error.code == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.error.code == ErrorType.SERVER_ERROR.code) {
+            val message = "${Network.chainNameFor(chainId)} ($chainId) has not been added to your MetaMask wallet. Add chain?"
+            SwitchChainResult.Error(result.error.code, message)
+        } else {
+            SwitchChainResult.Error(result.error.code,"Add chain error: ${result.error.message}")
         }
     }
 }
