@@ -102,6 +102,10 @@ fun SwitchChainScreen(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
                     ) {
+                        requiresAddChain = false
+                        errorMessage = null
+                        resultMessage = null
+
                         networks.forEach { network ->
                             DropdownMenuItem(
                                 text = { Text(Network.name(network)) },
@@ -128,11 +132,12 @@ fun SwitchChainScreen(
                         when(val addChainResult = addChain(targetNetwork.chainId)) {
                             is SwitchChainResult.Success -> {
                                 errorMessage = null
+                                requiresAddChain = false
                                 resultMessage = addChainResult.value
                             }
                             is SwitchChainResult.Error -> {
                                 resultMessage = null
-                                errorMessage =addChainResult.message
+                                errorMessage = addChainResult.message
                             }
                         }
                     } else {

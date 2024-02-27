@@ -112,7 +112,14 @@ class EthereumFlowViewModel @Inject constructor(
     suspend fun addEthereumChain(chainId: String) : SwitchChainResult {
         Logger.log("Adding chainId: $chainId")
 
-        return when (val result = ethereum.addEthereumChain(targetChainId = chainId, rpcUrls = Network.rpcUrls(Network.fromChainId(chainId)))) {
+        return when (val result = ethereum.addEthereumChain(
+            chainId = chainId,
+            chainName = Network.chainNameFor(chainId),
+            rpcUrls = Network.rpcUrls(Network.fromChainId(chainId)),
+            iconUrls = listOf(),
+            blockExplorerUrls = null,
+            nativeCurrency = NativeCurrency(name = Network.chainNameFor(chainId), symbol = Network.symbol(chainId), decimals = 18)
+        )) {
             is Result.Error -> {
                 SwitchChainResult.Error(result.error.code,"Add chain error: ${result.error.message}")
             }

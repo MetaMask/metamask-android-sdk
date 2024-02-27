@@ -27,6 +27,26 @@ enum class Network(val chainId: String) {
             }
         }
 
+        fun symbol(chainId: String): String {
+            val network = enumValues<Network>()
+                .toList()
+                .firstOrNull { it.chainId == chainId }
+
+            return when(network) {
+                ETHEREUM -> "ETH"
+                LINEAR -> "LINA"
+                POLYGON -> "MATIC"
+                AVALANCHE -> "AVAX"
+                FANTOM_OPERA -> "FTM"
+                BNB_SMART_CHAIN -> "BSC"
+                GOERLI -> "GETH"
+                KOVAN -> "ETH"
+                null -> {
+                    ""
+                }
+            }
+        }
+
         fun fromChainId(chainId: String): Network? {
             for (network in values()) {
                 if (network.chainId == chainId) {

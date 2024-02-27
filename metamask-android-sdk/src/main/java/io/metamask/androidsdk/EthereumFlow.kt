@@ -32,7 +32,12 @@ interface EthereumFlowWrapper {
     suspend fun sendTransaction(from: String, to: String, amount: String) : Result
 
     suspend fun switchEthereumChain(targetChainId: String) : Result
-    suspend fun addEthereumChain(targetChainId: String, rpcUrls: List<String>?) : Result
+    suspend fun addEthereumChain(chainId: String,
+                                 chainName: String,
+                                 rpcUrls: List<String>,
+                                 iconUrls: List<String>?,
+                                 blockExplorerUrls: List<String>?,
+                                 nativeCurrency: NativeCurrency) : Result
 
     suspend fun personalSign(message: String, address: String) : Result
     suspend fun ethSignTypedDataV4(typedData: Any, address: String) : Result
@@ -156,11 +161,19 @@ constructor(
         ethereumRequest(method = EthereumMethod.ETH_GET_TRANSACTION_COUNT, params = listOf(address, tagOrblockNumber))
 
 
-    override suspend fun addEthereumChain(targetChainId: String, rpcUrls: List<String>?): Result =
+    override suspend fun addEthereumChain(chainId: String,
+                                          chainName: String,
+                                          rpcUrls: List<String>,
+                                          iconUrls: List<String>?,
+                                          blockExplorerUrls: List<String>?,
+                                          nativeCurrency: NativeCurrency) : Result =
         ethereumRequest(method = EthereumMethod.ADD_ETHEREUM_CHAIN, params = listOf(mapOf(
-            "chainId" to targetChainId,
-            "chainName" to Network.chainNameFor(targetChainId),
-            "rpcUrls" to (rpcUrls ?: Network.rpcUrls(Network.fromChainId(targetChainId)))
+            "chainId" to chainId,
+            "chainName" to chainName,
+            "rpcUrls" to rpcUrls,
+            "iconUrls" to iconUrls,
+            "blockExplorerUrls" to blockExplorerUrls,
+            "nativeCurrency" to nativeCurrency
         )))
 
     override suspend fun switchEthereumChain(targetChainId: String): Result =
