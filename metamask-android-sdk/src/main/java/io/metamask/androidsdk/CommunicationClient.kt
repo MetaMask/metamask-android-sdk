@@ -454,14 +454,18 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         sendMessage(messageJson)
     }
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun isQA(): Boolean {
+        if (Build.VERSION.SDK_INT < 33 ) { // i.e Build.VERSION_CODES.TIRAMISU
+            return false
+        }
+
         val packageManager = appContextRef.get()?.packageManager
 
         return try {
             packageManager?.getPackageInfo("io.metamask.qa", PackageManager.PackageInfoFlags.of(0))
             true
         } catch (e: PackageManager.NameNotFoundException) {
+            Logger.error("CommunicationClient:: NameNotFoundException ${e.message}")
             false
         }
     }
