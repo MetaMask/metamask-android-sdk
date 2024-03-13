@@ -107,14 +107,14 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
 
         when(event) {
             Event.SDK_CONNECTION_REQUEST_STARTED -> {
-                parameters["commlayer"] = SDKInfo.PLATFORM
+                parameters["commLayer"] = SDKInfo.PLATFORM
                 parameters["sdkVersion"] = SDKInfo.VERSION
                 parameters["url"] = dappMetadata?.url ?: ""
                 parameters["title"] = dappMetadata?.name ?: ""
                 parameters["platform"] = SDKInfo.PLATFORM
             }
             Event.SDK_RPC_REQUEST -> {
-                parameters["commlayer"] = SDKInfo.PLATFORM
+                parameters["commLayer"] = SDKInfo.PLATFORM
                 parameters["sdkVersion"] = SDKInfo.VERSION
                 parameters["url"] = dappMetadata?.url ?: ""
                 parameters["title"] = dappMetadata?.name ?: ""

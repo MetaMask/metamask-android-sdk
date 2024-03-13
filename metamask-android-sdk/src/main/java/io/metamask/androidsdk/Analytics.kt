@@ -33,8 +33,6 @@ internal class Analytics(override var enableDebug: Boolean = true) : Tracker {
     override fun trackEvent(event: Event, params: MutableMap<String, String>) {
         if (!enableDebug) { return }
 
-        Logger.log("Analytics: ${event.value}, params: $params")
-
         params["event"] = event.value
         httpClient.newCall(Endpoints.ANALYTICS, params)
     }
