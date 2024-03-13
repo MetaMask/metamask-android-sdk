@@ -24,6 +24,11 @@ enum class EthereumMethod(val value: String) {
     ETH_SIGN_TYPED_DATA_V4("eth_signTypedData_v4"),
     ADD_ETHEREUM_CHAIN("wallet_addEthereumChain"),
     METAMASK_BATCH("metamask_batch"),
+    METAMASK_OPEN("metamask_open"),
+    PERSONAL_EC_RECOVER("personal_ecRecover"),
+    WALLET_REVOKE_PERMISSIONS("wallet_revokePermissions"),
+    WALLET_REQUEST_PERMISSIONS("wallet_requestPermissions"),
+    WALLET_GET_PERMISSIONS("wallet_getPermissions"),
     METAMASK_CONNECT_WITH("metamask_connectwith"),
     METAMASK_CONNECT_SIGN("metamask_connectSign"),
     METAMASK_CHAIN_CHANGED("metamask_chainChanged"),
@@ -48,10 +53,10 @@ enum class EthereumMethod(val value: String) {
 
         fun requiresAuthorisation(method: String): Boolean {
             val authorisationMethods: List<String> = listOf(
-                ETH_SIGN, WATCH_ASSET, PERSONAL_SIGN, METAMASK_BATCH,
-                ADD_ETHEREUM_CHAIN, SWITCH_ETHEREUM_CHAIN, METAMASK_CONNECT_WITH,
-                ETH_SEND_TRANSACTION, ETH_SIGN_TRANSACTION, ETH_REQUEST_ACCOUNTS, METAMASK_CONNECT_SIGN,
-                ETH_SIGN_TYPED_DATA, ETH_SIGN_TYPED_DATA_V3, ETH_SIGN_TYPED_DATA_V4
+                ETH_SIGN, WATCH_ASSET, PERSONAL_SIGN, METAMASK_BATCH, WALLET_GET_PERMISSIONS, WALLET_REVOKE_PERMISSIONS,
+                ADD_ETHEREUM_CHAIN, SWITCH_ETHEREUM_CHAIN, METAMASK_CONNECT_WITH, WALLET_REQUEST_PERMISSIONS,
+                ETH_SEND_TRANSACTION, ETH_SIGN_TRANSACTION, ETH_REQUEST_ACCOUNTS, METAMASK_CONNECT_SIGN, PERSONAL_EC_RECOVER,
+                ETH_SIGN_TYPED_DATA, ETH_SIGN_TYPED_DATA_V3, ETH_SIGN_TYPED_DATA_V4, ETH_ACCOUNTS, METAMASK_OPEN
             ).map { it.value }
 
             return authorisationMethods.contains(method)
@@ -63,10 +68,10 @@ enum class EthereumMethod(val value: String) {
 
         fun isResultMethod(method: String): Boolean {
             val resultMethods: List<String> = listOf(
-                ETH_SIGN, ETH_CHAIN_ID, PERSONAL_SIGN, METAMASK_CONNECT_WITH,
-                ADD_ETHEREUM_CHAIN, SWITCH_ETHEREUM_CHAIN, METAMASK_BATCH,
-                ETH_SIGN_TRANSACTION, ETH_SEND_TRANSACTION, METAMASK_CONNECT_SIGN,
-                WATCH_ASSET, ETH_REQUEST_ACCOUNTS, GET_METAMASK_PROVIDER_STATE,
+                ETH_SIGN, ETH_CHAIN_ID, PERSONAL_SIGN, METAMASK_CONNECT_WITH, WALLET_GET_PERMISSIONS,
+                ADD_ETHEREUM_CHAIN, SWITCH_ETHEREUM_CHAIN, METAMASK_BATCH, WALLET_REQUEST_PERMISSIONS,
+                ETH_SIGN_TRANSACTION, ETH_SEND_TRANSACTION, METAMASK_CONNECT_SIGN, WALLET_REVOKE_PERMISSIONS,
+                WATCH_ASSET, ETH_REQUEST_ACCOUNTS, GET_METAMASK_PROVIDER_STATE,ETH_ACCOUNTS,
                 ETH_SIGN_TYPED_DATA, ETH_SIGN_TYPED_DATA_V3, ETH_SIGN_TYPED_DATA_V4,
             ).map { it.value }
             return resultMethods.contains(method)
