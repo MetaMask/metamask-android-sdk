@@ -47,6 +47,10 @@ class Ethereum (
             communicationClient?.enableDebug = value
         }
 
+    init {
+        updateSessionDuration()
+    }
+
     fun enableDebug(enable: Boolean) = apply {
         this.enableDebug = enable
     }
@@ -96,7 +100,7 @@ class Ethereum (
         communicationClient?.dappMetadata = dappMetadata
         communicationClient?.ethereumEventCallbackRef = WeakReference(this)
         communicationClient?.updateSessionDuration(sessionDuration)
-        communicationClient?.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
+        communicationClient?.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED)
 
         _ethereumState.postValue(
             currentEthereumState.copy(
@@ -119,7 +123,7 @@ class Ethereum (
         communicationClient?.dappMetadata = dappMetadata
         communicationClient?.ethereumEventCallbackRef = WeakReference(this)
         communicationClient?.updateSessionDuration(sessionDuration)
-        communicationClient?.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
+        communicationClient?.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED)
 
         _ethereumState.postValue(
             currentEthereumState.copy(
@@ -144,7 +148,7 @@ class Ethereum (
         communicationClient?.dappMetadata = dappMetadata
         communicationClient?.ethereumEventCallbackRef = WeakReference(this)
         communicationClient?.updateSessionDuration(sessionDuration)
-        communicationClient?.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED, null)
+        communicationClient?.trackEvent(Event.SDK_CONNECTION_REQUEST_STARTED)
 
         _ethereumState.postValue(
             currentEthereumState.copy(
@@ -239,17 +243,17 @@ class Ethereum (
         sendRequest(request) { result ->
             when (result) {
                 is Result.Error -> {
-                    communicationClient?.trackEvent(Event.SDK_CONNECTION_FAILED, null)
+                    communicationClient?.trackEvent(Event.SDK_CONNECTION_FAILED)
 
                     if (
                         result.error.code == ErrorType.USER_REJECTED_REQUEST.code ||
                         result.error.code == ErrorType.UNAUTHORISED_REQUEST.code
                     ) {
-                        communicationClient?.trackEvent(Event.SDK_CONNECTION_REJECTED, null)
+                        communicationClient?.trackEvent(Event.SDK_CONNECTION_REJECTED)
                     }
                 }
                 is Result.Success -> {
-                    communicationClient?.trackEvent(Event.SDK_CONNECTION_AUTHORIZED, null)
+                    communicationClient?.trackEvent(Event.SDK_CONNECTION_AUTHORIZED)
                 }
             }
             callback?.invoke(result)
@@ -301,6 +305,7 @@ class Ethereum (
 
     fun sendRequest(request: RpcRequest, callback: ((Result) -> Unit)? = null) {
         Logger.log("Ethereum:: Sending request $request")
+
         if (!connectRequestSent) {
             requestAccounts {
                 sendRequest(request, callback)
@@ -314,6 +319,12 @@ class Ethereum (
         } else {
             communicationClient?.sendRequest(request) { response ->
                 callback?.invoke(response)
+            }
+            if (EthereumMethod.requiresAuthorisation(request.method)) {
+                val params = mapOf(
+                    "method" to request.method
+                )
+                communicationClient?.trackEvent(Event.SDK_RPC_REQUEST, params)
             }
             openMetaMask()
         }
