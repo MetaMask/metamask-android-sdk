@@ -112,6 +112,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                 parameters["url"] = dappMetadata?.url ?: ""
                 parameters["title"] = dappMetadata?.name ?: ""
                 parameters["platform"] = SDKInfo.PLATFORM
+                parameters["channelId"] = sessionId
             }
             Event.SDK_RPC_REQUEST -> {
                 parameters["commLayer"] = SDKInfo.PLATFORM
@@ -120,6 +121,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                 parameters["title"] = dappMetadata?.name ?: ""
                 parameters["platform"] = SDKInfo.PLATFORM
                 parameters["timestamp"] = TimeStampGenerator.timestamp()
+                parameters["channelId"] = sessionId
                 parameters["from"] = "mobile"
             }
             else -> Unit
