@@ -11,6 +11,13 @@ class InfuraProvider(private val infuraAPIKey: String) {
         "0x5" to "https://goerli.infura.io/v3/${infuraAPIKey}",
         // Sepolia 11155111
         "0x2a" to "https://sepolia.infura.io/v3/${infuraAPIKey}",
+
+        // ###### Linear ######
+        // Mainnet
+        "0xe708" to "https://linea-mainnet.infura.io/v3/${infuraAPIKey}",
+        // Goerli Testnet
+        "0xe704" to "https://linea-goerli.infura.io/v3/${infuraAPIKey}",
+
         // ###### Polygon ######
         // Mainnet
         "0x89" to "https://polygon-mainnet.infura.io/v3/${infuraAPIKey}",
