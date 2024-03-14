@@ -74,7 +74,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             messageService = null
             isServiceConnected = false
             Logger.error("CommunicationClient:: Service disconnected $name")
-            trackEvent(Event.SDK_DISCONNECTED, null)
+            trackEvent(Event.SDK_DISCONNECTED)
         }
 
         override fun onBindingDied(name: ComponentName?) {
@@ -99,18 +99,30 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
     }
 
-    fun trackEvent(event: Event, params: MutableMap<String, String>?) {
-        val parameters: MutableMap<String, String> = params ?: mutableMapOf(
+    fun trackEvent(event: Event, params: Map<String, String> = mapOf()) {
+        val parameters: MutableMap<String, String> = mutableMapOf(
             "id" to sessionId
         )
+        parameters.putAll(params)
 
         when(event) {
             Event.SDK_CONNECTION_REQUEST_STARTED -> {
-                parameters["commlayer"] = SDKInfo.PLATFORM
+                parameters["commLayer"] = SDKInfo.PLATFORM
                 parameters["sdkVersion"] = SDKInfo.VERSION
                 parameters["url"] = dappMetadata?.url ?: ""
                 parameters["title"] = dappMetadata?.name ?: ""
                 parameters["platform"] = SDKInfo.PLATFORM
+                parameters["channelId"] = sessionId
+            }
+            Event.SDK_RPC_REQUEST -> {
+                parameters["commLayer"] = SDKInfo.PLATFORM
+                parameters["sdkVersion"] = SDKInfo.VERSION
+                parameters["url"] = dappMetadata?.url ?: ""
+                parameters["title"] = dappMetadata?.name ?: ""
+                parameters["platform"] = SDKInfo.PLATFORM
+                parameters["timestamp"] = TimeStampGenerator.timestamp()
+                parameters["channelId"] = sessionId
+                parameters["from"] = "mobile"
             }
             else -> Unit
         }

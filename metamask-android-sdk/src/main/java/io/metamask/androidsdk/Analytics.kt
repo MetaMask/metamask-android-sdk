@@ -5,6 +5,7 @@ package io.metamask.androidsdk
 
 
 enum class Event(val value: String) {
+    SDK_RPC_REQUEST("sdk_rpc_request"),
     SDK_CONNECTION_REQUEST_STARTED("sdk_connect_request_started"),
     SDK_CONNECTION_ESTABLISHED("sdk_connection_established"),
     SDK_CONNECTION_AUTHORIZED("sdk_connection_authorized"),
@@ -31,8 +32,6 @@ internal class Analytics(override var enableDebug: Boolean = true) : Tracker {
 
     override fun trackEvent(event: Event, params: MutableMap<String, String>) {
         if (!enableDebug) { return }
-
-        Logger.log("Analytics: ${event.value}")
 
         params["event"] = event.value
         httpClient.newCall(Endpoints.ANALYTICS, params)
