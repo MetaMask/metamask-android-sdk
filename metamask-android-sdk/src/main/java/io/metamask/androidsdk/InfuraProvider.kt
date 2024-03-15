@@ -7,8 +7,7 @@ class InfuraProvider(private val infuraAPIKey: String) {
         // ###### Ethereum ######
         // Mainnet
         "0x1" to "https://mainnet.infura.io/v3/${infuraAPIKey}",
-        // Goerli
-        "0x5" to "https://goerli.infura.io/v3/${infuraAPIKey}",
+
         // Sepolia 11155111
         "0x2a" to "https://sepolia.infura.io/v3/${infuraAPIKey}",
 
