@@ -41,6 +41,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
 
     private var isMetaMaskReady = false
     private var sentOriginatorInfo = false
+    private var requestedBindService = false
 
     var enableDebug: Boolean = false
         set(value) {
@@ -67,6 +68,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             messageService = IMessegeService.Stub.asInterface(service)
             messageService?.registerCallback(messageServiceCallback)
             isServiceConnected = true
+            Logger.log("CommunicationClient:: Service connected")
             initiateKeyExchange()
         }
 
@@ -407,10 +409,14 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
 
         if (!isServiceConnected) {
-            Logger.log("CommunicationClient:: sendRequest - not yet connected to metamask, binding service first")
             queuedRequests[request.id] = SubmittedRequest(request, callback)
             queueRequestJob { processRequest(request, callback) }
-            bindService()
+            if (!requestedBindService) {
+                Logger.log("CommunicationClient:: sendRequest - not yet connected to metamask, binding service first")
+                bindService()
+            } else {
+                Logger.log("CommunicationClient:: sendRequest - not yet connected to metamask, waiting for service to bind")
+            }
         } else if (!keyExchange.keysExchanged()) {
             Logger.log("CommunicationClient:: sendRequest - keys not yet exchanged")
             queuedRequests[request.id] = SubmittedRequest(request, callback)
@@ -477,13 +483,13 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             packageManager?.getPackageInfo("io.metamask.qa", PackageManager.PackageInfoFlags.of(0))
             true
         } catch (e: PackageManager.NameNotFoundException) {
-            Logger.error("CommunicationClient:: NameNotFoundException ${e.message}")
             false
         }
     }
 
     private fun bindService() {
         Logger.log("CommunicationClient:: Binding service")
+        requestedBindService = true
         
         val serviceIntent = Intent()
             .setComponent(
@@ -504,6 +510,8 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     }
 
     fun unbindService() {
+        requestedBindService = false
+
         if (isServiceConnected) {
             Logger.log("CommunicationClient:: unbindService")
             appContextRef.get()?.unbindService(serviceConnection)
