@@ -20,7 +20,8 @@ internal class HttpClient {
     }
 
     fun newCall(baseUrl: String, parameters: Map<String, Any>? = null, callback: ((String?, IOException?) -> Unit)? = null) {
-        val json = JSONObject(parameters).toString()
+        val params: Map<String, Any> = parameters ?: mapOf()
+        val json = JSONObject(params).toString()
 
         val requestBody = json.toRequestBody("application/json".toMediaTypeOrNull())
         val request = Request.Builder()
