@@ -226,7 +226,6 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                 val result: Map<String, Any?>? = Gson().fromJson(resultJson, object : TypeToken<Map<String, Any?>>() {}.type)
                 if (result != null) {
                     submittedRequests[id]?.callback?.invoke(Result.Success.ItemMap(result))
-                    completeRequest(id, Result.Success.ItemMap(result))
                 } else {
                     val accounts: List<String>? = Gson().fromJson(resultJson, object : TypeToken<List<String>>() {}.type)
                     val account = accounts?.firstOrNull()
@@ -241,6 +240,12 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             }
             return
         }
+
+        val params = mapOf(
+            "method" to submittedRequest.method,
+            "from" to "mobile"
+        )
+        trackEvent(Event.SDK_RPC_REQUEST_DONE, params)
 
         when(submittedRequest.method) {
             EthereumMethod.GET_METAMASK_PROVIDER_STATE.value -> {
