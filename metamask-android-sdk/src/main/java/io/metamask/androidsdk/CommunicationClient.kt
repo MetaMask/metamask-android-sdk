@@ -242,6 +242,12 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             return
         }
 
+        val params = mapOf(
+            "method" to submittedRequest.method,
+            "from" to "mobile"
+        )
+        trackEvent(Event.SDK_RPC_REQUEST_DONE, params)
+
         when(submittedRequest.method) {
             EthereumMethod.GET_METAMASK_PROVIDER_STATE.value -> {
                 val result = data.optString("result")

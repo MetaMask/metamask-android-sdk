@@ -6,6 +6,7 @@ package io.metamask.androidsdk
 
 enum class Event(val value: String) {
     SDK_RPC_REQUEST("sdk_rpc_request"),
+    SDK_RPC_REQUEST_DONE("sdk_rpc_request_done"),
     SDK_CONNECTION_REQUEST_STARTED("sdk_connect_request_started"),
     SDK_CONNECTION_ESTABLISHED("sdk_connection_established"),
     SDK_CONNECTION_AUTHORIZED("sdk_connection_authorized"),

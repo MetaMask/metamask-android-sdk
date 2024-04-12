@@ -322,7 +322,8 @@ class Ethereum (
             }
             if (EthereumMethod.requiresAuthorisation(request.method)) {
                 val params = mapOf(
-                    "method" to request.method
+                    "method" to request.method,
+                    "from" to "mobile"
                 )
                 communicationClient?.trackEvent(Event.SDK_RPC_REQUEST, params)
             }
