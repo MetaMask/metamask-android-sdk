@@ -9,7 +9,7 @@ import java.lang.ref.WeakReference
 
 private const val METAMASK_DEEPLINK = "https://metamask.app.link"
 private const val METAMASK_BIND_DEEPLINK = "$METAMASK_DEEPLINK/bind"
-private const val DEFAULT_SESSION_DURATION: Long = 7 * 24 * 3600 // 7 days default
+private const val DEFAULT_SESSION_DURATION: Long = 30 * 24 * 3600 // 30 days default
 
 class Ethereum (
     private val context: Context,
