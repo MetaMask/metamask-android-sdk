@@ -463,6 +463,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             title = dappMetadata?.name,
             url = dappMetadata?.url,
             icon = dappMetadata?.iconUrl ?: dappMetadata?.base64Icon,
+            dappId = appContextRef.get()?.packageName,
             platform = SDKInfo.PLATFORM,
             apiVersion = SDKInfo.VERSION)
         val requestInfo = RequestInfo("originator_info", originatorInfo)
