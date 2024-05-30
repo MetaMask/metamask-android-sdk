@@ -8,8 +8,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
-import android.util.Log
-import androidx.annotation.RequiresApi
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import io.metamask.nativesdk.IMessegeService
@@ -272,14 +270,8 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             EthereumMethod.ETH_REQUEST_ACCOUNTS.value  -> {
                 val result = data.optString("result")
                 val accounts: List<String> = Gson().fromJson(result, object : TypeToken<List<String>>() {}.type)
-                val account = accounts.getOrNull(0)
 
-                if (account != null) {
-                    updateAccount(account)
-                    completeRequest(id, Result.Success.Item(account))
-                } else {
-                    Logger.error("CommunicationClient:: Request accounts failure: $result")
-                }
+                completeRequest(id, Result.Success.Items(accounts))
             }
             EthereumMethod.ETH_CHAIN_ID.value -> {
                 val chainId = data.optString("result")
@@ -345,6 +337,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                 val accountsJson = event.optString("params")
                 val accounts: List<String> = Gson().fromJson(accountsJson, object : TypeToken<List<String>>() {}.type)
                 accounts.getOrNull(0)?.let { account ->
+                    Logger.error("CommunicationClient:: Event Updated to account $account")
                     updateAccount(account)
                 }
             }
