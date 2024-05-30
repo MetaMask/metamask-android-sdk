@@ -256,7 +256,6 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                 val account = accounts.firstOrNull()
 
                 if (account != null) {
-                    Logger.error("CommunicationClient:: Response: Updated to account $account")
                     updateAccount(account)
                     completeRequest(id, Result.Success.Item(account))
                 }
