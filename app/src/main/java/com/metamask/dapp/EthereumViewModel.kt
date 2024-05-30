@@ -24,8 +24,8 @@ class EthereumViewModel @Inject constructor(
                     Logger.log("Ethereum connection error: ${result.error.message}")
                     onError(result.error.message)
                 }
-                is Result.Success.Item -> {
-                    Logger.log("Ethereum connection result: ${result.value}")
+                is Result.Success.Items -> {
+                    Logger.log("Ethereum connection result: ${result.value.first()}")
                     onSuccess()
                 }
                 else -> { }
