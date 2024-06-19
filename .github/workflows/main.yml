@@ -10,16 +10,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up JDK 11
-      uses: actions/setup-java@v3
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-    - name: Setup Gradle
-      uses: gradle/gradle-build-action@66535aaf56f831b35e3a8481c9c99b665b84dd45
+      - uses: actions/checkout@v3
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@66535aaf56f831b35e3a8481c9c99b665b84dd45
 
-    - name: Execute sonar
-      run: ./gradlew sonar
-      env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      - name: Execute sonar
+        run: ./gradlew sonar
+        env:
+            SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
