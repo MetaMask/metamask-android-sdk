@@ -4,6 +4,7 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.serialization' version '1.5.0'
     id 'kotlin-kapt'
     id 'maven-publish'
+    id("org.sonarqube") version "5.0.0.4638"
 }
 
 android {
@@ -58,6 +59,14 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.7.0"
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
+
+sonar {
+  properties {
+    property "sonar.projectKey", "metamask-android-sdk"
+    property "sonar.organization", "metamask"
+    property "sonar.host.url", "https://sonarcloud.io"
+  }
 }
 
 ext {
