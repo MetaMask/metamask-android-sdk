@@ -1,0 +1,13 @@
+name: Main
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  sonarcloud-scan:
+    name: Run SonarCloud Scan
+    uses: MetaMask/metamask-sdk/.github/workflows/sonar-cloud.yml@535a911b02d28a61ab305841f8b14b83e91c7000
+    secrets:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
