@@ -267,9 +267,14 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
                     completeRequest(id, Result.Success.Item(chainId))
                 }
             }
-            EthereumMethod.ETH_REQUEST_ACCOUNTS.value  -> {
+            EthereumMethod.ETH_REQUEST_ACCOUNTS.value -> {
                 val result = data.optString("result")
                 val accounts: List<String> = Gson().fromJson(result, object : TypeToken<List<String>>() {}.type)
+                val selectedAccount = accounts.getOrNull(0)
+
+                if (selectedAccount != null) {
+                    updateAccount(selectedAccount)
+                }
 
                 completeRequest(id, Result.Success.Items(accounts))
             }
