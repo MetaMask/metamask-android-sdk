@@ -7,7 +7,20 @@ on:
 
 jobs:
   sonarcloud-scan:
+    runs-on: ubuntu-latest
     name: Run SonarCloud Scan
-    uses: MetaMask/metamask-sdk/.github/workflows/sonar-cloud.yml@535a911b02d28a61ab305841f8b14b83e91c7000
-    secrets:
+    steps:
+    - name: Checkout project sources
+      uses: actions/checkout@v4
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        build-scan-publish: true
+        build-scan-terms-of-use-url: "https://gradle.com/terms-of-service"
+        build-scan-terms-of-use-agree: "yes"
+        
+    - name: Run sonar
+      env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: ./gradlew sonar -Dsonar.token=$SONAR_TOKEN
