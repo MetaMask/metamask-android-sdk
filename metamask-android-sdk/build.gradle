@@ -9,11 +9,11 @@ plugins {
 
 android {
     namespace 'io.metamask.androidsdk'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         minSdk 23
-        targetSdk 33
+        targetSdk 34
 
         ext.versionCode = 1
         ext.versionName = "0.5.5"
@@ -63,10 +63,9 @@ dependencies {
 
 sonar {
   properties {
-    property "sonar.projectBaseDir", "${rootProject.projectDir}"
     property "sonar.projectKey", "metamask-android-sdk"
     property "sonar.organization", "metamask"
-    property "sonar.sources", "metamask-android-sdk/src/main/java"
+    property "sonar.sources", "src/main/java"
     property "sonar.exclusions", "**/generated/**,app/**"
   }
 }
