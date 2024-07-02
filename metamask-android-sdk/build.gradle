@@ -65,7 +65,7 @@ sonar {
   properties {
     property "sonar.projectKey", "metamask-android-sdk"
     property "sonar.organization", "metamask"
-    property "sonar.sources", "metamask-android-sdk/src/main/java"
+    property "sonar.sources", "../metamask-android-sdk/src/main/java"
     property "sonar.exclusions", "**/generated/**"
     property "sonar.projectBaseDir", "${rootProject.projectDir}"
   }
