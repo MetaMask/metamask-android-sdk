@@ -67,6 +67,7 @@ sonar {
     property "sonar.organization", "metamask"
     property "sonar.sources", "metamask-android-sdk/src/main/java"
     property "sonar.exclusions", "**/generated/**"
+    property "sonar.projectBaseDir", "${rootProject.projectDir}"
   }
 }
 
