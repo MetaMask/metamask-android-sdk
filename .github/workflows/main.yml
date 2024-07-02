@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   sonarcloud-scan:
     runs-on: ubuntu-latest
@@ -29,4 +32,4 @@ jobs:
     - name: Run sonar
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      run: ./gradlew sonar -Dsonar.token=$SONAR_TOKEN
+      run: ./gradlew :metamask-android-sdk:sonar -Dsonar.token=$SONAR_TOKEN
