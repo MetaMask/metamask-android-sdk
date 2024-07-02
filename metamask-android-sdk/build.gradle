@@ -63,11 +63,11 @@ dependencies {
 
 sonar {
   properties {
+    property "sonar.projectBaseDir", "${rootProject.projectDir}"
     property "sonar.projectKey", "metamask-android-sdk"
     property "sonar.organization", "metamask"
     property "sonar.sources", "../metamask-android-sdk/src/main/java"
-    property "sonar.exclusions", "**/generated/**"
-    property "sonar.projectBaseDir", "${rootProject.projectDir}"
+    property "sonar.exclusions", "**/generated/**,app/**"
   }
 }
 
