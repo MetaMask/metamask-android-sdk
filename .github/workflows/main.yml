@@ -1,0 +1,35 @@
+name: Main
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  sonarcloud-scan:
+    runs-on: ubuntu-latest
+    name: Run SonarCloud Scan
+    steps:
+    - name: Checkout project sources
+      uses: actions/checkout@v4
+
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: 17
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@db19848a5fa7950289d3668fb053140cf3028d43
+      with:
+        build-scan-publish: true
+        build-scan-terms-of-use-url: "https://gradle.com/terms-of-service"
+        build-scan-terms-of-use-agree: "yes"
+        
+    - name: Run sonar
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: ./gradlew :metamask-android-sdk:sonar -Dsonar.token=$SONAR_TOKEN
