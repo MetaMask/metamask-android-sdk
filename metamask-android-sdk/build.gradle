@@ -4,7 +4,7 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.serialization' version '1.5.0'
     id 'kotlin-kapt'
     id 'maven-publish'
-    id("org.sonarqube") version "5.0.0.4638"
+    id("org.sonarqube") version "4.2.1.3168"
 }
 
 android {
