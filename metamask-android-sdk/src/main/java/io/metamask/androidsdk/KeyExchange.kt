@@ -7,7 +7,7 @@ data class KeyExchangeMessage(
     val publicKey: String?
     )
 
-class KeyExchange(private val crypto: Encryption = Crypto()) {
+class KeyExchange(private val crypto: Encryption = Crypto(), private val logger: Logger = DefaultLogger) {
     companion object {
         const val TYPE = "type"
         const val PUBLIC_KEY = "public_key"
@@ -56,7 +56,7 @@ class KeyExchange(private val crypto: Encryption = Crypto()) {
     }
 
     fun complete() {
-        Logger.log("KeyExchange:: Key exchange complete")
+        logger.log("KeyExchange:: Key exchange complete")
         setIsKeysExchanged(true)
     }
 

@@ -2,14 +2,17 @@ package io.metamask.androidsdk
 
 import android.util.Log
 
-class Logger {
-    companion object {
-        fun log(msg: String): Int {
-            return Log.d(TAG, msg)
-        }
+interface Logger {
+    fun log(message: String)
+    fun error(message: String)
+}
 
-        fun error(e: String): Int {
-            return Log.e(TAG, e)
-        }
+object DefaultLogger : Logger {
+    override fun log(message: String) {
+        Log.d(TAG, message)
+    }
+
+    override fun error(message: String) {
+        Log.e(TAG, message)
     }
 }

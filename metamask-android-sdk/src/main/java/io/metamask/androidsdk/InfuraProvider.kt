@@ -2,7 +2,7 @@ package io.metamask.androidsdk
 
 import org.json.JSONObject
 
-class InfuraProvider(private val infuraAPIKey: String) {
+class InfuraProvider(private val infuraAPIKey: String, private val logger: Logger = DefaultLogger) {
     val rpcUrls: Map<String, String> = mapOf(
         // ###### Ethereum ######
         // Mainnet
@@ -87,12 +87,12 @@ class InfuraProvider(private val infuraAPIKey: String) {
 
         httpClient.newCall("${rpcUrls[chainId]}", parameters = params) { response, ioException ->
             if (response != null) {
-                Logger.log("InfuraProvider:: response $response")
+                logger.log("InfuraProvider:: response $response")
                 try {
                     val result = JSONObject(response).optString("result") ?: ""
                     callback?.invoke(Result.Success.Item(result))
                 } catch (e: Exception) {
-                    Logger.error("InfuraProvider:: error: ${e.message}")
+                    logger.error("InfuraProvider:: error: ${e.message}")
                     callback?.invoke(Result.Error(RequestError(-1, response)))
                 }
             } else if (ioException != null) {
