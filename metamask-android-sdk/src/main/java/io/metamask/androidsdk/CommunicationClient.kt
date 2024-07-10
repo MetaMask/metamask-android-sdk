@@ -208,13 +208,20 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     }
 
     private fun handleResponse(id: String, data: JSONObject) {
+        val submittedRequest = submittedRequests[id]?.request ?: return
+
         val error = data.optString("error")
+
+        val params = mapOf(
+            "method" to submittedRequest.method,
+            "from" to "mobile"
+        )
+        trackEvent(Event.SDK_RPC_REQUEST_DONE, params)
 
         if (handleError(error, id)) {
             return
         }
 
-        val submittedRequest = submittedRequests[id]?.request ?: return
         val isResultMethod = EthereumMethod.isResultMethod(submittedRequest.method)
 
         if (!isResultMethod) {
@@ -239,12 +246,6 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             }
             return
         }
-
-        val params = mapOf(
-            "method" to submittedRequest.method,
-            "from" to "mobile"
-        )
-        trackEvent(Event.SDK_RPC_REQUEST_DONE, params)
 
         when(submittedRequest.method) {
             EthereumMethod.GET_METAMASK_PROVIDER_STATE.value -> {
