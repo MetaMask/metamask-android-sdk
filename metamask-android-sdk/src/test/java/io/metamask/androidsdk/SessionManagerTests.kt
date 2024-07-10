@@ -11,18 +11,24 @@ import org.junit.Before
 import org.junit.Test
 
 class SessionManagerTests {
-    private val testFile = "testFile"
+    private val sessionConfigFile: String = "SESSION_CONFIG_FILE"
     private lateinit var keyStorage: SecureStorage
     private lateinit var sessionManager: SessionManager
     @Before
     fun setUp() {
         keyStorage = MockKeyStorage()
-        keyStorage.clear(testFile)
-        sessionManager = SessionManager(store = keyStorage, 7 * 24 * 3600, logger = TestLogger)
+        keyStorage.clear(sessionConfigFile)
+        sessionManager = SessionManager(store = keyStorage, logger = TestLogger)
     }
     @Test
     fun testInitLoadsSessionConfig() = runTest {
         assertNotNull(sessionManager.sessionId)
+    }
+    @Test
+    fun testDefaultSessionDuration() = runTest {
+        val sessionConfig = sessionManager.getSessionConfig()
+        val defaultDuration = 30 * 24 * 3600L // 30 days
+        assertEquals(sessionConfig.expiryDate, System.currentTimeMillis() + defaultDuration * 1000)
     }
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
