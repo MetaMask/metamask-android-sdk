@@ -209,7 +209,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
 
     private fun handleResponse(id: String, data: JSONObject) {
         val submittedRequest = submittedRequests[id]?.request ?: return
-        
+
         val error = data.optString("error")
 
         val params = mapOf(
