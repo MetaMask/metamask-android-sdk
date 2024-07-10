@@ -7,7 +7,8 @@ import java.lang.reflect.Type
 
 internal class SessionManager(
     private val store: SecureStorage,
-    private var sessionDuration: Long = 30 * 24 * 3600 // 30 days default
+    private var sessionDuration: Long = 30 * 24 * 3600, // 30 days default
+    private val logger: Logger = DefaultLogger
 ) {
     private val sessionConfigKey: String = "SESSION_CONFIG_KEY"
     private val sessionConfigFile: String = "SESSION_CONFIG_FILE"
@@ -26,7 +27,7 @@ internal class SessionManager(
     }
 
     fun updateSessionDuration(duration: Long) {
-        Logger.log("SessionManager:: Session duration extended by: ${duration/3600.0/24.0} days")
+        logger.log("SessionManager:: Session duration extended by: ${duration/3600.0/24.0} days")
         coroutineScope.launch {
             sessionDuration = duration
             val sessionId = getSessionConfig().sessionId
@@ -56,7 +57,7 @@ internal class SessionManager(
                 makeNewSessionConfig()
             }
         } catch(e: Exception) {
-            Logger.error("SessionManager: ${e.message}")
+            logger.error("SessionManager: ${e.message}")
             makeNewSessionConfig()
         }
     }

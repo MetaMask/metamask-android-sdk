@@ -11,7 +11,7 @@ import java.security.KeyStore
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 
-class KeyStorage(private val context: Context): SecureStorage {
+class KeyStorage(private val context: Context, private val logger: Logger = DefaultLogger): SecureStorage {
 
     private val keyStoreAlias = context.packageName
     private val androidKeyStore = "AndroidKeyStore"
@@ -28,7 +28,7 @@ class KeyStorage(private val context: Context): SecureStorage {
             return try {
                 keyStore.getEntry(keyStoreAlias, null) as? KeyStore.SecretKeyEntry
             } catch(e: Exception) {
-                Logger.error("KeyStorage: ${e.message}")
+                logger.error("KeyStorage: ${e.message}")
                 null
             }
     }

@@ -7,7 +7,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.IOException
 
-internal class HttpClient {
+internal class HttpClient(private val logger: Logger = DefaultLogger) {
     private val client = OkHttpClient()
     private var additionalHeaders: Headers = Headers.headersOf("Accept", "application/json", "Content-Type", "application/json")
 
@@ -32,7 +32,7 @@ internal class HttpClient {
 
         client.newCall(request).enqueue(object: Callback {
             override fun onFailure(call: Call, e: IOException) {
-                Log.e(TAG,"HttpClient: error ${e.message}")
+                logger.error("HttpClient: error ${e.message}")
                 if (callback != null) {
                     callback(null, e)
                 }

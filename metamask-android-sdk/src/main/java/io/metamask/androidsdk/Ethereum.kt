@@ -14,7 +14,9 @@ private const val DEFAULT_SESSION_DURATION: Long = 30 * 24 * 3600 // 30 days def
 class Ethereum (
     private val context: Context,
     private val dappMetadata: DappMetadata,
-    sdkOptions: SDKOptions? = null): EthereumEventCallback {
+    sdkOptions: SDKOptions? = null,
+    private val logger: Logger = DefaultLogger
+    ): EthereumEventCallback {
     private var connectRequestSent = false
     private val communicationClient: CommunicationClient? by lazy {
         CommunicationClient(context, null)
@@ -58,7 +60,7 @@ class Ethereum (
     private var sessionDuration: Long = DEFAULT_SESSION_DURATION
 
     override fun updateAccount(account: String) {
-        Logger.log("Ethereum:: Selected account changed: $account")
+        logger.log("Ethereum:: Selected account changed: $account")
         _ethereumState.postValue(
             currentEthereumState.copy(
                 selectedAddress = account,
@@ -68,7 +70,7 @@ class Ethereum (
     }
 
     override fun updateChainId(newChainId: String) {
-        Logger.log("Ethereum:: ChainId changed: $newChainId")
+        logger.log("Ethereum:: ChainId changed: $newChainId")
         _ethereumState.postValue(
             currentEthereumState.copy(
                 chainId = newChainId,
@@ -96,7 +98,7 @@ class Ethereum (
             return
         }
 
-        Logger.log("Ethereum:: connecting...")
+        logger.log("Ethereum:: connecting...")
         communicationClient?.dappMetadata = dappMetadata
         communicationClient?.ethereumEventCallbackRef = WeakReference(this)
         communicationClient?.updateSessionDuration(sessionDuration)
@@ -118,7 +120,7 @@ class Ethereum (
      */
 
     fun connectWith(request: EthereumRequest, callback: ((Result) -> Unit)? = null) {
-        Logger.log("Ethereum:: connecting with ${request.method}...")
+        logger.log("Ethereum:: connecting with ${request.method}...")
         connectRequestSent = true
         communicationClient?.dappMetadata = dappMetadata
         communicationClient?.ethereumEventCallbackRef = WeakReference(this)
@@ -261,7 +263,7 @@ class Ethereum (
     }
 
     fun disconnect(clearSession: Boolean = false) {
-        Logger.log("Ethereum:: disconnecting...")
+        logger.log("Ethereum:: disconnecting...")
         connectRequestSent = false
         communicationClient?.resetState()
         communicationClient?.unbindService()
@@ -293,7 +295,7 @@ class Ethereum (
     }
 
     private fun requestAccounts(callback: ((Result) -> Unit)? = null) {
-        Logger.log("Ethereum:: Requesting ethereum accounts")
+        logger.log("Ethereum:: Requesting ethereum accounts")
         connectRequestSent = true
 
         val accountsRequest = EthereumRequest(
@@ -304,7 +306,7 @@ class Ethereum (
     }
 
     fun sendRequest(request: RpcRequest, callback: ((Result) -> Unit)? = null) {
-        Logger.log("Ethereum:: Sending request $request")
+        logger.log("Ethereum:: Sending request $request")
 
         if (!connectRequestSent) {
             requestAccounts {
@@ -314,7 +316,7 @@ class Ethereum (
         }
 
         if (EthereumMethod.isReadOnly(request.method) && infuraProvider?.supportsChain(chainId) == true) {
-            Logger.log("Ethereum:: Using Infura API for method ${request.method} on chain $chainId")
+            logger.log("Ethereum:: Using Infura API for method ${request.method} on chain $chainId")
             infuraProvider.makeRequest(request, chainId, dappMetadata, callback)
         } else {
             communicationClient?.sendRequest(request) { response ->
