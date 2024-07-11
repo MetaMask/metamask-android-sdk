@@ -5,7 +5,7 @@ import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.*
 import java.lang.reflect.Type
 
-internal class SessionManager(
+class SessionManager(
     private val store: SecureStorage,
     private var sessionDuration: Long = 7 * 24 * 3600, // 7 days default
     private val logger: Logger = DefaultLogger

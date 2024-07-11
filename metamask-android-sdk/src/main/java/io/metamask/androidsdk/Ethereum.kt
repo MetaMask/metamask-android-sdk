@@ -15,11 +15,13 @@ class Ethereum (
     private val context: Context,
     private val dappMetadata: DappMetadata,
     sdkOptions: SDKOptions? = null,
-    private val logger: Logger = DefaultLogger
+    private val logger: Logger = DefaultLogger,
+    private val communicationClientModule: CommunicationClientModule = CommunicationClientModule(context)
     ): EthereumEventCallback {
     private var connectRequestSent = false
+
     private val communicationClient: CommunicationClient? by lazy {
-        CommunicationClient(context, null)
+        communicationClientModule.provideCommunicationClient(this)
     }
 
     private val infuraProvider: InfuraProvider? = sdkOptions?.let {
