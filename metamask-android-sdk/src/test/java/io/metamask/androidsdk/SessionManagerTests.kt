@@ -1,6 +1,8 @@
 package io.metamask.androidsdk
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -24,6 +26,7 @@ class SessionManagerTests {
         sessionManager = SessionManager(store = keyStorage, logger = TestLogger)
         sessionManager.clearSession{}
     }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun testInitLoadsSessionConfig() = runTest {
@@ -53,10 +56,10 @@ class SessionManagerTests {
     }
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
-    fun testSessionConfigReset() = runTest {
+    fun testSessionConfigReset() = runBlocking {
         val initialSessionConfig = sessionManager.getSessionConfig()
+        delay(1000)
         val resetSessionConfig = sessionManager.getSessionConfig(reset = true)
-        advanceUntilIdle()
 
         assertNotEquals(initialSessionConfig.sessionId, resetSessionConfig.sessionId)
     }
