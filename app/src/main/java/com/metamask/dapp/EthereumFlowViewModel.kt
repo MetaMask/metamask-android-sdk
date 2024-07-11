@@ -110,8 +110,6 @@ class EthereumFlowViewModel @Inject constructor(
     }
 
     suspend fun addEthereumChain(chainId: String) : SwitchChainResult {
-        Logger.log("Adding chainId: $chainId")
-
         return when (val result = ethereum.addEthereumChain(
             chainId = chainId,
             chainName = Network.chainNameFor(chainId),

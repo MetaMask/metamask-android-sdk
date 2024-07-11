@@ -8,11 +8,11 @@ plugins {
 
 android {
     namespace 'io.metamask.androidsdk'
-    compileSdk 34
+    compileSdk 33
 
     defaultConfig {
         minSdk 23
-        targetSdk 34
+        targetSdk 33
 
         ext.versionCode = 1
         ext.versionName = "0.5.7"
@@ -54,7 +54,7 @@ dependencies {
     implementation 'com.google.android.material:material:1.9.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.test.ext:junit-ktx:1.1.5'
-    implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.7.0"
+    implementation "androidx.lifecycle:lifecycle-livedata-ktx:2.6.1"
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.6.0'
