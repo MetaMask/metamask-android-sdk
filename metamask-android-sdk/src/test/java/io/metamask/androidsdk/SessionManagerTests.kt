@@ -37,7 +37,7 @@ class SessionManagerTests {
     fun testDefaultSessionDuration() = runTest {
         val sessionConfig = sessionManager.getSessionConfig()
         val defaultDuration = 30 * 24 * 3600L // 30 days
-        assertEquals(sessionConfig.expiryDate, System.currentTimeMillis() + defaultDuration * 1000)
+        assertEquals(sessionConfig.expiryDate/1000, System.currentTimeMillis()/1000 + defaultDuration)
     }
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
@@ -46,7 +46,7 @@ class SessionManagerTests {
         sessionManager.updateSessionDuration(newDuration)
         advanceUntilIdle()
         val sessionConfig = sessionManager.getSessionConfig()
-        assertEquals(sessionConfig.expiryDate/1000, System.currentTimeMillis()/1000L + newDuration)
+        assertEquals(sessionConfig.expiryDate/1000, System.currentTimeMillis()/1000 + newDuration)
     }
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
