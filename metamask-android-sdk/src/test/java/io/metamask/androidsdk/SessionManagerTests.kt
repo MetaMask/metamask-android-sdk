@@ -24,10 +24,12 @@ class SessionManagerTests {
         sessionManager = SessionManager(store = keyStorage, logger = TestLogger)
         sessionManager.clearSession{}
     }
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun testInitLoadsSessionConfig() = runTest {
         assertNotNull(sessionManager.sessionId)
     }
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun testDefaultSessionDuration() = runTest {
         val sessionConfig = sessionManager.getSessionConfig()
@@ -43,6 +45,7 @@ class SessionManagerTests {
         val sessionConfig = sessionManager.getSessionConfig()
         assertEquals(sessionConfig.expiryDate/1000, System.currentTimeMillis()/1000L + newDuration)
     }
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun testSessionConfigIsValid() = runTest {
         val sessionConfig = sessionManager.getSessionConfig()
@@ -57,6 +60,7 @@ class SessionManagerTests {
 
         assertNotEquals(initialSessionConfig.sessionId, resetSessionConfig.sessionId)
     }
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun testSaveSessionConfig() = runTest {
         val sessionConfig = SessionConfig("test_session", System.currentTimeMillis() + 1000L)
@@ -75,6 +79,7 @@ class SessionManagerTests {
         assertNotEquals("", sessionManager.sessionId)
         assertNotEquals("", sessionConfig.sessionId)
     }
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun testMakeNewSessionConfig() = runTest {
         val newConfig = sessionManager.makeNewSessionConfig()
