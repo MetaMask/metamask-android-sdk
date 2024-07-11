@@ -37,7 +37,7 @@ class SessionManagerTests {
         sessionManager.updateSessionDuration(newDuration)
         advanceUntilIdle()
         val sessionConfig = sessionManager.getSessionConfig()
-        assertEquals(sessionConfig.expiryDate, System.currentTimeMillis() + newDuration * 1000)
+        assertEquals(sessionConfig.expiryDate/1000, System.currentTimeMillis()/1000L + newDuration)
     }
     @Test
     fun testSessionConfigIsValid() = runTest {
