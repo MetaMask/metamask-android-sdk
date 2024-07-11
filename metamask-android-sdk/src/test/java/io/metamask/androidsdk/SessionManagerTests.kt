@@ -12,13 +12,17 @@ import org.junit.Test
 
 class SessionManagerTests {
     private val sessionConfigFile: String = "SESSION_CONFIG_FILE"
+    private val sessionConfigKey: String = "SESSION_CONFIG_KEY"
+
     private lateinit var keyStorage: SecureStorage
     private lateinit var sessionManager: SessionManager
     @Before
     fun setUp() {
         keyStorage = MockKeyStorage()
+        keyStorage.clearValue(key = sessionConfigKey, file = sessionConfigFile)
         keyStorage.clear(sessionConfigFile)
         sessionManager = SessionManager(store = keyStorage, logger = TestLogger)
+        sessionManager.clearSession{}
     }
     @Test
     fun testInitLoadsSessionConfig() = runTest {
@@ -44,10 +48,12 @@ class SessionManagerTests {
         val sessionConfig = sessionManager.getSessionConfig()
         assertTrue(sessionConfig.isValid())
     }
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun testSessionConfigReset() = runTest {
         val initialSessionConfig = sessionManager.getSessionConfig()
         val resetSessionConfig = sessionManager.getSessionConfig(reset = true)
+        advanceUntilIdle()
 
         assertNotEquals(initialSessionConfig.sessionId, resetSessionConfig.sessionId)
     }
