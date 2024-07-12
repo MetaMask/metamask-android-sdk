@@ -4,6 +4,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import io.metamask.androidsdk.DefaultLogger
 import io.metamask.androidsdk.Logger
 import javax.inject.Inject
 
@@ -14,6 +15,6 @@ class ScreenViewModel @Inject constructor(): ViewModel() {
 
     fun setScreen(screen: DappScreen) {
         _currentScreen.value = screen
-        Logger.log("Navigating to $screen")
+        DefaultLogger.log("Navigating to $screen")
     }
 }
