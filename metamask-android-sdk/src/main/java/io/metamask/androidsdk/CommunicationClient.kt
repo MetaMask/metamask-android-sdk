@@ -300,8 +300,9 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
             }
             EthereumMethod.METAMASK_BATCH.value -> {
                 val result = data.optString("result")
-                val results: List<String> = Gson().fromJson(result, object : TypeToken<List<String>>() {}.type)
-                completeRequest(id, Result.Success.Items(results))
+                val results: List<String?> = Gson().fromJson(result, object : TypeToken<List<String?>>() {}.type)
+                val sanitisedResults = results.filterNotNull()
+                completeRequest(id, Result.Success.Items(sanitisedResults))
             }
             else -> {
                 val result = data.optString("result")
