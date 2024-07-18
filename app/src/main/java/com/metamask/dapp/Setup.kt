@@ -5,7 +5,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.metamask.dapp.DappScreen.*
-import io.metamask.androidsdk.DefaultLogger
 import io.metamask.androidsdk.EthereumState
 import io.metamask.androidsdk.Result
 
