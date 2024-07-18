@@ -13,7 +13,6 @@ import java.lang.ref.WeakReference
 
 private const val METAMASK_DEEPLINK = "https://metamask.app.link"
 private const val METAMASK_BIND_DEEPLINK = "$METAMASK_DEEPLINK/bind"
-private const val DEFAULT_SESSION_DURATION: Long = 30 * 24 * 3600 // 30 days default
 
 class Ethereum (
     private val context: Context,
@@ -58,12 +57,6 @@ class Ethereum (
             communicationClient?.enableDebug = value
         }
 
-    companion object {
-        const val ACCOUNT_KEY = "account_key"
-        const val CHAIN_ID_KEY = "chain_id_key"
-        const val SESSION_FILE = "session_file"
-    }
-
     init {
         updateSessionDuration()
         initializeEthereumState()
@@ -72,8 +65,8 @@ class Ethereum (
     private fun initializeEthereumState() {
         coroutineScope.launch(Dispatchers.IO) {
             try {
-                val account = storage.getValue(key = ACCOUNT_KEY, file = SESSION_FILE)
-                val chainId = storage.getValue(key = CHAIN_ID_KEY, file = SESSION_FILE)
+                val account = storage.getValue(key = SessionManager.SESSION_ACCOUNT_KEY, file = SessionManager.SESSION_CONFIG_FILE)
+                val chainId = storage.getValue(key = SessionManager.SESSION_CHAIN_ID_KEY, file = SessionManager.SESSION_CONFIG_FILE)
                 _ethereumState.postValue(
                     currentEthereumState.copy(
                         selectedAddress = account ?: "",
@@ -90,7 +83,7 @@ class Ethereum (
         this.enableDebug = enable
     }
 
-    private var sessionDuration: Long = DEFAULT_SESSION_DURATION
+    private var sessionDuration: Long = SessionManager.DEFAULT_SESSION_DURATION
 
     override fun updateAccount(account: String) {
         logger.log("Ethereum:: Selected account changed: $account")
@@ -101,7 +94,7 @@ class Ethereum (
             )
         )
         if (account.isNotEmpty()) {
-            storage.putValue(account, key = ACCOUNT_KEY, SESSION_FILE)
+            storage.putValue(account, key = SessionManager.SESSION_ACCOUNT_KEY, SessionManager.SESSION_CONFIG_FILE)
         }
     }
 
@@ -114,12 +107,12 @@ class Ethereum (
             )
         )
         if (newChainId.isNotEmpty()) {
-            storage.putValue(newChainId, key = CHAIN_ID_KEY, SESSION_FILE)
+            storage.putValue(newChainId, key = SessionManager.SESSION_CHAIN_ID_KEY, SessionManager.SESSION_CONFIG_FILE)
         }
     }
 
     // Set session duration in seconds
-    fun updateSessionDuration(duration: Long = DEFAULT_SESSION_DURATION) = apply {
+    fun updateSessionDuration(duration: Long = SessionManager.DEFAULT_SESSION_DURATION) = apply {
         sessionDuration = duration
         communicationClient?.updateSessionDuration(duration)
     }
@@ -127,7 +120,7 @@ class Ethereum (
     // Clear persisted session. Subsequent MetaMask connection request will need approval
     fun clearSession() {
         disconnect(true)
-        storage.clear(SESSION_FILE)
+        storage.clear(SessionManager.SESSION_CONFIG_FILE)
     }
 
     fun connect(callback: ((Result) -> Unit)? = null) {
