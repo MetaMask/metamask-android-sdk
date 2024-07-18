@@ -16,10 +16,14 @@ import kotlinx.serialization.Serializable
 import org.json.JSONObject
 import java.lang.ref.WeakReference
 
-internal class CommunicationClient(context: Context, callback: EthereumEventCallback?, private val logger: Logger = DefaultLogger)  {
+class CommunicationClient(
+    context: Context,
+    callback: EthereumEventCallback?,
+    private val sessionManager: SessionManager,
+    private val keyExchange: KeyExchange,
+    private val logger: Logger = DefaultLogger)  {
 
     var sessionId: String = ""
-    private val keyExchange: KeyExchange = KeyExchange()
 
     var dappMetadata: DappMetadata? = null
     var isServiceConnected = false
@@ -35,11 +39,13 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     private var submittedRequests: MutableMap<String, SubmittedRequest>  = mutableMapOf()
     private var queuedRequests: MutableMap<String, SubmittedRequest>  = mutableMapOf()
 
-    private var sessionManager: SessionManager
-
     private var isMetaMaskReady = false
     private var sentOriginatorInfo = false
     private var requestedBindService = false
+
+    var hasSubmittedRequests: Boolean = submittedRequests.isEmpty()
+    var hasRequestJobs: Boolean = requestJobs.isEmpty()
+    var hasQueuedRequests: Boolean = queuedRequests.isEmpty()
 
     var enableDebug: Boolean = false
         set(value) {
@@ -48,7 +54,8 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
     }
 
     init {
-        sessionManager = SessionManager(KeyStorage(context))
+        sessionId = sessionManager.sessionId
+        // in case not yet initialised in SessionManager
         sessionManager.onInitialized = {
             sessionId = sessionManager.sessionId
         }
@@ -142,7 +149,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         sentOriginatorInfo = false
     }
 
-    private fun handleMessage(message: String) {
+    fun handleMessage(message: String) {
         val jsonString = keyExchange.decrypt(message)
         val json = JSONObject(jsonString)
 
@@ -187,7 +194,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
     }
 
-    private fun resumeRequestJobs() {
+    fun resumeRequestJobs() {
         logger.log("CommunicationClient:: Resuming jobs")
 
         while (requestJobs.isNotEmpty()) {
@@ -196,12 +203,12 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
     }
 
-    private fun queueRequestJob(job: () -> Unit) {
+    fun queueRequestJob(job: () -> Unit) {
         requestJobs.add(job)
         logger.log("CommunicationClient:: Queued job")
     }
 
-    private fun clearPendingRequests() {
+    fun clearPendingRequests() {
         queuedRequests = mutableMapOf()
         requestJobs = mutableListOf()
         submittedRequests = mutableMapOf()
@@ -311,7 +318,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
     }
 
-    private fun handleError(error: String, id: String): Boolean {
+    fun handleError(error: String, id: String): Boolean {
         if (error.isEmpty()) {
             return false
         }
@@ -329,7 +336,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         return true
     }
 
-    private fun completeRequest(id: String, result: Result) {
+    fun completeRequest(id: String, result: Result) {
         if (queuedRequests[id] != null) {
             queuedRequests[id]?.callback?.invoke(result)
             queuedRequests.remove(id)
@@ -338,13 +345,13 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         submittedRequests.remove(id)
     }
 
-    private fun handleEvent(event: JSONObject) {
+    fun handleEvent(event: JSONObject) {
         when (event.optString("method")) {
             EthereumMethod.METAMASK_ACCOUNTS_CHANGED.value -> {
                 val accountsJson = event.optString("params")
                 val accounts: List<String> = Gson().fromJson(accountsJson, object : TypeToken<List<String>>() {}.type)
                 accounts.getOrNull(0)?.let { account ->
-                    logger.error("CommunicationClient:: Event Updated to account $account")
+                    logger.log("CommunicationClient:: Event Updated to account $account")
                     updateAccount(account)
                 }
             }
@@ -362,17 +369,17 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
     }
 
-    private fun updateAccount(account: String) {
+    fun updateAccount(account: String) {
         val callback = ethereumEventCallbackRef.get()
         callback?.updateAccount(account)
     }
 
-    private fun updateChainId(chainId: String) {
+    fun updateChainId(chainId: String) {
         val callback = ethereumEventCallbackRef.get()
         callback?.updateChainId(chainId)
     }
 
-    private fun handleKeyExchange(message: String) {
+    fun handleKeyExchange(message: String) {
         val json = JSONObject(message)
 
         val keyExchangeStep = json.optString(KeyExchange.TYPE, KeyExchangeMessageType.KEY_HANDSHAKE_SYN.name)
@@ -396,7 +403,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
     }
 
-    private fun sendMessage(message: String) {
+    fun sendMessage(message: String) {
         val bundle = Bundle().apply {
             putString(MESSAGE, message)
         }
@@ -439,7 +446,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
     }
 
-    private fun processRequest(request: RpcRequest, callback: (Result) -> Unit) {
+    fun processRequest(request: RpcRequest, callback: (Result) -> Unit) {
         logger.log("CommunicationClient:: sending request $request")
         if (queuedRequests[request.id] != null) {
             queuedRequests.remove(request.id)
@@ -455,7 +462,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         sendMessage(messageJson)
     }
 
-    private fun sendOriginatorInfo() {
+    fun sendOriginatorInfo() {
         if (sentOriginatorInfo) { return }
         sentOriginatorInfo = true
 
@@ -479,7 +486,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         sendMessage(messageJson)
     }
 
-    private fun isQA(): Boolean {
+    fun isQA(): Boolean {
         if (Build.VERSION.SDK_INT < 33 ) { // i.e Build.VERSION_CODES.TIRAMISU
             return false
         }
@@ -494,7 +501,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         }
     }
 
-    private fun bindService() {
+    fun bindService() {
         logger.log("CommunicationClient:: Binding service")
         requestedBindService = true
         
@@ -538,7 +545,7 @@ internal class CommunicationClient(context: Context, callback: EthereumEventCall
         sendKeyExchangeMesage(keyExchange.toString())
     }
 
-    private fun sendKeyExchangeMesage(message: String) {
+    fun sendKeyExchangeMesage(message: String) {
         val bundle = Bundle().apply {
             putString(KEY_EXCHANGE, message)
         }

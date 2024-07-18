@@ -25,7 +25,7 @@ internal object AppModule {
 
     @Provides // Add SDKOptions(infuraAPIKey="supply_your_key_here") to Ethereum constructor for read-only calls
     fun provideEthereum(@ApplicationContext context: Context, dappMetadata: DappMetadata, logger: Logger): Ethereum {
-        return Ethereum(context, dappMetadata, SDKOptions(infuraAPIKey = "#####"), logger)
+        return Ethereum(context, dappMetadata, null, logger)
     }
 
     @Provides

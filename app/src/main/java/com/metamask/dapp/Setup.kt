@@ -20,7 +20,13 @@ fun Setup(ethereumViewModel: EthereumFlowViewModel, screenViewModel: ScreenViewM
     var isConnecting by remember { mutableStateOf(false) }
     var isConnectSigning by remember { mutableStateOf(false) }
     var connectResult by remember { mutableStateOf<Result>(Result.Success.Item("")) }
-    var signMessage by remember { mutableStateOf("") }
+    var account by remember { mutableStateOf(ethereumState.selectedAddress) }
+
+    LaunchedEffect(ethereumState.selectedAddress) {
+        if (ethereumState.selectedAddress.isNotEmpty()) {
+            screenViewModel.setScreen(ACTIONS)
+        }
+    }
 
     // Connect
     LaunchedEffect(isConnecting) {
@@ -38,7 +44,7 @@ fun Setup(ethereumViewModel: EthereumFlowViewModel, screenViewModel: ScreenViewM
         }
     }
 
-    NavHost(navController = navController, startDestination = CONNECT.name) {
+    NavHost(navController = navController, startDestination = if (account.isNotEmpty()) { DappScreen.ACTIONS.name } else { DappScreen.CONNECT.name }) {
         composable(CONNECT.name) {
             ConnectScreen(
                 ethereumState = ethereumState,

@@ -5,22 +5,30 @@ import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 
 private const val METAMASK_DEEPLINK = "https://metamask.app.link"
 private const val METAMASK_BIND_DEEPLINK = "$METAMASK_DEEPLINK/bind"
-private const val DEFAULT_SESSION_DURATION: Long = 30 * 24 * 3600 // 30 days default
 
 class Ethereum (
     private val context: Context,
     private val dappMetadata: DappMetadata,
     sdkOptions: SDKOptions? = null,
-    private val logger: Logger = DefaultLogger
+    private val logger: Logger = DefaultLogger,
+    private val communicationClientModule: CommunicationClientModule = CommunicationClientModule(context)
     ): EthereumEventCallback {
     private var connectRequestSent = false
+
     private val communicationClient: CommunicationClient? by lazy {
-        CommunicationClient(context, null)
+        communicationClientModule.provideCommunicationClient(this)
     }
+
+    private val storage = communicationClientModule.provideKeyStorage()
+    private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private val infuraProvider: InfuraProvider? = sdkOptions?.let {
         if (it.infuraAPIKey.isNotEmpty()) {
@@ -51,13 +59,31 @@ class Ethereum (
 
     init {
         updateSessionDuration()
+        initializeEthereumState()
+    }
+
+    private fun initializeEthereumState() {
+        coroutineScope.launch(Dispatchers.IO) {
+            try {
+                val account = storage.getValue(key = SessionManager.SESSION_ACCOUNT_KEY, file = SessionManager.SESSION_CONFIG_FILE)
+                val chainId = storage.getValue(key = SessionManager.SESSION_CHAIN_ID_KEY, file = SessionManager.SESSION_CONFIG_FILE)
+                _ethereumState.postValue(
+                    currentEthereumState.copy(
+                        selectedAddress = account ?: "",
+                        chainId = chainId ?: ""
+                    )
+                )
+            } catch (e: Exception) {
+                logger.error(e.localizedMessage)
+            }
+        }
     }
 
     fun enableDebug(enable: Boolean) = apply {
         this.enableDebug = enable
     }
 
-    private var sessionDuration: Long = DEFAULT_SESSION_DURATION
+    private var sessionDuration: Long = SessionManager.DEFAULT_SESSION_DURATION
 
     override fun updateAccount(account: String) {
         logger.log("Ethereum:: Selected account changed: $account")
@@ -67,6 +93,9 @@ class Ethereum (
                 sessionId = communicationClient?.sessionId ?: ""
             )
         )
+        if (account.isNotEmpty()) {
+            storage.putValue(account, key = SessionManager.SESSION_ACCOUNT_KEY, SessionManager.SESSION_CONFIG_FILE)
+        }
     }
 
     override fun updateChainId(newChainId: String) {
@@ -77,10 +106,13 @@ class Ethereum (
                 sessionId = communicationClient?.sessionId ?: ""
             )
         )
+        if (newChainId.isNotEmpty()) {
+            storage.putValue(newChainId, key = SessionManager.SESSION_CHAIN_ID_KEY, SessionManager.SESSION_CONFIG_FILE)
+        }
     }
 
     // Set session duration in seconds
-    fun updateSessionDuration(duration: Long = DEFAULT_SESSION_DURATION) = apply {
+    fun updateSessionDuration(duration: Long = SessionManager.DEFAULT_SESSION_DURATION) = apply {
         sessionDuration = duration
         communicationClient?.updateSessionDuration(duration)
     }
@@ -88,6 +120,7 @@ class Ethereum (
     // Clear persisted session. Subsequent MetaMask connection request will need approval
     fun clearSession() {
         disconnect(true)
+        storage.clear(SessionManager.SESSION_CONFIG_FILE)
     }
 
     fun connect(callback: ((Result) -> Unit)? = null) {
@@ -308,7 +341,7 @@ class Ethereum (
     fun sendRequest(request: RpcRequest, callback: ((Result) -> Unit)? = null) {
         logger.log("Ethereum:: Sending request $request")
 
-        if (!connectRequestSent) {
+        if (!connectRequestSent && selectedAddress.isEmpty()) {
             requestAccounts {
                 sendRequest(request, callback)
             }
