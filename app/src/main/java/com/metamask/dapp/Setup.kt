@@ -26,7 +26,6 @@ fun Setup(ethereumViewModel: EthereumFlowViewModel, screenViewModel: ScreenViewM
     LaunchedEffect(ethereumState.selectedAddress) {
         if (ethereumState.selectedAddress.isNotEmpty()) {
             screenViewModel.setScreen(ACTIONS)
-            DefaultLogger.log("Mpendulo:: Eth state changed ${ethereumState.selectedAddress}")
         }
     }
 
