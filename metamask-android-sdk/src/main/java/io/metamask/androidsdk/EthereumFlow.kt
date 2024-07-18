@@ -180,6 +180,10 @@ constructor(
         ethereumRequest(method = EthereumMethod.SWITCH_ETHEREUM_CHAIN, params = listOf(mapOf("chainId" to targetChainId)))
 
     override fun disconnect(clearSession: Boolean) {
-        ethereum.disconnect(clearSession)
+        if (clearSession) {
+            ethereum.clearSession()
+        } else {
+            ethereum.disconnect()
+        }
     }
 }
