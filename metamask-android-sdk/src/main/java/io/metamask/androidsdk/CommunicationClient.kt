@@ -350,7 +350,7 @@ class CommunicationClient(
                 val accountsJson = event.optString("params")
                 val accounts: List<String> = Gson().fromJson(accountsJson, object : TypeToken<List<String>>() {}.type)
                 accounts.getOrNull(0)?.let { account ->
-                    logger.error("CommunicationClient:: Event Updated to account $account")
+                    logger.log("CommunicationClient:: Event Updated to account $account")
                     updateAccount(account)
                 }
             }

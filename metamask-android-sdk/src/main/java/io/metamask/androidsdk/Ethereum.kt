@@ -5,6 +5,10 @@ import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 
 private const val METAMASK_DEEPLINK = "https://metamask.app.link"
@@ -23,6 +27,9 @@ class Ethereum (
     private val communicationClient: CommunicationClient? by lazy {
         communicationClientModule.provideCommunicationClient(this)
     }
+
+    private val storage = communicationClientModule.provideKeyStorage()
+    private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private val infuraProvider: InfuraProvider? = sdkOptions?.let {
         if (it.infuraAPIKey.isNotEmpty()) {
@@ -51,8 +58,32 @@ class Ethereum (
             communicationClient?.enableDebug = value
         }
 
+    companion object {
+        const val ACCOUNT_KEY = "account_key"
+        const val CHAIN_ID_KEY = "chain_id_key"
+        const val SESSION_FILE = "session_file"
+    }
+
     init {
         updateSessionDuration()
+        initializeEthereumState()
+    }
+
+    private fun initializeEthereumState() {
+        coroutineScope.launch(Dispatchers.IO) {
+            try {
+                val account = storage.getValue(key = ACCOUNT_KEY, file = SESSION_FILE)
+                val chainId = storage.getValue(key = CHAIN_ID_KEY, file = SESSION_FILE)
+                _ethereumState.postValue(
+                    currentEthereumState.copy(
+                        selectedAddress = account ?: "",
+                        chainId = chainId ?: ""
+                    )
+                )
+            } catch (e: Exception) {
+                logger.error(e.localizedMessage)
+            }
+        }
     }
 
     fun enableDebug(enable: Boolean) = apply {
@@ -69,6 +100,9 @@ class Ethereum (
                 sessionId = communicationClient?.sessionId ?: ""
             )
         )
+        if (account.isNotEmpty()) {
+            storage.putValue(account, key = ACCOUNT_KEY, SESSION_FILE)
+        }
     }
 
     override fun updateChainId(newChainId: String) {
@@ -79,6 +113,9 @@ class Ethereum (
                 sessionId = communicationClient?.sessionId ?: ""
             )
         )
+        if (newChainId.isNotEmpty()) {
+            storage.putValue(newChainId, key = CHAIN_ID_KEY, SESSION_FILE)
+        }
     }
 
     // Set session duration in seconds
@@ -90,6 +127,7 @@ class Ethereum (
     // Clear persisted session. Subsequent MetaMask connection request will need approval
     fun clearSession() {
         disconnect(true)
+        storage.clear(SESSION_FILE)
     }
 
     fun connect(callback: ((Result) -> Unit)? = null) {
@@ -310,7 +348,7 @@ class Ethereum (
     fun sendRequest(request: RpcRequest, callback: ((Result) -> Unit)? = null) {
         logger.log("Ethereum:: Sending request $request")
 
-        if (!connectRequestSent) {
+        if (!connectRequestSent && selectedAddress.isEmpty()) {
             requestAccounts {
                 sendRequest(request, callback)
             }

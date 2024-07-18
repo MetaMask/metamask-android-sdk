@@ -2,13 +2,6 @@ package io.metamask.androidsdk
 
 import android.content.Context
 
-interface CommunicationClientModuleInterface {
-    fun provideKeyStorage(): SecureStorage
-    fun provideSessionManager(keyStorage: SecureStorage): SessionManager
-    fun provideKeyExchange(): KeyExchange
-    fun provideLogger(): Logger
-    fun provideCommunicationClient(callback: EthereumEventCallback?): CommunicationClient
-}
 class CommunicationClientModule(private val context: Context): CommunicationClientModuleInterface {
     override fun provideKeyStorage(): KeyStorage {
         return KeyStorage(context)
