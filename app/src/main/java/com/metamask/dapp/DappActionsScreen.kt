@@ -36,7 +36,15 @@ fun DappActionsScreen(
             Heading("Dapp Actions")
 
             DappLabel(
+                labelPrefix = "Account:",
                 text = ethereumState.selectedAddress,
+                color = Color.Unspecified,
+                modifier = Modifier.padding(bottom = 36.dp)
+            )
+
+            DappLabel(
+                labelPrefix = "ChainId:",
+                text = ethereumState.chainId,
                 color = Color.Unspecified,
                 modifier = Modifier.padding(bottom = 36.dp)
             )
