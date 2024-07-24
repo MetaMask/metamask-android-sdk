@@ -12,11 +12,20 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun DappLabel(
+    heading: String = "",
     text: String,
     color: Color = Color.White,
     fontSize: TextUnit = 14.sp,
     modifier: Modifier = Modifier.padding(bottom = 12.dp)
 ) {
+    if (heading.isNotEmpty()) {
+        Text(
+            text = heading,
+            color = color,
+            fontSize = 18.sp,
+            modifier = Modifier.padding(bottom = 5.dp)
+        )
+    }
     Text(
         text = text,
         color = color,
