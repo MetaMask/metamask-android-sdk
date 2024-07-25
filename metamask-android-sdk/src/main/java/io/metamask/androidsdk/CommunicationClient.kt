@@ -68,7 +68,7 @@ class CommunicationClient(
         requestJobs.clear()
     }
 
-    private val serviceConnection = object : ServiceConnection {
+    val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             messageService = IMessegeService.Stub.asInterface(service)
             messageService?.registerCallback(messageServiceCallback)
@@ -93,7 +93,7 @@ class CommunicationClient(
         }
     }
 
-    private val messageServiceCallback: IMessegeServiceCallback = object : IMessegeServiceCallback.Stub() {
+    val messageServiceCallback: IMessegeServiceCallback = object : IMessegeServiceCallback.Stub() {
         override fun onMessageReceived(bundle: Bundle) {
             val keyExchange = bundle.getString(KEY_EXCHANGE)
             val message = bundle.getString(MESSAGE)
