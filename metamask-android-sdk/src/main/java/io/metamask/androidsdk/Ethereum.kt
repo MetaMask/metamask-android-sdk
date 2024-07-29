@@ -67,14 +67,14 @@ class Ethereum (
             try {
                 val account = storage.getValue(key = SessionManager.SESSION_ACCOUNT_KEY, file = SessionManager.SESSION_CONFIG_FILE)
                 val chainId = storage.getValue(key = SessionManager.SESSION_CHAIN_ID_KEY, file = SessionManager.SESSION_CONFIG_FILE)
-                _ethereumState.postValue(
-                    currentEthereumState.copy(
-                        selectedAddress = account ?: "",
-                        chainId = chainId ?: ""
-                    )
-                )
+                if (account != null) {
+                    updateAccount(account)
+                }
+                if (chainId != null) {
+                    updateChainId(chainId)
+                }
             } catch (e: Exception) {
-                logger.error(e.localizedMessage)
+                e.localizedMessage?.let { logger.error(it) }
             }
         }
     }
