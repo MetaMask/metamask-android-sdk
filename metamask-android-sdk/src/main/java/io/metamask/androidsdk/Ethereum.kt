@@ -9,6 +9,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
 
 private const val METAMASK_DEEPLINK = "https://metamask.app.link"
@@ -46,9 +48,14 @@ class Ethereum (
 
     // Expose plain variables for developers who prefer not using observing live data via ethereumState
     val chainId: String
-        get() = currentEthereumState.chainId
+        get() = if (currentEthereumState.chainId.isEmpty()) { currentEthereumState.chainId } else { cachedChainId }
     val selectedAddress: String
-        get() = currentEthereumState.selectedAddress
+        get() = if (currentEthereumState.selectedAddress.isEmpty()) { currentEthereumState.selectedAddress } else { cachedAccount }
+
+    private var cachedChainId = ""
+    private var cachedAccount = ""
+
+    private var isCachedSession = true
 
     // Toggle SDK tracking
     var enableDebug: Boolean = true
@@ -58,20 +65,27 @@ class Ethereum (
         }
 
     init {
-        updateSessionDuration()
-        initializeEthereumState()
+        runBlocking { fetchCachedSession() }
     }
 
-    private fun initializeEthereumState() {
-        coroutineScope.launch(Dispatchers.IO) {
+    private suspend fun fetchCachedSession() {
+        withContext(Dispatchers.IO) {
             try {
                 val account = storage.getValue(key = SessionManager.SESSION_ACCOUNT_KEY, file = SessionManager.SESSION_CONFIG_FILE)
                 val chainId = storage.getValue(key = SessionManager.SESSION_CHAIN_ID_KEY, file = SessionManager.SESSION_CONFIG_FILE)
-                if (account != null) {
-                    updateAccount(account)
-                }
-                if (chainId != null) {
-                    updateChainId(chainId)
+                if (account != null && chainId != null) {
+                    cachedChainId = chainId
+                    cachedAccount = account
+
+                    _ethereumState.postValue(
+                        currentEthereumState.copy(
+                            selectedAddress = account,
+                            chainId = chainId,
+                            sessionId = communicationClient?.sessionId ?: ""
+                        )
+                    )
+                } else {
+
                 }
             } catch (e: Exception) {
                 e.localizedMessage?.let { logger.error(it) }
@@ -125,6 +139,8 @@ class Ethereum (
 
     fun connect(callback: ((Result) -> Unit)? = null) {
         connectRequestSent = true
+        isCachedSession = false
+
         val error = dappMetadata.validationError
         if (error != null) {
             callback?.invoke((Result.Error(error)))
@@ -207,11 +223,19 @@ class Ethereum (
     }
 
     fun getChainId(callback: ((Result) -> Unit)?) {
-        ethereumRequest(method = EthereumMethod.ETH_CHAIN_ID, params = null, callback)
+        if(connectRequestSent) {
+            ethereumRequest(method = EthereumMethod.ETH_CHAIN_ID, params = null, callback)
+        } else {
+            callback?.invoke((Result.Success.Item(cachedChainId)))
+        }
     }
 
     fun getEthAccounts(callback: ((Result) -> Unit)?) {
-        ethereumRequest(method = EthereumMethod.ETH_ACCOUNTS, params = null, callback)
+        if (connectRequestSent) {
+            ethereumRequest(method = EthereumMethod.ETH_ACCOUNTS, params = null, callback)
+        } else {
+            callback?.invoke((Result.Success.Item(cachedAccount)))
+        }
     }
 
     fun getEthBalance(address: String, block: String, callback: ((Result) -> Unit)? = null) {
