@@ -55,8 +55,6 @@ class Ethereum (
     private var cachedChainId = ""
     private var cachedAccount = ""
 
-    private var isCachedSession = true
-
     // Toggle SDK tracking
     var enableDebug: Boolean = true
         set(value) {
@@ -139,7 +137,6 @@ class Ethereum (
 
     fun connect(callback: ((Result) -> Unit)? = null) {
         connectRequestSent = true
-        isCachedSession = false
 
         val error = dappMetadata.validationError
         if (error != null) {
