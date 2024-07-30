@@ -4,15 +4,16 @@ plugins {
     id 'org.jetbrains.kotlin.plugin.serialization' version '1.5.0'
     id 'kotlin-kapt'
     id 'maven-publish'
+    id("org.sonarqube") version "4.2.1.3168"
 }
 
 android {
     namespace 'io.metamask.androidsdk'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         minSdk 23
-        targetSdk 33
+        targetSdk 34
 
         ext.versionCode = 1
         ext.versionName = "0.6.1"
@@ -61,6 +62,15 @@ dependencies {
 
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
+}
+
+sonar {
+  properties {
+    property "sonar.projectKey", "metamask-android-sdk"
+    property "sonar.organization", "metamask"
+    property "sonar.sources", "src/main/java"
+    property "sonar.exclusions", "**/generated/**,app/**"
+  }
 }
 
 ext {
