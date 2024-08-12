@@ -19,11 +19,29 @@ class MockCommunicationClientModule(private val context: Context): Communication
         return TestLogger
     }
 
+    override fun provideClientServiceConnection(): ClientServiceConnection {
+        return MockClientServiceConnection()
+    }
+
+    override fun provideClientMessageServiceCallback(): ClientMessageServiceCallback {
+        return MockClientMessageServiceCallback()
+    }
+
     override fun provideCommunicationClient(callback: EthereumEventCallback?): CommunicationClient {
         val keyStorage = provideKeyStorage()
         val sessionManager = provideSessionManager(keyStorage)
         val keyExchange = provideKeyExchange()
         val logger = provideLogger()
-        return CommunicationClient(context, callback, sessionManager, keyExchange, logger)
+        val serviceConnection = provideClientServiceConnection()
+        val clientMessageServiceCallback = provideClientMessageServiceCallback()
+
+        return CommunicationClient(
+            context,
+            callback,
+            sessionManager,
+            keyExchange,
+            serviceConnection,
+            clientMessageServiceCallback,
+            logger)
     }
 }

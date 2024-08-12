@@ -2,8 +2,8 @@ package io.metamask.androidsdk
 
 import android.content.Context
 
-class CommunicationClientModule(private val context: Context): CommunicationClientModuleInterface {
-    override fun provideKeyStorage(): KeyStorage {
+open class CommunicationClientModule(private val context: Context): CommunicationClientModuleInterface {
+    override fun provideKeyStorage(): SecureStorage {
         return KeyStorage(context)
     }
 
@@ -19,11 +19,29 @@ class CommunicationClientModule(private val context: Context): CommunicationClie
         return DefaultLogger
     }
 
+    override fun provideClientServiceConnection(): ClientServiceConnection {
+        return ClientServiceConnection()
+    }
+
+    override fun provideClientMessageServiceCallback(): ClientMessageServiceCallback {
+        return ClientMessageServiceCallback()
+    }
+
     override fun provideCommunicationClient(callback: EthereumEventCallback?): CommunicationClient {
         val keyStorage = provideKeyStorage()
         val sessionManager = provideSessionManager(keyStorage)
         val keyExchange = provideKeyExchange()
+        val serviceConnection = provideClientServiceConnection()
+        val messageServiceCallback = provideClientMessageServiceCallback()
         val logger = provideLogger()
-        return CommunicationClient(context, callback, sessionManager, keyExchange, logger)
+
+        return CommunicationClient(
+            context,
+            callback,
+            sessionManager,
+            keyExchange,
+            serviceConnection,
+            messageServiceCallback,
+            logger)
     }
 }
