@@ -19,6 +19,7 @@ class KeyExchange(private val crypto: Encryption = Crypto(), private val logger:
     private var isKeysExchanged = false
 
     init {
+        reset()
         crypto.onInitialized = {
             reset()
         }

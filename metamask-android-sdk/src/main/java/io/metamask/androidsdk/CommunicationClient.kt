@@ -43,7 +43,9 @@ class CommunicationClient(
 
     private var isMetaMaskReady = false
     private var sentOriginatorInfo = false
-    private var requestedBindService = false
+
+    var requestedBindService = false
+        private set
 
     var enableDebug: Boolean = false
         set(value) {
