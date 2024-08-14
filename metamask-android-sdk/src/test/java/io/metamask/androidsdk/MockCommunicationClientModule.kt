@@ -1,6 +1,7 @@
 package io.metamask.androidsdk
 
 import android.content.Context
+import io.metamask.androidsdk.MockTracker
 
 class MockCommunicationClientModule(private val context: Context): CommunicationClientModuleInterface{
     override fun provideKeyStorage(): SecureStorage {
@@ -19,6 +20,10 @@ class MockCommunicationClientModule(private val context: Context): Communication
         return TestLogger
     }
 
+    override fun provideTracker(): Tracker {
+        return MockTracker()
+    }
+
     override fun provideClientServiceConnection(): ClientServiceConnection {
         return MockClientServiceConnection()
     }
@@ -32,6 +37,7 @@ class MockCommunicationClientModule(private val context: Context): Communication
         val sessionManager = provideSessionManager(keyStorage)
         val keyExchange = provideKeyExchange()
         val logger = provideLogger()
+        val tracker = provideTracker()
         val serviceConnection = provideClientServiceConnection()
         val clientMessageServiceCallback = provideClientMessageServiceCallback()
 
@@ -42,6 +48,7 @@ class MockCommunicationClientModule(private val context: Context): Communication
             keyExchange,
             serviceConnection,
             clientMessageServiceCallback,
+            tracker,
             logger)
     }
 }
