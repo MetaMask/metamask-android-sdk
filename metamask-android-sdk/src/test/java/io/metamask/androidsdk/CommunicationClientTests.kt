@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.os.IBinder
 import io.metamask.androidsdk.KeyExchangeMessageType.*
 import io.metamask.nativesdk.IMessegeService
+import io.metamask.androidsdk.Event.*
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Before
@@ -27,7 +28,7 @@ class CommunicationClientTest {
 
     private lateinit var context: Context
 
-    private lateinit var mockEthereumEventCallback: EthereumEventCallback
+    private lateinit var mockEthereumEventCallback: MockEthereumEventCallback
     private lateinit var logger: Logger
     private lateinit var keyExchange: KeyExchange
     private lateinit var sessionManager: SessionManager
@@ -35,6 +36,7 @@ class CommunicationClientTest {
     private lateinit var mockClientMessageServiceCallback: MockClientMessageServiceCallback
     private lateinit var communicationClient: CommunicationClient
     private lateinit var mockCrypto: MockCrypto
+    private lateinit var mockTracker: MockTracker
 
     @Before
     fun setup() {
@@ -47,6 +49,7 @@ class CommunicationClientTest {
         mockClientMessageServiceCallback = MockClientMessageServiceCallback()
 
         mockCrypto = MockCrypto()
+        mockTracker = MockTracker()
         keyExchange = KeyExchange(mockCrypto, logger)
         sessionManager = SessionManager(MockKeyStorage())
 
@@ -57,6 +60,7 @@ class CommunicationClientTest {
             keyExchange,
             mockClientServiceConnection,
             mockClientMessageServiceCallback,
+            mockTracker,
             logger
         )
     }
@@ -275,4 +279,85 @@ class CommunicationClientTest {
         assertEquals(messageJSON.getString("method"), request.method)
         assertEquals(messageJSON.getString("id"), request.id)
     }
+
+    @Test
+    fun testTrackSDKDisconnectedEvent() {
+        // Prepare the name of the component that got disconnected
+        val componentName = ComponentName("service_package", "service_class")
+
+        // Trigger the onDisconnected event
+        mockClientServiceConnection.onDisconnected?.invoke(componentName)
+
+        // Verify that the event is logged and tracked correctly
+        val trackedEvent = mockTracker.trackedEvent
+        assertEquals(trackedEvent, SDK_DISCONNECTED)
+        assertNotNull(mockTracker.trackedEventParams)
+        assertEquals(SDK_DISCONNECTED.value, mockTracker.trackedEventParams?.get("event"))
+
+        // Ensure that the internal state is updated
+        assertFalse(communicationClient.isServiceConnected)
+    }
+
+    @Test
+    fun testTrackSdkRpcRequestDoneEvent() {
+        val mockBinder = Mockito.mock(IBinder::class.java)
+        val mockMessageService = Mockito.mock(IMessegeService::class.java)
+        `when`(IMessegeService.Stub.asInterface(mockBinder)).thenReturn(mockMessageService)
+
+        // mock service connection
+        mockClientServiceConnection.onServiceConnected(ComponentName(context, "Service"), mockBinder)
+
+        // mock receiver
+        val receiverKeyExchange = KeyExchange(MockCrypto(), logger)
+
+        // exchange public keys
+        val receiverKeyExchangeMessage = KeyExchangeMessage(KEY_HANDSHAKE_ACK.name, receiverKeyExchange.publicKey)
+        val senderKeyExchangeMessage = KeyExchangeMessage(KEY_HANDSHAKE_ACK.name, keyExchange.publicKey)
+
+        keyExchange.nextKeyExchangeMessage(receiverKeyExchangeMessage)
+        receiverKeyExchange.nextKeyExchangeMessage(senderKeyExchangeMessage)
+
+        // mock key exchange complete
+        keyExchange.complete()
+
+        val request = EthereumRequest(method = EthereumMethod.ETH_SIGN_TRANSACTION.value)
+        communicationClient.sendRequest(request) { }
+
+        // mock receiving ready message
+        val readyMessage = JSONObject().apply {
+            put(MessageType.TYPE.value, MessageType.READY.value)
+        }.toString()
+        val encryptedReadyMessage = receiverKeyExchange.encrypt(readyMessage)
+
+        // simulate MetaMask Ready. Sends queued request above
+        communicationClient.handleMessage(encryptedReadyMessage)
+
+        // simulate receiving response for RPC request
+        val responseData = JSONObject().apply {
+            put("id", request.id)
+            put("result", "0x123456789")
+        }
+        communicationClient.handleResponse(request.id, responseData)
+
+        val trackedEvent = mockTracker.trackedEvent
+        assertEquals(trackedEvent, SDK_RPC_REQUEST_DONE)
+        assertNotNull(mockTracker.trackedEventParams)
+        assertEquals(SDK_RPC_REQUEST_DONE.value, mockTracker.trackedEventParams?.get("event"))
+    }
+
+    @Test
+    fun testUpdateAccount() {
+        val testAccount = "0x123"
+        communicationClient.updateAccount(testAccount)
+
+        assertEquals(mockEthereumEventCallback.account, testAccount)
+    }
+
+    @Test
+    fun testUpdateChainId() {
+        val testChainId = "0x1"
+        communicationClient.updateChainId(testChainId)
+
+        assertEquals(mockEthereumEventCallback.chainId, testChainId)
+    }    
 }
