@@ -19,6 +19,7 @@ class CommunicationClient(
     private val keyExchange: KeyExchange,
     private val serviceConnection: ClientServiceConnection,
     private val messageServiceCallback: ClientMessageServiceCallback,
+    private val tracker: Tracker,
     private val logger: Logger = DefaultLogger)  {
 
     var sessionId: String = ""
@@ -26,8 +27,6 @@ class CommunicationClient(
     var dappMetadata: DappMetadata? = null
     var isServiceConnected = false
         private set
-
-    private val tracker: Tracker = Analytics()
 
     private val appContextRef: WeakReference<Context> = WeakReference(context)
     var ethereumEventCallbackRef: WeakReference<EthereumEventCallback> = WeakReference(callback)
@@ -214,7 +213,7 @@ class CommunicationClient(
         submittedRequests = mutableMapOf()
     }
 
-    private fun handleResponse(id: String, data: JSONObject) {
+    fun handleResponse(id: String, data: JSONObject) {
         val submittedRequest = submittedRequests[id]?.request ?: return
 
         val error = data.optString("error")
