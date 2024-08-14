@@ -19,6 +19,10 @@ open class CommunicationClientModule(private val context: Context): Communicatio
         return DefaultLogger
     }
 
+    override fun provideTracker(): Tracker {
+        return Analytics()
+    }
+
     override fun provideClientServiceConnection(): ClientServiceConnection {
         return ClientServiceConnection()
     }
@@ -34,6 +38,7 @@ open class CommunicationClientModule(private val context: Context): Communicatio
         val serviceConnection = provideClientServiceConnection()
         val messageServiceCallback = provideClientMessageServiceCallback()
         val logger = provideLogger()
+        val tracker = provideTracker()
 
         return CommunicationClient(
             context,
@@ -42,6 +47,7 @@ open class CommunicationClientModule(private val context: Context): Communicatio
             keyExchange,
             serviceConnection,
             messageServiceCallback,
+            tracker,
             logger)
     }
 }
