@@ -1,8 +1,16 @@
 package io.metamask.androidsdk
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
 class MockCrypto() : Encryption {
-    private val rsaEncryption = RSAEncryption()
+    private val rsaEncryption: RSAEncryption = RSAEncryption()
     override var onInitialized: () -> Unit = {}
+
+    init {
+        onInitialized()
+    }
 
     override fun generatePrivateKey(): String {
         return rsaEncryption.generatePrivateKey()

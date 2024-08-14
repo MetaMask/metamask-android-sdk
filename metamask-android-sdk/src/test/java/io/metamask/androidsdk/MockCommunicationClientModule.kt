@@ -1,10 +1,11 @@
 package io.metamask.androidsdk
 
 import android.content.Context
+import io.metamask.androidsdk.MockTracker
 
-open class CommunicationClientModule(private val context: Context): CommunicationClientModuleInterface {
+class MockCommunicationClientModule(private val context: Context): CommunicationClientModuleInterface{
     override fun provideKeyStorage(): SecureStorage {
-        return KeyStorage(context)
+        return MockKeyStorage()
     }
 
     override fun provideSessionManager(keyStorage: SecureStorage): SessionManager {
@@ -12,33 +13,33 @@ open class CommunicationClientModule(private val context: Context): Communicatio
     }
 
     override fun provideKeyExchange(): KeyExchange {
-        return KeyExchange()
+        return KeyExchange(MockCrypto())
     }
 
     override fun provideLogger(): Logger {
-        return DefaultLogger
+        return TestLogger
     }
 
     override fun provideTracker(): Tracker {
-        return Analytics()
+        return MockTracker()
     }
 
     override fun provideClientServiceConnection(): ClientServiceConnection {
-        return ClientServiceConnection()
+        return MockClientServiceConnection()
     }
 
     override fun provideClientMessageServiceCallback(): ClientMessageServiceCallback {
-        return ClientMessageServiceCallback()
+        return MockClientMessageServiceCallback()
     }
 
     override fun provideCommunicationClient(callback: EthereumEventCallback?): CommunicationClient {
         val keyStorage = provideKeyStorage()
         val sessionManager = provideSessionManager(keyStorage)
         val keyExchange = provideKeyExchange()
-        val serviceConnection = provideClientServiceConnection()
-        val messageServiceCallback = provideClientMessageServiceCallback()
         val logger = provideLogger()
         val tracker = provideTracker()
+        val serviceConnection = provideClientServiceConnection()
+        val clientMessageServiceCallback = provideClientMessageServiceCallback()
 
         return CommunicationClient(
             context,
@@ -46,7 +47,7 @@ open class CommunicationClientModule(private val context: Context): Communicatio
             sessionManager,
             keyExchange,
             serviceConnection,
-            messageServiceCallback,
+            clientMessageServiceCallback,
             tracker,
             logger)
     }

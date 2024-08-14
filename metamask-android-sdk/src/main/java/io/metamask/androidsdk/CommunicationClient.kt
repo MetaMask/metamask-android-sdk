@@ -3,15 +3,11 @@ package io.metamask.androidsdk
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.IBinder
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import io.metamask.nativesdk.IMessegeService
-import io.metamask.nativesdk.IMessegeServiceCallback
 import kotlinx.serialization.Serializable
 import org.json.JSONObject
 import java.lang.ref.WeakReference
@@ -21,6 +17,9 @@ class CommunicationClient(
     callback: EthereumEventCallback?,
     private val sessionManager: SessionManager,
     private val keyExchange: KeyExchange,
+    private val serviceConnection: ClientServiceConnection,
+    private val messageServiceCallback: ClientMessageServiceCallback,
+    private val tracker: Tracker,
     private val logger: Logger = DefaultLogger)  {
 
     var sessionId: String = ""
@@ -29,23 +28,23 @@ class CommunicationClient(
     var isServiceConnected = false
         private set
 
-    private val tracker: Tracker = Analytics()
-
-    private var messageService: IMessegeService? = null
     private val appContextRef: WeakReference<Context> = WeakReference(context)
     var ethereumEventCallbackRef: WeakReference<EthereumEventCallback> = WeakReference(callback)
 
-    private var requestJobs: MutableList<() -> Unit> = mutableListOf()
-    private var submittedRequests: MutableMap<String, SubmittedRequest>  = mutableMapOf()
-    private var queuedRequests: MutableMap<String, SubmittedRequest>  = mutableMapOf()
+    var requestJobs: MutableList<() -> Unit> = mutableListOf()
+        private set
+
+    var submittedRequests: MutableMap<String, SubmittedRequest>  = mutableMapOf()
+        private set
+
+    var queuedRequests: MutableMap<String, SubmittedRequest>  = mutableMapOf()
+        private set
 
     private var isMetaMaskReady = false
     private var sentOriginatorInfo = false
-    private var requestedBindService = false
 
-    var hasSubmittedRequests: Boolean = submittedRequests.isEmpty()
-    var hasRequestJobs: Boolean = requestJobs.isEmpty()
-    var hasQueuedRequests: Boolean = queuedRequests.isEmpty()
+    var requestedBindService = false
+        private set
 
     var enableDebug: Boolean = false
         set(value) {
@@ -59,6 +58,8 @@ class CommunicationClient(
         sessionManager.onInitialized = {
             sessionId = sessionManager.sessionId
         }
+        setupServiceConnection()
+        setupMessageServiceCallback()
     }
 
     fun resetState() {
@@ -68,33 +69,31 @@ class CommunicationClient(
         requestJobs.clear()
     }
 
-    private val serviceConnection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            messageService = IMessegeService.Stub.asInterface(service)
-            messageService?.registerCallback(messageServiceCallback)
-            isServiceConnected = true
+    private fun setupServiceConnection() {
+        serviceConnection.onConnected = {
             logger.log("CommunicationClient:: Service connected")
+            isServiceConnected = true
+            serviceConnection.registerCallback(messageServiceCallback)
             initiateKeyExchange()
         }
 
-        override fun onServiceDisconnected(name: ComponentName?) {
-            messageService = null
+        serviceConnection.onDisconnected = { name ->
             isServiceConnected = false
             logger.error("CommunicationClient:: Service disconnected $name")
             trackEvent(Event.SDK_DISCONNECTED)
         }
 
-        override fun onBindingDied(name: ComponentName?) {
+        serviceConnection.onBindingDied = { name ->
             logger.error("CommunicationClient:: binding died: $name")
         }
 
-        override fun onNullBinding(name: ComponentName?) {
+        serviceConnection.onNullBinding = { name ->
             logger.error("CommunicationClient:: null binding: $name")
         }
     }
 
-    private val messageServiceCallback: IMessegeServiceCallback = object : IMessegeServiceCallback.Stub() {
-        override fun onMessageReceived(bundle: Bundle) {
+    private fun setupMessageServiceCallback() {
+        messageServiceCallback.onMessage = { bundle ->
             val keyExchange = bundle.getString(KEY_EXCHANGE)
             val message = bundle.getString(MESSAGE)
 
@@ -214,7 +213,7 @@ class CommunicationClient(
         submittedRequests = mutableMapOf()
     }
 
-    private fun handleResponse(id: String, data: JSONObject) {
+    fun handleResponse(id: String, data: JSONObject) {
         val submittedRequest = submittedRequests[id]?.request ?: return
 
         val error = data.optString("error")
@@ -359,7 +358,7 @@ class CommunicationClient(
                 val paramsJson = event.optJSONObject("params")
                 val chainId = paramsJson?.optString("chainId")
 
-                if (chainId != null && chainId.isNotEmpty()) {
+                if (!chainId.isNullOrEmpty()) {
                     updateChainId(chainId)
                 }
             }
@@ -409,10 +408,10 @@ class CommunicationClient(
         }
 
         if (keyExchange.keysExchanged()) {
-            messageService?.sendMessage(bundle)
+            serviceConnection.sendMessage(bundle)
         } else {
             logger.log("CommunicationClient::sendMessage keys not exchanged, queueing job")
-            queueRequestJob { messageService?.sendMessage(bundle) }
+            queueRequestJob { serviceConnection.sendMessage(bundle) }
         }
     }
 
@@ -549,6 +548,6 @@ class CommunicationClient(
         val bundle = Bundle().apply {
             putString(KEY_EXCHANGE, message)
         }
-        messageService?.sendMessage(bundle)
+        serviceConnection.sendMessage(bundle)
     }
 }
