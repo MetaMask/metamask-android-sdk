@@ -10,6 +10,10 @@ class MockKeyStorage : SecureStorage {
     private val keyMap: MutableMap<String, SecretKey> = mutableMapOf()
     private val sharedPreferencesMap: MutableMap<String, MutableMap<String, String>> = mutableMapOf()
 
+    fun isClear(): Boolean {
+        return sharedPreferencesMap[SessionManager.SESSION_CONFIG_FILE].isNullOrEmpty()
+    }
+
     override fun loadSecretKey() {
         val keyStoreAlias = "keyStoreAlias"
         keyMap[keyStoreAlias] = generateMockSecretKey()

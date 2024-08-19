@@ -2,7 +2,7 @@ package io.metamask.androidsdk
 
 import org.json.JSONObject
 
-class InfuraProvider(private val infuraAPIKey: String, private val logger: Logger = DefaultLogger) {
+open class InfuraProvider(private val infuraAPIKey: String, private val logger: Logger = DefaultLogger) {
     val rpcUrls: Map<String, String> = mapOf(
         // ###### Ethereum ######
         // Mainnet
@@ -70,7 +70,7 @@ class InfuraProvider(private val infuraAPIKey: String, private val logger: Logge
         return !rpcUrls[chainId].isNullOrEmpty()
     }
 
-    fun makeRequest(request: RpcRequest, chainId: String, dappMetadata: DappMetadata, callback: ((Result) -> Unit)?) {
+    open fun makeRequest(request: RpcRequest, chainId: String, dappMetadata: DappMetadata, callback: ((Result) -> Unit)?) {
         val httpClient = HttpClient()
 
         val devicePlatformInfo = DeviceInfo.platformDescription

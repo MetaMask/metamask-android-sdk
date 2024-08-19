@@ -7,7 +7,7 @@ import java.lang.reflect.Type
 
 class SessionManager(
     private val store: SecureStorage,
-    private var sessionDuration: Long = 30 * 24 * 3600, // 30 days default
+    var sessionDuration: Long = 30 * 24 * 3600, // 30 days default
     private val logger: Logger = DefaultLogger
 ) {
     var sessionId: String = ""

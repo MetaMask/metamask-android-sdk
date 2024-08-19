@@ -21,17 +21,7 @@ class Ethereum (
     private val dappMetadata: DappMetadata,
     sdkOptions: SDKOptions? = null,
     private val logger: Logger = DefaultLogger,
-    private val communicationClientModule: CommunicationClientModule = CommunicationClientModule(context)
-    ): EthereumEventCallback {
-    private var connectRequestSent = false
-
-    private val communicationClient: CommunicationClient? by lazy {
-        communicationClientModule.provideCommunicationClient(this)
-    }
-
-    private val storage = communicationClientModule.provideKeyStorage()
-    private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-
+    private val communicationClientModule: CommunicationClientModuleInterface = CommunicationClientModule(context),
     private val infuraProvider: InfuraProvider? = sdkOptions?.let {
         if (it.infuraAPIKey.isNotEmpty()) {
             InfuraProvider(it.infuraAPIKey)
@@ -39,6 +29,14 @@ class Ethereum (
             null
         }
     }
+    ): EthereumEventCallback {
+    private var connectRequestSent = false
+
+    val communicationClient: CommunicationClient? by lazy {
+        communicationClientModule.provideCommunicationClient(this)
+    }
+
+    private val storage = communicationClientModule.provideKeyStorage()
 
     // Ethereum LiveData
     private val _ethereumState = MutableLiveData(EthereumState("", "", ""))
@@ -46,14 +44,11 @@ class Ethereum (
         get() = checkNotNull(ethereumState.value)
     val ethereumState: LiveData<EthereumState> get() = _ethereumState
 
-    // Expose plain variables for developers who prefer not using observing live data via ethereumState
-    val chainId: String
-        get() = if (currentEthereumState.chainId.isEmpty()) { currentEthereumState.chainId } else { cachedChainId }
-    val selectedAddress: String
-        get() = if (currentEthereumState.selectedAddress.isEmpty()) { currentEthereumState.selectedAddress } else { cachedAccount }
-
     private var cachedChainId = ""
     private var cachedAccount = ""
+
+    var selectedAddress: String = ethereumState.value?.selectedAddress.takeIf { !it.isNullOrEmpty() } ?: cachedAccount
+    var chainId: String = ethereumState.value?.selectedAddress.takeIf { !it.isNullOrEmpty() } ?: cachedChainId
 
     // Toggle SDK tracking
     var enableDebug: Boolean = true
@@ -106,6 +101,7 @@ class Ethereum (
             )
         )
         if (account.isNotEmpty()) {
+            selectedAddress = account
             storage.putValue(account, key = SessionManager.SESSION_ACCOUNT_KEY, SessionManager.SESSION_CONFIG_FILE)
         }
     }
@@ -119,6 +115,7 @@ class Ethereum (
             )
         )
         if (newChainId.isNotEmpty()) {
+            chainId = newChainId
             storage.putValue(newChainId, key = SessionManager.SESSION_CHAIN_ID_KEY, SessionManager.SESSION_CONFIG_FILE)
         }
     }
