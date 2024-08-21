@@ -3,52 +3,31 @@ package io.metamask.androidsdk
 import android.content.Context
 import io.metamask.androidsdk.MockTracker
 
-class MockCommunicationClientModule(private val context: Context): CommunicationClientModuleInterface{
-    override fun provideKeyStorage(): SecureStorage {
-        return MockKeyStorage()
-    }
+class MockCommunicationClientModule(
+    private val context: Context,
+    private val keyStorage: SecureStorage,
+    private val sessionManager: SessionManager,
+    private val keyExchange: KeyExchange,
+    private val serviceConnection: ClientServiceConnection,
+    private val clientMessageServiceCallback: ClientMessageServiceCallback,
+    private val tracker: Tracker,
+    private val logger: Logger): CommunicationClientModuleInterface {
 
-    override fun provideSessionManager(keyStorage: SecureStorage): SessionManager {
-        return SessionManager(keyStorage)
-    }
+    override fun provideKeyStorage(): SecureStorage = keyStorage
+    override fun provideSessionManager(keyStorage: SecureStorage): SessionManager = sessionManager
+    override fun provideKeyExchange(): KeyExchange = keyExchange
+    override fun provideLogger(): Logger = logger
+    override fun provideTracker(): Tracker = tracker
 
-    override fun provideKeyExchange(): KeyExchange {
-        return KeyExchange(MockCrypto())
-    }
-
-    override fun provideLogger(): Logger {
-        return TestLogger
-    }
-
-    override fun provideTracker(): Tracker {
-        return MockTracker()
-    }
-
-    override fun provideClientServiceConnection(): ClientServiceConnection {
-        return MockClientServiceConnection()
-    }
-
-    override fun provideClientMessageServiceCallback(): ClientMessageServiceCallback {
-        return MockClientMessageServiceCallback()
-    }
-
-    override fun provideCommunicationClient(callback: EthereumEventCallback?): CommunicationClient {
-        val keyStorage = provideKeyStorage()
-        val sessionManager = provideSessionManager(keyStorage)
-        val keyExchange = provideKeyExchange()
-        val logger = provideLogger()
-        val tracker = provideTracker()
-        val serviceConnection = provideClientServiceConnection()
-        val clientMessageServiceCallback = provideClientMessageServiceCallback()
-
-        return CommunicationClient(
-            context,
-            callback,
-            sessionManager,
-            keyExchange,
-            serviceConnection,
-            clientMessageServiceCallback,
-            tracker,
-            logger)
-    }
+    override fun provideClientServiceConnection(): ClientServiceConnection = serviceConnection
+    override fun provideClientMessageServiceCallback(): ClientMessageServiceCallback = clientMessageServiceCallback
+    override fun provideCommunicationClient(callback: EthereumEventCallback?): CommunicationClient = CommunicationClient(
+        context,
+        callback,
+        sessionManager,
+        keyExchange,
+        serviceConnection,
+        clientMessageServiceCallback,
+        tracker,
+        logger)
 }
