@@ -37,7 +37,7 @@ fun SendTransactionScreen(
     sendTransaction: suspend (value: String, from: String, to: String) -> Result,
     connectWithSendTransaction: suspend (value: String, from: String, to: String) -> Result
 ) {
-    var amount by remember { mutableStateOf("0x01") }
+    var value by remember { mutableStateOf("0x8ac7230489e80000") }
     var from by remember { mutableStateOf(ethereumState.selectedAddress) }
     var to by remember { mutableStateOf("0x0000000000000000000000000000000000000000") }
     var sendResult by remember { mutableStateOf("") }
@@ -67,7 +67,7 @@ fun SendTransactionScreen(
                     .height(48.dp)
             ) {
                 Text(
-                    text = "Amount:",
+                    text = "Value:",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Start,
@@ -87,10 +87,10 @@ fun SendTransactionScreen(
                         }
                 ) {
                     BasicTextField(
-                        value = amount,
+                        value = value,
                         textStyle = TextStyle(color = if (isSystemInDarkTheme()) { Color.White} else { Color.Black}),
                         onValueChange = {
-                            amount = it
+                            value = it
                         },
                         modifier = Modifier
                             .padding(start = 8.dp, top = 16.dp, end = 8.dp, bottom = 0.dp)
@@ -184,7 +184,7 @@ fun SendTransactionScreen(
             if (isConnectWith) {
                 DappButton(buttonText = stringResource(R.string.connect_with_send)) {
                     coroutineScope.launch {
-                        when (val result = connectWithSendTransaction(amount, from, to)) {
+                        when (val result = connectWithSendTransaction(value, from, to)) {
                             is Result.Success.Item -> {
                                 errorMessage = null
                                 sendResult = result.value
@@ -199,7 +199,7 @@ fun SendTransactionScreen(
             } else {
                 DappButton(buttonText = stringResource(R.string.send)) {
                     coroutineScope.launch {
-                        when (val result = sendTransaction(amount, from, to)) {
+                        when (val result = sendTransaction(value, from, to)) {
                             is Result.Success.Item -> {
                                 errorMessage = null
                                 sendResult = result.value
