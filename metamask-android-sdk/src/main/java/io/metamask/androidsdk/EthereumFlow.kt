@@ -143,7 +143,7 @@ constructor(
         ethereumRequest(method = EthereumMethod.ETH_SEND_TRANSACTION, params = listOf(mapOf(
             "from" to from,
             "to" to to,
-            "amount" to amount
+            "value" to amount
         )))
 
     override suspend fun sendRawTransaction(signedTransaction: String) : Result =

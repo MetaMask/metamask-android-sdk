@@ -330,7 +330,7 @@ class CommunicationClient(
         val errorCode = errorMap["code"] as? Double ?: -1
         val code = errorCode.toInt()
         val message = errorMap["message"] as? String ?: ErrorType.message(code)
-        logger.error("CommunicationClient:: Got error $message")
+        logger.error("CommunicationClient:: Got error $error")
         completeRequest(requestId, Result.Error(RequestError(code, message)))
         return true
     }
@@ -476,6 +476,7 @@ class CommunicationClient(
         val requestInfoJson = Gson().toJson(requestInfo)
 
         logger.log("CommunicationClient:: Sending originator info: $requestInfoJson")
+        logger.log("CommunicationClient:: SessionId $sessionId")
 
         val payload = keyExchange.encrypt(requestInfoJson)
 

@@ -34,8 +34,8 @@ fun SendTransactionScreen(
     navController: NavController,
     ethereumState: EthereumState,
     isConnectWith: Boolean = false,
-    sendTransaction: suspend (amount: String, from: String, to: String) -> Result,
-    connectWithSendTransaction: suspend (amount: String, from: String, to: String) -> Result
+    sendTransaction: suspend (value: String, from: String, to: String) -> Result,
+    connectWithSendTransaction: suspend (value: String, from: String, to: String) -> Result
 ) {
     var amount by remember { mutableStateOf("0x01") }
     var from by remember { mutableStateOf(ethereumState.selectedAddress) }
