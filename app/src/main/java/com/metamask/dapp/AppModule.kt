@@ -15,7 +15,7 @@ import io.metamask.androidsdk.*
 internal object AppModule {
     @Provides
     fun provideDappMetadata(): DappMetadata {
-        return DappMetadata("Droiddapp", "https://droiddapp.io", iconUrl = "https://cdn.sstatic.net/Sites/stackoverflow/Img/apple-touch-icon.png")
+        return DappMetadata("Droiddapp", "https://www.droiddapp.io", iconUrl = "https://cdn.sstatic.net/Sites/stackoverflow/Img/apple-touch-icon.png")
     }
 
     @Provides

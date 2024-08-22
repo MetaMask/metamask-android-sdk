@@ -70,7 +70,7 @@ code to your project file:
 @AndroidEntryPoint
 class SomeModel(context: Context) {
     
-    val dappMetadata = DappMetadata("Droid Dapp", "https://droiddapp.com")
+    val dappMetadata = DappMetadata("Droid Dapp", "https://www.droiddapp.io")
     val infuraAPIKey = "1234567890" // We use Infura API for read-only RPCs for a seamless user experience 
     
     // A) Using callbacks
@@ -255,10 +255,10 @@ The following example sends a transaction by calling
 // Create parameters
 val from = ethereum.selectedAddress
 val to = "0x0000000000000000000000000000000000000000"
-val amount = "0x01"
+val value = "0x8ac7230489e80000"
 
 // Make a transaction request
-when (val result = ethereum.sendTransaction(from, to, amount)) {
+when (val result = ethereum.sendTransaction(from, to, value)) {
     is Result.Success.Item -> {
         Logger.log("Ethereum transaction result: ${result.value}")
         balance = result.value
@@ -302,7 +302,7 @@ We have provided a convenience method that enables you to connect and make any r
 val params: Map<String, Any> = mutableMapOf(
     "from" to "", // this will be populated with selected address once connected
     "to" to "0x0000000000000000000000000000000000000000",
-    "amount" to "0x01"
+    "value" to "0x8ac7230489e80000"
 )
 
 val transactionRequest = EthereumRequest(

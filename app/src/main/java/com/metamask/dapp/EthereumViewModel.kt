@@ -50,7 +50,7 @@ class EthereumViewModel @Inject constructor(
         }
     }
 
-    fun connectWithSendTransaction(amount: String,
+    fun connectWithSendTransaction(value: String,
                         from: String,
                         to: String,
                         onSuccess: (Any?) -> Unit,
@@ -58,7 +58,7 @@ class EthereumViewModel @Inject constructor(
         val params: MutableMap<String, Any> = mutableMapOf(
             "from" to from,
             "to" to to,
-            "amount" to amount
+            "value" to value
         )
 
         val transactionRequest = EthereumRequest(
@@ -231,7 +231,7 @@ class EthereumViewModel @Inject constructor(
     }
 
     fun sendTransaction(
-        amount: String,
+        value: String,
         from: String,
         to: String,
         onSuccess: (String) -> Unit,
@@ -240,7 +240,7 @@ class EthereumViewModel @Inject constructor(
         val params: MutableMap<String, Any> = mutableMapOf(
             "from" to from,
             "to" to to,
-            "amount" to amount
+            "value" to value
         )
 
         val transactionRequest = EthereumRequest(

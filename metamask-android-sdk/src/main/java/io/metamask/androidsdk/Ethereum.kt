@@ -256,11 +256,11 @@ class Ethereum (
         ethereumRequest(method = EthereumMethod.ETH_SIGN_TYPED_DATA_V4, params = listOf(address, typedData), callback)
     }
 
-    fun sendTransaction(from: String, to: String, amount: String, callback: ((Result) -> Unit)?) {
+    fun sendTransaction(from: String, to: String, value: String, callback: ((Result) -> Unit)?) {
         ethereumRequest(method = EthereumMethod.ETH_SEND_TRANSACTION, params = listOf(mutableMapOf(
             "from" to from,
             "to" to to,
-            "amount" to amount
+            "value" to value
         )), callback)
     }
 

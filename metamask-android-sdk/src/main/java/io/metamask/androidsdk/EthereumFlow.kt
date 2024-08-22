@@ -29,7 +29,7 @@ interface EthereumFlowWrapper {
     suspend fun getBlockTransactionCountByHash(blockHash: String) : Result
     suspend fun getBlockTransactionCountByNumber(blockNumber: String) : Result
     suspend fun getTransactionCount(address: String, tagOrblockNumber: String) : Result
-    suspend fun sendTransaction(from: String, to: String, amount: String) : Result
+    suspend fun sendTransaction(from: String, to: String, value: String) : Result
 
     suspend fun switchEthereumChain(targetChainId: String) : Result
     suspend fun addEthereumChain(chainId: String,
@@ -139,11 +139,11 @@ constructor(
     override suspend fun ethSignTypedDataV4(typedData: Any, address: String) : Result =
         ethereumRequest(method = EthereumMethod.ETH_SIGN_TYPED_DATA_V4, params = listOf(address, typedData))
 
-    override suspend fun sendTransaction(from: String, to: String, amount: String) : Result =
+    override suspend fun sendTransaction(from: String, to: String, value: String) : Result =
         ethereumRequest(method = EthereumMethod.ETH_SEND_TRANSACTION, params = listOf(mapOf(
             "from" to from,
             "to" to to,
-            "amount" to amount
+            "value" to value
         )))
 
     override suspend fun sendRawTransaction(signedTransaction: String) : Result =
