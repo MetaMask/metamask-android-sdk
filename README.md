@@ -70,7 +70,7 @@ code to your project file:
 @AndroidEntryPoint
 class SomeModel(context: Context) {
     
-    val dappMetadata = DappMetadata("Droid Dapp", "")
+    val dappMetadata = DappMetadata("Droid Dapp", "https://www.droiddapp.io")
     val infuraAPIKey = "1234567890" // We use Infura API for read-only RPCs for a seamless user experience 
     
     // A) Using callbacks
