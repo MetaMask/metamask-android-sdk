@@ -9,38 +9,35 @@ interface EthereumFlowWrapper {
     val chainId: String
     val selectedAddress: String
     val ethereumState: Flow<EthereumState>
-    suspend fun connect() : Result
+    suspend fun connect() : Result<String>
     fun disconnect(clearSession: Boolean)
-    suspend fun connectSign(message: String) : Result
-    suspend fun connectWith(request: EthereumRequest) : Result
-    suspend fun sendRequest(request: EthereumRequest) : Result
-    suspend fun sendRequestBatch(requests: List<EthereumRequest>) : Result
+    suspend fun connectSign(message: String) : Result<String>
+    suspend fun connectWith(request: EthereumRequest) : Result<String>
+    suspend fun sendRequest(request: EthereumRequest) : Result<Any?>
+    suspend fun sendRequestBatch(requests: List<EthereumRequest>) : Result<List<String>>
 
-    suspend fun getEthBalance(address: String, block: String) : Result
-    suspend fun getEthAccounts() : Result
+    suspend fun getEthBalance(address: String, block: String) : Result<String>
+    suspend fun getEthAccounts() : Result<List<String>>
 
-    suspend fun getChainId() : Result
-    suspend fun getEthGasPrice() : Result
-    suspend fun getEthBlockNumber() : Result
-    suspend fun getEthEstimateGas() : Result
-    suspend fun getWeb3ClientVersion() : Result
+    suspend fun getChainId() : Result<String>
+    suspend fun getEthGasPrice() : Result<String>
+    suspend fun getEthEstimateGas() : Result<String>
+    suspend fun getWeb3ClientVersion() : Result<String>
 
-    suspend fun sendRawTransaction(signedTransaction: String) : Result
-    suspend fun getBlockTransactionCountByHash(blockHash: String) : Result
-    suspend fun getBlockTransactionCountByNumber(blockNumber: String) : Result
-    suspend fun getTransactionCount(address: String, tagOrblockNumber: String) : Result
-    suspend fun sendTransaction(from: String, to: String, value: String) : Result
+    suspend fun sendRawTransaction(signedTransaction: String) : Result<String>
+    suspend fun getTransactionCount(address: String, tagOrblockNumber: String) : Result<String>
+    suspend fun sendTransaction(from: String, to: String, value: String) : Result<String>
 
-    suspend fun switchEthereumChain(targetChainId: String) : Result
+    suspend fun switchEthereumChain(targetChainId: String) : Result<Any?>
     suspend fun addEthereumChain(chainId: String,
                                  chainName: String,
                                  rpcUrls: List<String>,
                                  iconUrls: List<String>?,
                                  blockExplorerUrls: List<String>?,
-                                 nativeCurrency: NativeCurrency) : Result
+                                 nativeCurrency: NativeCurrency) : Result<Any?>
 
-    suspend fun personalSign(message: String, address: String) : Result
-    suspend fun ethSignTypedDataV4(typedData: Any, address: String) : Result
+    suspend fun personalSign(message: String, address: String) : Result<String>
+    suspend fun ethSignTypedDataV4(typedData: Any, address: String) : Result<String>
 }
 
 class EthereumFlow
@@ -57,7 +54,7 @@ constructor(
     override val ethereumState = ethereum.ethereumState.asFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun connect() : Result = suspendCancellableCoroutine { continuation ->
+    override suspend fun connect() : Result<String> = suspendCancellableCoroutine { continuation ->
         ethereum.connect { result ->
             continuation.resume(result) {
                 continuation.invokeOnCancellation {}
@@ -66,7 +63,7 @@ constructor(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun connectWith(request: EthereumRequest) : Result = suspendCancellableCoroutine { continuation ->
+    override suspend fun connectWith(request: EthereumRequest) : Result<String> = suspendCancellableCoroutine { continuation ->
         ethereum.connectWith(request) { result ->
             continuation.resume(result) {
                 continuation.invokeOnCancellation {}
@@ -75,7 +72,7 @@ constructor(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun connectSign(message: String) : Result = suspendCancellableCoroutine { continuation ->
+    override suspend fun connectSign(message: String) : Result<String> = suspendCancellableCoroutine { continuation ->
         ethereum.connectSign(message) { result ->
             continuation.resume(result) {
                 continuation.invokeOnCancellation {}
@@ -84,7 +81,7 @@ constructor(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun sendRequestBatch(requests: List<EthereumRequest>) : Result = suspendCancellableCoroutine { continuation ->
+    override suspend fun sendRequestBatch(requests: List<EthereumRequest>) : Result<List<String>> = suspendCancellableCoroutine { continuation ->
         ethereum.sendRequestBatch(requests) { result ->
             continuation.resume(result) {
                 continuation.invokeOnCancellation {}
@@ -93,7 +90,7 @@ constructor(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun sendRequest(request: EthereumRequest) : Result = suspendCancellableCoroutine { continuation ->
+    override suspend fun sendRequest(request: EthereumRequest) : Result<Any?> = suspendCancellableCoroutine { continuation ->
         ethereum.sendRequest(request) { result ->
             continuation.resume(result) {
                 continuation.invokeOnCancellation {}
@@ -102,62 +99,62 @@ constructor(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private suspend fun ethereumRequest(method: EthereumMethod, params: Any?): Result = suspendCancellableCoroutine { continuation ->
+    private suspend fun <T> ethereumRequest(method: EthereumMethod, params: Any?): Result<T> = suspendCancellableCoroutine { continuation ->
         val request = EthereumRequest(method = method.value, params = params)
 
         ethereum.sendRequest(request) { result ->
-            continuation.resume(result) {
+            val convertedResult = when (result) {
+                is Result.Success<*> -> {
+                    try {
+                        @Suppress("UNCHECKED_CAST")
+                        Result.Success(result.value as T)
+                    } catch (e: ClassCastException) {
+                        Result.Error(RequestError(-1, "Type conversion error: ${e.message}"))
+                    }
+                }
+                is Result.Error -> result
+            }
+            continuation.resume(convertedResult) {
                 continuation.invokeOnCancellation {}
             }
         }
     }
 
-    override suspend fun getChainId() : Result =
+    override suspend fun getChainId() : Result<String> =
         ethereumRequest(method = EthereumMethod.ETH_CHAIN_ID, params = null)
 
-    override suspend fun getEthAccounts() : Result =
+    override suspend fun getEthAccounts() : Result<List<String>> =
         ethereumRequest(method = EthereumMethod.ETH_ACCOUNTS, params = null)
 
-    override suspend fun getEthGasPrice() : Result =
+    override suspend fun getEthGasPrice() : Result<String> =
         ethereumRequest(method = EthereumMethod.ETH_GAS_PRICE, params = listOf<String>())
 
-    override suspend fun getEthBalance(address: String, block: String) : Result =
+    override suspend fun getEthBalance(address: String, block: String) : Result<String> =
         ethereumRequest(method = EthereumMethod.ETH_GET_BALANCE, params = listOf(address, block))
 
-    override suspend fun getEthBlockNumber() : Result =
-        ethereumRequest(method = EthereumMethod.ETH_BLOCK_NUMBER, params = null)
-
-    override suspend fun getEthEstimateGas() : Result =
+    override suspend fun getEthEstimateGas() : Result<String> =
         ethereumRequest(method = EthereumMethod.ETH_ESTIMATE_GAS, params = null)
 
-    override suspend fun getWeb3ClientVersion() : Result =
+    override suspend fun getWeb3ClientVersion() : Result<String> =
         ethereumRequest(method = EthereumMethod.WEB3_CLIENT_VERSION, params = listOf<String>())
 
-    override suspend fun personalSign(message: String, address: String) : Result =
+    override suspend fun personalSign(message: String, address: String) : Result<String> =
         ethereumRequest(method = EthereumMethod.PERSONAL_SIGN, params = listOf(address, message))
 
-    override suspend fun ethSignTypedDataV4(typedData: Any, address: String) : Result =
+    override suspend fun ethSignTypedDataV4(typedData: Any, address: String) : Result<String> =
         ethereumRequest(method = EthereumMethod.ETH_SIGN_TYPED_DATA_V4, params = listOf(address, typedData))
 
-    override suspend fun sendTransaction(from: String, to: String, value: String) : Result =
+    override suspend fun sendTransaction(from: String, to: String, value: String) : Result<String> =
         ethereumRequest(method = EthereumMethod.ETH_SEND_TRANSACTION, params = listOf(mapOf(
             "from" to from,
             "to" to to,
             "value" to value
         )))
 
-    override suspend fun sendRawTransaction(signedTransaction: String) : Result =
+    override suspend fun sendRawTransaction(signedTransaction: String) : Result<String> =
         ethereumRequest(method = EthereumMethod.ETH_SEND_RAW_TRANSACTION, params = listOf(signedTransaction))
 
-
-    override suspend fun getBlockTransactionCountByNumber(blockNumber: String): Result =
-        ethereumRequest(method = EthereumMethod.ETH_GET_BLOCK_TRANSACTION_COUNT_BY_NUMBER, params = listOf(blockNumber))
-
-    override suspend fun getBlockTransactionCountByHash(blockHash: String): Result =
-        ethereumRequest(method = EthereumMethod.ETH_GET_BLOCK_TRANSACTION_COUNT_BY_HASH, params = listOf(blockHash))
-
-
-    override suspend fun getTransactionCount(address: String, tagOrblockNumber: String): Result =
+    override suspend fun getTransactionCount(address: String, tagOrblockNumber: String): Result<String> =
         ethereumRequest(method = EthereumMethod.ETH_GET_TRANSACTION_COUNT, params = listOf(address, tagOrblockNumber))
 
 
@@ -166,7 +163,7 @@ constructor(
                                           rpcUrls: List<String>,
                                           iconUrls: List<String>?,
                                           blockExplorerUrls: List<String>?,
-                                          nativeCurrency: NativeCurrency) : Result =
+                                          nativeCurrency: NativeCurrency) : Result<Any?> =
         ethereumRequest(method = EthereumMethod.ADD_ETHEREUM_CHAIN, params = listOf(mapOf(
             "chainId" to chainId,
             "chainName" to chainName,
@@ -176,7 +173,7 @@ constructor(
             "nativeCurrency" to nativeCurrency
         )))
 
-    override suspend fun switchEthereumChain(targetChainId: String): Result =
+    override suspend fun switchEthereumChain(targetChainId: String): Result<Any?> =
         ethereumRequest(method = EthereumMethod.SWITCH_ETHEREUM_CHAIN, params = listOf(mapOf("chainId" to targetChainId)))
 
     override fun disconnect(clearSession: Boolean) {

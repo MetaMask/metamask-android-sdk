@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
 import kotlinx.serialization.Serializable
 import org.json.JSONObject
@@ -233,22 +234,52 @@ class CommunicationClient(
         if (!isResultMethod) {
             val resultJson = data.optString("result")
 
-            if (resultJson.isNotEmpty()) {
-                val result: Map<String, Any?>? = Gson().fromJson(resultJson, object : TypeToken<Map<String, Any?>>() {}.type)
-                if (result != null) {
-                    submittedRequests[id]?.callback?.invoke(Result.Success.ItemMap(result))
-                    completeRequest(id, Result.Success.ItemMap(result))
+            if (!resultJson.isNullOrEmpty()) {
+                logger.log("CommClient::Dev got result $resultJson")
+
+                // Check if resultJson is a plain string
+                if (isPlainString(resultJson)) {
+                    logger.log("CommClient::Dev it is plain string $resultJson")
+                    submittedRequests[id]?.callback?.invoke(Result.Success(resultJson))
+                    completeRequest(id, Result.Success(resultJson))
                 } else {
-                    val accounts: List<String>? = Gson().fromJson(resultJson, object : TypeToken<List<String>>() {}.type)
-                    val account = accounts?.firstOrNull()
-                    if (account != null) {
-                        submittedRequests[id]?.callback?.invoke(Result.Success.Item(account))
-                        completeRequest(id, Result.Success.Item(account))
+                    logger.log("CommClient::Dev try Map $resultJson")
+                    val resultMap: Map<String, Any?>? = try {
+                        Gson().fromJson(resultJson, object : TypeToken<Map<String, Any?>>() {}.type)
+                    } catch (e: JsonSyntaxException) {
+                        null
+                    }
+
+                    logger.log("CommClient::Dev check if Map is null $resultJson")
+                    if (resultMap != null) {
+                        logger.log("CommClient::Dev Map is not null $resultMap")
+                        submittedRequests[id]?.callback?.invoke(Result.Success(resultMap))
+                        completeRequest(id, Result.Success(resultMap))
+                    } else {
+                        logger.log("CommClient::Dev try List $resultJson")
+                        val accounts: List<String>? = try {
+                            Gson().fromJson(resultJson, object : TypeToken<List<String>>() {}.type)
+                        } catch (e: JsonSyntaxException) {
+                            null
+                        }
+                        val account = accounts?.firstOrNull()
+                        if (account != null) {
+                            logger.log("CommClient::Dev account not null $account")
+                            submittedRequests[id]?.callback?.invoke(Result.Success(account))
+                            completeRequest(id, Result.Success(account))
+                        } else {
+                            logger.log("CommClient::Dev try fallback $resultJson")
+                            submittedRequests[id]?.callback?.invoke(Result.Success(resultJson))
+                            logger.log("CommClient::Dev invoked fallback  callback $resultJson")
+                            completeRequest(id, Result.Success(resultJson))
+                            logger.log("CommClient::Dev completed fallback $resultJson")
+                        }
                     }
                 }
             } else {
+                // Handle empty result case by parsing the entire data object as a Map
                 val result: Map<String, Serializable> = Gson().fromJson(data.toString(), object : TypeToken<Map<String, Serializable>>() {}.type)
-                completeRequest(id, Result.Success.ItemMap(result))
+                completeRequest(id, Result.Success(result))
             }
             return
         }
@@ -264,14 +295,14 @@ class CommunicationClient(
 
                 if (account != null) {
                     updateAccount(account)
-                    completeRequest(id, Result.Success.Item(account))
+                    completeRequest(id, Result.Success(account))
                 }
 
                 val chainId = resultJson.optString("chainId")
 
                 if (chainId.isNotEmpty()) {
                     updateChainId(chainId)
-                    completeRequest(id, Result.Success.Item(chainId))
+                    completeRequest(id, Result.Success(chainId))
                 }
             }
             EthereumMethod.ETH_REQUEST_ACCOUNTS.value -> {
@@ -283,14 +314,14 @@ class CommunicationClient(
                     updateAccount(selectedAccount)
                 }
 
-                completeRequest(id, Result.Success.Items(accounts))
+                completeRequest(id, Result.Success(accounts))
             }
             EthereumMethod.ETH_CHAIN_ID.value -> {
                 val chainId = data.optString("result")
 
                 if (chainId.isNotEmpty()) {
                     updateChainId(chainId)
-                    completeRequest(id, Result.Success.Item(chainId))
+                    completeRequest(id, Result.Success(chainId))
                 }
             }
             EthereumMethod.ETH_SIGN_TYPED_DATA_V3.value,
@@ -299,7 +330,7 @@ class CommunicationClient(
                 val result = data.optString("result")
 
                 if (result.isNotEmpty()) {
-                    completeRequest(id, Result.Success.Item(result))
+                    completeRequest(id, Result.Success(result))
                 } else {
                     logger.error("CommunicationClient:: Unexpected response: $data")
                 }
@@ -308,12 +339,21 @@ class CommunicationClient(
                 val result = data.optString("result")
                 val results: List<String?> = Gson().fromJson(result, object : TypeToken<List<String?>>() {}.type)
                 val sanitisedResults = results.filterNotNull()
-                completeRequest(id, Result.Success.Items(sanitisedResults))
+                completeRequest(id, Result.Success(sanitisedResults))
             }
             else -> {
                 val result = data.optString("result")
-                completeRequest(id, Result.Success.Item(result))
+                completeRequest(id, Result.Success(result))
             }
+        }
+    }
+
+    private fun isPlainString(input: String): Boolean {
+        return try {
+            Gson().fromJson(input, Any::class.java)
+            false
+        } catch (e: JsonSyntaxException) {
+            true
         }
     }
 
@@ -335,7 +375,7 @@ class CommunicationClient(
         return true
     }
 
-    fun completeRequest(id: String, result: Result) {
+    fun completeRequest(id: String, result: Result<Any>) {
         if (queuedRequests[id] != null) {
             queuedRequests[id]?.callback?.invoke(result)
             queuedRequests.remove(id)
@@ -415,7 +455,7 @@ class CommunicationClient(
         }
     }
 
-    fun sendRequest(request: RpcRequest, callback: (Result) -> Unit) {
+    fun sendRequest(request: RpcRequest, callback: (Result<Any?>) -> Unit) {
         if (request.method == EthereumMethod.GET_METAMASK_PROVIDER_STATE.value) {
             clearPendingRequests()
         }
@@ -445,7 +485,7 @@ class CommunicationClient(
         }
     }
 
-    fun processRequest(request: RpcRequest, callback: (Result) -> Unit) {
+    fun processRequest(request: RpcRequest, callback: (Result<Any?>) -> Unit) {
         logger.log("CommunicationClient:: sending request $request")
         if (queuedRequests[request.id] != null) {
             queuedRequests.remove(request.id)

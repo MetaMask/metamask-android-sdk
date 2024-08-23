@@ -20,9 +20,9 @@ import kotlinx.coroutines.launch
 fun ReadOnlyCallsScreen(
     navController: NavController,
     ethereumState: EthereumState,
-    getBalance: suspend (address: String) -> Result,
-    getGasPrice: suspend ()  -> Result,
-    getWeb3ClientVersion: suspend ()  -> Result
+    getBalance: suspend (address: String) -> Result<String>,
+    getGasPrice: suspend ()  -> Result<String>,
+    getWeb3ClientVersion: suspend ()  -> Result<String>
 ) {
     var selectedAddress by remember { mutableStateOf("") }
     var balance by remember { mutableStateOf("") }
@@ -54,7 +54,7 @@ fun ReadOnlyCallsScreen(
             DappButton(buttonText = stringResource(R.string.get_balance)) {
                 coroutineScope.launch {
                     when(val result = getBalance(selectedAddress)) {
-                        is Result.Success.Item -> {
+                        is Result.Success -> {
                             balance = result.value
                             getBalanceErrorMessage = null
                         }
@@ -78,7 +78,7 @@ fun ReadOnlyCallsScreen(
             DappButton(buttonText = stringResource(R.string.get_gas_price)) {
                 coroutineScope.launch {
                     when(val result = getGasPrice()) {
-                        is Result.Success.Item -> {
+                        is Result.Success -> {
                             gasPrice = result.value
                             getGasPriceErrorMessage = null
                         }
@@ -102,7 +102,7 @@ fun ReadOnlyCallsScreen(
             DappButton(buttonText = stringResource(R.string.get_web3_client_version)) {
                 coroutineScope.launch {
                     when(val result = getWeb3ClientVersion()) {
-                        is Result.Success.Item -> {
+                        is Result.Success -> {
                             web3ClientVersion = result.value
                             getWeb3VersionErrorMessage = null
                         }
@@ -131,8 +131,8 @@ fun PreviewReadOnlyCallsScreen() {
     ReadOnlyCallsScreen(
         rememberNavController(),
         ethereumState = EthereumState("", "", ""),
-        getBalance = {_ -> Result.Success.Item("")},
-        getGasPrice = { -> Result.Success.Item("")},
-        getWeb3ClientVersion = { -> Result.Success.Item("")}
+        getBalance = {_ -> Result.Success("")},
+        getGasPrice = { -> Result.Success("")},
+        getWeb3ClientVersion = { -> Result.Success("")}
     )
 }

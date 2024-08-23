@@ -24,8 +24,8 @@ fun SignMessageScreen(
     navController: NavController,
     ethereumState: EthereumState,
     isConnectSign: Boolean = false,
-    connectSignMessage: suspend (message: String) -> Result,
-    signMessage: suspend (message: String, address: String) -> Result
+    connectSignMessage: suspend (message: String) -> Result<String>,
+    signMessage: suspend (message: String, address: String) -> Result<String>
 ) {
     fun signMessage(chainId: String): String {
         return if(isConnectSign) {
@@ -84,7 +84,7 @@ fun SignMessageScreen(
                 DappButton(buttonText = stringResource(R.string.sign)) {
                     coroutineScope.launch {
                         when (val result = signMessage(message, ethereumState.selectedAddress)) {
-                            is Result.Success.Item -> {
+                            is Result.Success -> {
                                 errorMessage = null
                                 signResult = result.value
                             }
@@ -117,7 +117,7 @@ fun PreviewSignMessage() {
         rememberNavController(),
         ethereumState = EthereumState("", "", ""),
         false,
-        signMessage = { _, _ -> Result.Success.Item("") },
-        connectSignMessage = { _ -> Result.Success.Item("") }
+        signMessage = { _, _ -> Result.Success("") },
+        connectSignMessage = { _ -> Result.Success("") }
     )
 }

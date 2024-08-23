@@ -82,7 +82,7 @@ class SomeModel(context: Context) {
             is Result.Error -> {
                 Logger.log("Ethereum connection error: ${result.error.message}")
             }
-            is Result.Success.Item -> {
+            is Result.Success -> {
                 Logger.log("Ethereum connection result: ${result.value}")
             }
         }
@@ -98,7 +98,7 @@ class SomeModel(context: Context) {
             is Result.Error -> {
                 Logger.log("Ethereum connection error: ${result.error.message}")
             }
-            is Result.Success.Item -> {
+            is Result.Success -> {
                 Logger.log("Ethereum connection result: ${result.value}")
             }
         }    
@@ -187,7 +187,7 @@ val balance = ethereum.getEthBalance(ethereum.selectedAddress, "latest")
 
 // Make request
 when (balance) {
-    is Result.Success.Item -> {
+    is Result.Success -> {
         Logger.log("Ethereum account balance: ${result.value}")
         balance = result.value
     }
@@ -212,7 +212,7 @@ when (result) {
     is Result.Error -> {
         Logger.log("Ethereum sign error: ${result.error.message}")
     }
-    is Result.Success.Item -> {
+    is Result.Success -> {
         Logger.log("Ethereum sign result: ${result.value}")
     }
 }
@@ -240,7 +240,7 @@ when (val result = ethereum.sendRequestBatch(requestBatch)) {
     is Result.Error -> {
         Logger.log("Ethereum batch sign error: ${result.error.message}")
     }
-    is Result.Success.Items -> {
+    is Result.Success -> {
         Logger.log("Ethereum batch sign result: ${result.value}")
     }
 }
@@ -259,7 +259,7 @@ val value = "0x8ac7230489e80000"
 
 // Make a transaction request
 when (val result = ethereum.sendTransaction(from, to, value)) {
-    is Result.Success.Item -> {
+    is Result.Success -> {
         Logger.log("Ethereum transaction result: ${result.value}")
         balance = result.value
     }
@@ -314,7 +314,7 @@ ethereum.connectWith(transactionRequest) { result ->
         is Result.Error -> {
             Logger.log("Ethereum connectWith error: ${result.error.message}")
         }
-        is Result.Success.Item -> {
+        is Result.Success -> {
             Logger.log("Ethereum connectWith result: ${result.value}")
         }
     }
@@ -333,7 +333,7 @@ when (val result = ethereum.connectSign(message)) {
     is Result.Error -> {
         Logger.log("Ethereum connectSign error: ${result.error.message}")
     }
-    is Result.Success.Item -> {
+    is Result.Success -> {
         Logger.log("Ethereum connectSign result: ${result.value}")
     }
 }

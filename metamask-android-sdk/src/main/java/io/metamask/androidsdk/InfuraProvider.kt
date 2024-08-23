@@ -70,7 +70,7 @@ open class InfuraProvider(private val infuraAPIKey: String, private val logger: 
         return !rpcUrls[chainId].isNullOrEmpty()
     }
 
-    open fun makeRequest(request: RpcRequest, chainId: String, dappMetadata: DappMetadata, callback: ((Result) -> Unit)?) {
+    open fun makeRequest(request: RpcRequest, chainId: String, dappMetadata: DappMetadata, callback: ((Result<String>) -> Unit)?) {
         val httpClient = HttpClient()
 
         val devicePlatformInfo = DeviceInfo.platformDescription
@@ -90,13 +90,13 @@ open class InfuraProvider(private val infuraAPIKey: String, private val logger: 
                 logger.log("InfuraProvider:: response $response")
                 try {
                     val result = JSONObject(response).optString("result") ?: ""
-                    callback?.invoke(Result.Success.Item(result))
+                    callback?.invoke(Result.Success(result))
                 } catch (e: Exception) {
                     logger.error("InfuraProvider:: error: ${e.message}")
                     callback?.invoke(Result.Error(RequestError(-1, response)))
                 }
             } else if (ioException != null) {
-                callback?.invoke(Result.Success.Item(ioException.message ?: ""))
+                callback?.invoke(Result.Success(ioException.message ?: ""))
             }
         }
     }

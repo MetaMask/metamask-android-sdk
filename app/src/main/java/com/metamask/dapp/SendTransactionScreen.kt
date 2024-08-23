@@ -34,8 +34,8 @@ fun SendTransactionScreen(
     navController: NavController,
     ethereumState: EthereumState,
     isConnectWith: Boolean = false,
-    sendTransaction: suspend (value: String, from: String, to: String) -> Result,
-    connectWithSendTransaction: suspend (value: String, from: String, to: String) -> Result
+    sendTransaction: suspend (value: String, from: String, to: String) -> Result<String>,
+    connectWithSendTransaction: suspend (value: String, from: String, to: String) -> Result<String>
 ) {
     var value by remember { mutableStateOf("0x8ac7230489e80000") }
     var from by remember { mutableStateOf(ethereumState.selectedAddress) }
@@ -185,7 +185,7 @@ fun SendTransactionScreen(
                 DappButton(buttonText = stringResource(R.string.connect_with_send)) {
                     coroutineScope.launch {
                         when (val result = connectWithSendTransaction(value, from, to)) {
-                            is Result.Success.Item -> {
+                            is Result.Success<String> -> {
                                 errorMessage = null
                                 sendResult = result.value
                             }
@@ -200,7 +200,7 @@ fun SendTransactionScreen(
                 DappButton(buttonText = stringResource(R.string.send)) {
                     coroutineScope.launch {
                         when (val result = sendTransaction(value, from, to)) {
-                            is Result.Success.Item -> {
+                            is Result.Success -> {
                                 errorMessage = null
                                 sendResult = result.value
                             }
@@ -230,7 +230,7 @@ fun PreviewSendTransaction() {
     SendTransactionScreen(
         rememberNavController(),
         ethereumState = EthereumState("", "", ""),
-        sendTransaction = { _, _, _ -> Result.Success.Item("") },
-        connectWithSendTransaction = { _, _, _ -> Result.Success.Item("") },
+        sendTransaction = { _, _, _ -> Result.Success("") },
+        connectWithSendTransaction = { _, _, _ -> Result.Success("") },
     )
 }

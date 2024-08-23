@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
 fun BatchSignMessageScreen(
     navController: NavController,
     ethereumState: EthereumState,
-    batchSign: suspend (messages: List<String>, address: String) -> Result
+    batchSign: suspend (messages: List<String>, address: String) -> Result<List<String>>
 ) {
     var signResult by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -57,7 +57,7 @@ fun BatchSignMessageScreen(
             DappButton(buttonText = stringResource(R.string.batch_sign)) {
                 coroutineScope.launch {
                     when (val result = batchSign(batchSignMessages, ethereumState.selectedAddress)) {
-                        is Result.Success.Items -> {
+                        is Result.Success -> {
                             errorMessage = null
                             signResult = result.value.joinToString("\n=================================\n")
                         }
@@ -88,6 +88,6 @@ fun PreviewBatchSignMessage() {
     BatchSignMessageScreen(
         rememberNavController(),
         ethereumState = EthereumState("", "", ""),
-        batchSign = { _, _ -> Result.Success.Items(listOf()) }
+        batchSign = { _, _ -> Result.Success(listOf()) }
     )
 }

@@ -25,7 +25,7 @@ class EthereumViewModel @Inject constructor(
                     logger.log("Ethereum connection error: ${result.error.message}")
                     onError(result.error.message)
                 }
-                is Result.Success.Items -> {
+                is Result.Success -> {
                     logger.log("Ethereum connection result: ${result.value.first()}")
                     onSuccess()
                 }
@@ -41,7 +41,7 @@ class EthereumViewModel @Inject constructor(
                     logger.log("Connectwith error: ${result.error.message}")
                     onError(result.error.message)
                 }
-                is Result.Success.Item -> {
+                is Result.Success -> {
                     logger.log("Connectwith result: $result")
                     onSuccess(result.value)
                 }
@@ -76,7 +76,7 @@ class EthereumViewModel @Inject constructor(
                     logger.log("Connect & sign error: ${result.error.message}")
                     onError(result.error.message)
                 }
-                is Result.Success.Item -> {
+                is Result.Success -> {
                     logger.log("Connect & sign  result: $result")
                     onSuccess(result.value)
                 }
@@ -114,7 +114,7 @@ class EthereumViewModel @Inject constructor(
                     logger.log("Ethereum batch sign error: ${result.error.message}")
                     onError(result.error.message)
                 }
-                is Result.Success.Items -> {
+                is Result.Success -> {
                     logger.log("Ethereum batch sign result: $result")
                     onSuccess(result.value)
                 }
@@ -129,20 +129,13 @@ class EthereumViewModel @Inject constructor(
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
-        val params: List<String> = listOf(address, message)
-
-        val signRequest = EthereumRequest(
-            method = EthereumMethod.ETH_SIGN_TYPED_DATA_V4.value,
-            params = params
-        )
-
-        ethereum.sendRequest(signRequest) { result ->
+        ethereum.ethSignTypedDataV4(message, address) { result ->
             when (result) {
                 is Result.Error -> {
                     logger.log("Ethereum sign error: ${result.error.message}")
                     onError(result.error.message)
                 }
-                is Result.Success.Item -> {
+                is Result.Success -> {
                     logger.log("Ethereum sign result: $result")
                     onSuccess(result.value)
                 }
@@ -156,20 +149,13 @@ class EthereumViewModel @Inject constructor(
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
-        val params: List<String> = listOf(address, "latest")
-
-        val getBalanceRequest = EthereumRequest(
-            method = EthereumMethod.ETH_GET_BALANCE.value,
-            params = params
-        )
-
-        ethereum.sendRequest(getBalanceRequest) { result ->
+        ethereum.getEthBalance(address, "latest") { result ->
             when (result) {
                 is Result.Error -> {
                     logger.log("Ethereum get balance error: ${result.error.message}")
                     onError(result.error.message)
                 }
-                is Result.Success.Item -> {
+                is Result.Success -> {
                     logger.log("Ethereum get balance result: $result")
                     onSuccess(result.value)
                 }
@@ -182,20 +168,13 @@ class EthereumViewModel @Inject constructor(
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
-        val params: List<String> = listOf()
-
-        val gasPriceRequest = EthereumRequest(
-            method = EthereumMethod.ETH_GAS_PRICE.value,
-            params = params
-        )
-
-        ethereum.sendRequest(gasPriceRequest) { result ->
+        ethereum.gasPrice { result ->
             when (result) {
                 is Result.Error -> {
                     logger.log("Ethereum gas price error: ${result.error.message}")
                     onError(result.error.message)
                 }
-                is Result.Success.Item -> {
+                is Result.Success -> {
                     logger.log("Ethereum gas price result: $result")
                     onSuccess(result.value)
                 }
@@ -208,20 +187,13 @@ class EthereumViewModel @Inject constructor(
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
-        val params: List<String> = listOf()
-
-        val web3ClientVersionRequest = EthereumRequest(
-            method = EthereumMethod.WEB3_CLIENT_VERSION.value,
-            params = params
-        )
-
-        ethereum.sendRequest(web3ClientVersionRequest) { result ->
+        ethereum.getWeb3ClientVersion { result ->
             when (result) {
                 is Result.Error -> {
                     logger.log("Ethereum web3 client version error: ${result.error.message}")
                     onError(result.error.message)
                 }
-                is Result.Success.Item -> {
+                is Result.Success -> {
                     logger.log("Ethereum web3 client version result: $result")
                     onSuccess(result.value)
                 }
@@ -237,24 +209,13 @@ class EthereumViewModel @Inject constructor(
         onSuccess: (String) -> Unit,
         onError: (message: String) -> Unit
     ) {
-        val params: MutableMap<String, Any> = mutableMapOf(
-            "from" to from,
-            "to" to to,
-            "value" to value
-        )
-
-        val transactionRequest = EthereumRequest(
-            method = EthereumMethod.ETH_SEND_TRANSACTION.value,
-            params = listOf(params)
-        )
-
-        ethereum.sendRequest(transactionRequest) { result ->
+        ethereum.sendTransaction(from, to, value) { result ->
             when (result) {
                 is Result.Error -> {
                     logger.log("Ethereum transaction error: ${result.error.message}")
                     onError(result.error.message)
                 }
-                is Result.Success.Item -> {
+                is Result.Success -> {
                     logger.log("Ethereum transaction result: $result")
                     onSuccess(result.value)
                 }
@@ -268,13 +229,7 @@ class EthereumViewModel @Inject constructor(
         onSuccess: (message: String) -> Unit,
         onError: (message: String, action: (() -> Unit)?) -> Unit
     ) {
-        val switchChainParams: Map<String, String> = mapOf("chainId" to chainId)
-        val switchChainRequest = EthereumRequest(
-            method = EthereumMethod.SWITCH_ETHEREUM_CHAIN.value,
-            params = listOf(switchChainParams)
-        )
-
-        ethereum.sendRequest(switchChainRequest) { result ->
+        ethereum.switchEthereumChain(chainId) { result ->
             when (result) {
                 is Result.Error -> {
                     if (result.error.code == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.error.code == ErrorType.SERVER_ERROR.code) {
@@ -310,17 +265,7 @@ class EthereumViewModel @Inject constructor(
     ) {
         logger.log("Adding chainId: $chainId")
 
-        val addChainParams: Map<String, Any> = mapOf(
-            "chainId" to chainId,
-            "chainName" to Network.chainNameFor(chainId),
-            "rpcUrls" to Network.rpcUrls(Network.fromChainId(chainId))
-        )
-        val addChainRequest = EthereumRequest(
-            method = EthereumMethod.ADD_ETHEREUM_CHAIN.value,
-            params = listOf(addChainParams)
-        )
-
-        ethereum.sendRequest(addChainRequest) { result ->
+        ethereum.addEthereumChain(chainId, Network.rpcUrls(Network.fromChainId(chainId))) { result ->
             when (result) {
                 is Result.Error -> {
                     onError("Add chain error: ${result.error.message}")

@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
+import kotlin.collections.listOf
 
 private const val METAMASK_DEEPLINK = "https://metamask.app.link"
 private const val METAMASK_BIND_DEEPLINK = "$METAMASK_DEEPLINK/bind"
@@ -132,7 +133,7 @@ class Ethereum (
         storage.clear(SessionManager.SESSION_CONFIG_FILE)
     }
 
-    fun connect(callback: ((Result) -> Unit)? = null) {
+    fun connect(callback: ((Result<String>) -> Unit)? = null) {
         connectRequestSent = true
 
         val error = dappMetadata.validationError
@@ -162,7 +163,7 @@ class Ethereum (
     ===================
      */
 
-    fun connectWith(request: EthereumRequest, callback: ((Result) -> Unit)? = null) {
+    fun connectWith(request: EthereumRequest, callback: ((Result<String>) -> Unit)? = null) {
         logger.log("Ethereum:: connecting with ${request.method}...")
         connectRequestSent = true
         communicationClient?.dappMetadata = dappMetadata
@@ -188,7 +189,7 @@ class Ethereum (
         sendConnectRequest(sendRequest, callback)
     }
 
-    fun connectSign(message: String, callback: ((Result) -> Unit)? = null) {
+    fun connectSign(message: String, callback: ((Result<String>) -> Unit)? = null) {
         connectRequestSent = true
         communicationClient?.dappMetadata = dappMetadata
         communicationClient?.ethereumEventCallbackRef = WeakReference(this)
@@ -209,54 +210,68 @@ class Ethereum (
         sendConnectRequest(connectSignRequest, callback)
     }
 
-    private fun ethereumRequest(method: EthereumMethod, params: Any?, callback: ((Result) -> Unit)?) {
-        sendRequest(
-            EthereumRequest(method = method.value, params = params),
-            callback
-        )
+    private fun <T> ethereumRequest(method: EthereumMethod, params: Any?, callback: ((Result<T>) -> Unit)?) {
+        sendRequest(EthereumRequest(method = method.value, params = params)) { result -> 
+            val convertedResult = when (result) {
+                is Result.Success<*> -> {
+                    try {
+                        @Suppress("UNCHECKED_CAST")
+                        Result.Success(result.value as T)
+                    } catch (e: ClassCastException) {
+                        Result.Error(RequestError(-1, "Type conversion error: ${e.message}"))
+                    }
+                }
+                is Result.Error -> result
+            }
+            callback?.invoke(convertedResult)
+        }
     }
 
-    fun getChainId(callback: ((Result) -> Unit)?) {
+    fun getChainId(callback: ((Result<String>) -> Unit)?) {
         if(connectRequestSent) {
             ethereumRequest(method = EthereumMethod.ETH_CHAIN_ID, params = null, callback)
         } else {
-            callback?.invoke((Result.Success.Item(cachedChainId)))
+            callback?.invoke((Result.Success(cachedChainId)))
         }
     }
 
-    fun getEthAccounts(callback: ((Result) -> Unit)?) {
+    fun getEthAccounts(callback: ((Result<String>) -> Unit)?) {
         if (connectRequestSent) {
             ethereumRequest(method = EthereumMethod.ETH_ACCOUNTS, params = null, callback)
         } else {
-            callback?.invoke((Result.Success.Item(cachedAccount)))
+            callback?.invoke((Result.Success(cachedAccount)))
         }
     }
 
-    fun getEthBalance(address: String, block: String, callback: ((Result) -> Unit)? = null) {
+    fun getEthBalance(address: String, block: String, callback: ((Result<String>) -> Unit)? = null) {
         ethereumRequest(EthereumMethod.ETH_GET_BALANCE, params = listOf(address, block), callback)
     }
 
-    fun getEthBlockNumber(callback: ((Result) -> Unit)?) {
+    fun getEthBlockNumber(callback: ((Result<String>) -> Unit)?) {
         ethereumRequest(method = EthereumMethod.ETH_BLOCK_NUMBER, params = null, callback)
     }
 
-    fun getEthEstimateGas(callback: ((Result) -> Unit)?) {
+    fun getEthEstimateGas(callback: ((Result<String>) -> Unit)?) {
         ethereumRequest(method = EthereumMethod.ETH_ESTIMATE_GAS, params = null, callback)
     }
 
-    fun getWeb3ClientVersion(callback: ((Result) -> Unit)?) {
+    fun gasPrice(callback: ((Result<String>) -> Unit)?) {
+        ethereumRequest(method = EthereumMethod.ETH_GAS_PRICE, params = null, callback)
+    }
+
+    fun getWeb3ClientVersion(callback: ((Result<String>) -> Unit)?) {
         ethereumRequest(method = EthereumMethod.WEB3_CLIENT_VERSION, params = listOf<String>(), callback)
     }
 
-    fun personalSign(message: String, address: String, callback: ((Result) -> Unit)?) {
+    fun personalSign(message: String, address: String, callback: ((Result<String>) -> Unit)?) {
         ethereumRequest(method = EthereumMethod.PERSONAL_SIGN, params = listOf(address, message), callback)
     }
 
-    fun ethSignTypedDataV4(typedData: Any, address: String, callback: ((Result) -> Unit)?) {
+    fun ethSignTypedDataV4(typedData: Any, address: String, callback: ((Result<String>) -> Unit)?) {
         ethereumRequest(method = EthereumMethod.ETH_SIGN_TYPED_DATA_V4, params = listOf(address, typedData), callback)
     }
 
-    fun sendTransaction(from: String, to: String, value: String, callback: ((Result) -> Unit)?) {
+    fun sendTransaction(from: String, to: String, value: String, callback: ((Result<String>) -> Unit)?) {
         ethereumRequest(method = EthereumMethod.ETH_SEND_TRANSACTION, params = listOf(mutableMapOf(
             "from" to from,
             "to" to to,
@@ -264,23 +279,15 @@ class Ethereum (
         )), callback)
     }
 
-    fun sendRawTransaction(signedTransaction: String, callback: ((Result) -> Unit)?) {
+    fun sendRawTransaction(signedTransaction: String, callback: ((Result<String>) -> Unit)?) {
         ethereumRequest(method = EthereumMethod.ETH_SEND_RAW_TRANSACTION, params = listOf(signedTransaction), callback)
     }
 
-    fun getBlockTransactionCountByNumber(blockNumber: String, callback: ((Result) -> Unit)?) {
-        ethereumRequest(method = EthereumMethod.ETH_GET_BLOCK_TRANSACTION_COUNT_BY_NUMBER, params = listOf(blockNumber), callback)
-    }
-
-    fun getBlockTransactionCountByHash(blockHash: String, callback: ((Result) -> Unit)?) {
-        ethereumRequest(method = EthereumMethod.ETH_GET_BLOCK_TRANSACTION_COUNT_BY_HASH, params = listOf(blockHash), callback)
-    }
-
-    fun getTransactionCount(address: String, tagOrblockNumber: String, callback: ((Result) -> Unit)?) {
+    fun getTransactionCount(address: String, tagOrblockNumber: String, callback: ((Result<String>) -> Unit)?) {
         ethereumRequest(method = EthereumMethod.ETH_GET_TRANSACTION_COUNT, params = listOf(address, tagOrblockNumber), callback)
     }
 
-    fun addEthereumChain(targetChainId: String, rpcUrls: List<String>?, callback: ((Result) -> Unit)?) {
+    fun addEthereumChain(targetChainId: String, rpcUrls: List<String>?, callback: ((Result<Any?>) -> Unit)?) {
         ethereumRequest(method = EthereumMethod.ADD_ETHEREUM_CHAIN, params = listOf(mapOf(
             "chainId" to targetChainId,
             "chainName" to Network.chainNameFor(targetChainId),
@@ -288,11 +295,11 @@ class Ethereum (
         )), callback)
     }
 
-    fun switchEthereumChain(targetChainId: String, callback: ((Result) -> Unit)?) {
+    fun switchEthereumChain(targetChainId: String, callback: ((Result<Any?>) -> Unit)?) {
         ethereumRequest(method = EthereumMethod.SWITCH_ETHEREUM_CHAIN, params = listOf(mapOf("chainId" to targetChainId)), callback)
     }
 
-    private fun sendConnectRequest(request: EthereumRequest, callback: ((Result) -> Unit)?) {
+    private fun sendConnectRequest(request: EthereumRequest, callback: ((Result<String>) -> Unit)?) {
         sendRequest(request) { result ->
             when (result) {
                 is Result.Error -> {
@@ -304,12 +311,14 @@ class Ethereum (
                     ) {
                         communicationClient?.trackEvent(Event.SDK_CONNECTION_REJECTED)
                     }
+
+                    callback?.invoke(result)
                 }
                 is Result.Success -> {
                     communicationClient?.trackEvent(Event.SDK_CONNECTION_AUTHORIZED)
+                    callback?.invoke(Result.Success(result.value as String))
                 }
             }
-            callback?.invoke(result)
         }
     }
 
@@ -345,7 +354,7 @@ class Ethereum (
         sendRequest(chainIdRequest)
     }
 
-    private fun requestAccounts(callback: ((Result) -> Unit)? = null) {
+    private fun requestAccounts(callback: ((Result<String>) -> Unit)? = null) {
         logger.log("Ethereum:: Requesting ethereum accounts")
         connectRequestSent = true
 
@@ -356,7 +365,7 @@ class Ethereum (
         requestChainId()
     }
 
-    fun sendRequest(request: RpcRequest, callback: ((Result) -> Unit)? = null) {
+    fun sendRequest(request: RpcRequest, callback: ((Result<Any?>) -> Unit)? = null) {
         logger.log("Ethereum:: Sending request $request")
 
         if (!connectRequestSent && selectedAddress.isEmpty()) {
@@ -384,9 +393,29 @@ class Ethereum (
         }
     }
 
-    fun sendRequestBatch(requests: List<EthereumRequest>, callback: ((Result) -> Unit)? = null) {
+    fun sendRequestBatch(requests: List<EthereumRequest>, callback: ((Result<List<String>>) -> Unit)? = null) {
         val batchRequest = AnyRequest(method = EthereumMethod.METAMASK_BATCH.value, params = requests)
-        sendRequest(batchRequest, callback)
+        sendRequest(batchRequest) { result ->
+            when (result) {
+                is Result.Success -> {
+                    val value = result.value
+                    if (value is List<*>) {
+                        val stringList = value.filterIsInstance<String>()
+                        if (stringList.size == value.size) {
+                            callback?.invoke(Result.Success(stringList))
+                        } else {
+                            // Handle case where not all elements were strings
+                            callback?.invoke(Result.Error(RequestError(-1, "Expected List<String>, but got a list with mixed types.")))
+                        }
+                    } else {
+                        callback?.invoke(Result.Error(RequestError(-1, "Expected List<String>, but got ${value?.javaClass?.name}")))
+                    }
+                }
+                is Result.Error -> {
+                    callback?.invoke(result)
+                }
+            }
+        }
     }
 
     private fun openMetaMask() {
