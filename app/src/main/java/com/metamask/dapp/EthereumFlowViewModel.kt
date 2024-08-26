@@ -90,7 +90,7 @@ class EthereumFlowViewModel @Inject constructor(
         from: String,
         to: String,
     ) : Result {
-        return ethereum.sendTransaction(from = from, to = to, amount = amount)
+        return ethereum.sendTransaction(from = from, to = to, value = amount)
     }
 
     suspend fun switchChain(chainId: String) : SwitchChainResult {

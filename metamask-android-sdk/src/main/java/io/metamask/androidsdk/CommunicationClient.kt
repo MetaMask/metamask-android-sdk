@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
 import kotlinx.serialization.Serializable
 import org.json.JSONObject
@@ -234,16 +235,28 @@ class CommunicationClient(
             val resultJson = data.optString("result")
 
             if (resultJson.isNotEmpty()) {
-                val result: Map<String, Any?>? = Gson().fromJson(resultJson, object : TypeToken<Map<String, Any?>>() {}.type)
-                if (result != null) {
-                    submittedRequests[id]?.callback?.invoke(Result.Success.ItemMap(result))
-                    completeRequest(id, Result.Success.ItemMap(result))
+                val resultMap: Map<String, Any?>? = try {
+                    Gson().fromJson(resultJson, object : TypeToken<Map<String, Any?>>() {}.type)
+                } catch (e: JsonSyntaxException) {
+                    null
+                }
+
+                if (resultMap != null) {
+                    submittedRequests[id]?.callback?.invoke(Result.Success.ItemMap(resultMap))
+                    completeRequest(id, Result.Success.ItemMap(resultMap))
                 } else {
-                    val accounts: List<String>? = Gson().fromJson(resultJson, object : TypeToken<List<String>>() {}.type)
+                    val accounts: List<String>? = try {
+                        Gson().fromJson(resultJson, object : TypeToken<List<String>>() {}.type)
+                    } catch (e: JsonSyntaxException) {
+                        null
+                    }
                     val account = accounts?.firstOrNull()
                     if (account != null) {
                         submittedRequests[id]?.callback?.invoke(Result.Success.Item(account))
                         completeRequest(id, Result.Success.Item(account))
+                    } else {
+                        submittedRequests[id]?.callback?.invoke(Result.Success.Item(resultJson))
+                        completeRequest(id, Result.Success.Item(resultJson))
                     }
                 }
             } else {
