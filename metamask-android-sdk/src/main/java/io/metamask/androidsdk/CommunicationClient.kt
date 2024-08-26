@@ -234,46 +234,30 @@ class CommunicationClient(
         if (!isResultMethod) {
             val resultJson = data.optString("result")
 
-            if (!resultJson.isNullOrEmpty()) {
-                logger.log("CommClient::Dev got result $resultJson")
 
-                // Check if resultJson is a plain string
-                if (isPlainString(resultJson)) {
-                    logger.log("CommClient::Dev it is plain string $resultJson")
-                    submittedRequests[id]?.callback?.invoke(Result.Success(resultJson))
-                    completeRequest(id, Result.Success(resultJson))
+            if (resultJson.isNotEmpty()) {
+                val accounts: List<String>? = try {
+                    Gson().fromJson(resultJson, object : TypeToken<List<String>>() {}.type)
+                } catch (e: JsonSyntaxException) {
+                    null
+                }
+                val account = accounts?.firstOrNull()
+                if (account != null) {
+                    submittedRequests[id]?.callback?.invoke(Result.Success(account))
+                    completeRequest(id, Result.Success(account))
                 } else {
-                    logger.log("CommClient::Dev try Map $resultJson")
                     val resultMap: Map<String, Any?>? = try {
                         Gson().fromJson(resultJson, object : TypeToken<Map<String, Any?>>() {}.type)
                     } catch (e: JsonSyntaxException) {
                         null
                     }
 
-                    logger.log("CommClient::Dev check if Map is null $resultJson")
                     if (resultMap != null) {
-                        logger.log("CommClient::Dev Map is not null $resultMap")
                         submittedRequests[id]?.callback?.invoke(Result.Success(resultMap))
                         completeRequest(id, Result.Success(resultMap))
                     } else {
-                        logger.log("CommClient::Dev try List $resultJson")
-                        val accounts: List<String>? = try {
-                            Gson().fromJson(resultJson, object : TypeToken<List<String>>() {}.type)
-                        } catch (e: JsonSyntaxException) {
-                            null
-                        }
-                        val account = accounts?.firstOrNull()
-                        if (account != null) {
-                            logger.log("CommClient::Dev account not null $account")
-                            submittedRequests[id]?.callback?.invoke(Result.Success(account))
-                            completeRequest(id, Result.Success(account))
-                        } else {
-                            logger.log("CommClient::Dev try fallback $resultJson")
-                            submittedRequests[id]?.callback?.invoke(Result.Success(resultJson))
-                            logger.log("CommClient::Dev invoked fallback  callback $resultJson")
-                            completeRequest(id, Result.Success(resultJson))
-                            logger.log("CommClient::Dev completed fallback $resultJson")
-                        }
+                        submittedRequests[id]?.callback?.invoke(Result.Success(resultJson))
+                        completeRequest(id, Result.Success(resultJson))
                     }
                 }
             } else {
