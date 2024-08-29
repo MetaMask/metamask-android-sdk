@@ -316,7 +316,19 @@ class Ethereum (
                 }
                 is Result.Success -> {
                     communicationClient?.trackEvent(Event.SDK_CONNECTION_AUTHORIZED)
-                    callback?.invoke(Result.Success(result.value as String))
+                    val value = result.value
+                    if(value is List<*>) {
+                        val accounts = value.filterIsInstance<String>()
+                        val account = accounts.firstOrNull()
+                        if (account != null) {
+                            callback?.invoke(Result.Success(account))
+                        } else {
+                            logger.error("Ethereum:: Expected List<String>, but got $value")
+                            callback?.invoke(Result.Error(RequestError(-1, "Unexpected result")))
+                        }
+                    } else {
+                        callback?.invoke(Result.Success(value as String))
+                    }
                 }
             }
         }
