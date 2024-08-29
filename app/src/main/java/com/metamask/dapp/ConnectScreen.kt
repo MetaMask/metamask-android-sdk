@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ConnectScreen(
     ethereumState: EthereumState,
-    connect: suspend () -> Result,
+    connect: suspend () -> Result<String>,
     connectSign: () -> Unit,
     connectWith: () -> Unit,
     disconnect: () -> Unit,
@@ -101,7 +101,7 @@ fun ConnectScreen(
 fun PreviewConnectClearButtons() {
     ConnectScreen(
         ethereumState = EthereumState("", "", ""),
-        connect = { -> Result.Success.Item("")},
+        connect = { -> Result.Success("")},
         connectSign = { },
         connectWith = { },
         disconnect = { },

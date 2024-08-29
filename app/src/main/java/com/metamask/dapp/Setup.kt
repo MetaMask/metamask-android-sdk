@@ -19,7 +19,7 @@ fun Setup(ethereumViewModel: EthereumFlowViewModel, screenViewModel: ScreenViewM
 
     var isConnecting by remember { mutableStateOf(false) }
     var isConnectSigning by remember { mutableStateOf(false) }
-    var connectResult by remember { mutableStateOf<Result>(Result.Success.Item("")) }
+    var connectResult by remember { mutableStateOf<Result<String>>(Result.Success("")) }
     var account by remember { mutableStateOf(ethereumState.selectedAddress) }
 
     LaunchedEffect(ethereumState.selectedAddress) {

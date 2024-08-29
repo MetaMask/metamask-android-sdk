@@ -4,5 +4,5 @@ data class
 
 SubmittedRequest(
     val request: RpcRequest,
-    val callback: (Result) -> Unit
+    val callback: (Result<Any?>) -> Unit
 )

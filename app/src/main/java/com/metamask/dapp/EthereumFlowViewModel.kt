@@ -12,25 +12,25 @@ class EthereumFlowViewModel @Inject constructor(
 ): ViewModel() {
     val ethereumFlow: Flow<EthereumState> get() = ethereum.ethereumState
 
-    suspend fun connect() : Result {
+    suspend fun connect() : Result<String> {
         return ethereum.connect()
     }
 
-    suspend fun connectWith(request: EthereumRequest) : Result {
+    suspend fun connectWith(request: EthereumRequest) : Result<String> {
         return ethereum.connectWith(request)
     }
 
-    suspend fun connectSign(message: String) : Result {
+    suspend fun connectSign(message: String) : Result<String> {
         return ethereum.connectSign(message)
     }
 
-    suspend fun connectWithSendTransaction(amount: String,
+    suspend fun connectWithSendTransaction(value: String,
                                            from: String,
-                                           to: String) : Result {
+                                           to: String) : Result<String> {
         val params: MutableMap<String, Any> = mutableMapOf(
             "from" to from,
             "to" to to,
-            "amount" to amount
+            "value" to value
         )
 
         val transactionRequest = EthereumRequest(
@@ -41,17 +41,17 @@ class EthereumFlowViewModel @Inject constructor(
         return connectWith(transactionRequest)
     }
 
-    suspend fun sendRequestBatch(requests: List<EthereumRequest>) : Result {
+    suspend fun sendRequestBatch(requests: List<EthereumRequest>) : Result<List<String>> {
         return ethereum.sendRequestBatch(requests)
     }
 
-    suspend fun sendRequest(request: EthereumRequest) : Result {
+    suspend fun sendRequest(request: EthereumRequest) : Result<Any?> {
         return ethereum.sendRequest(request)
     }
 
     suspend fun sendBatchSigningRequest(
         messages: List<String>,
-        address: String) : Result {
+        address: String) : Result<List<String>> {
         val requestBatch: MutableList<EthereumRequest> = mutableListOf()
 
         for (message in messages) {
@@ -69,28 +69,28 @@ class EthereumFlowViewModel @Inject constructor(
     suspend fun signMessage(
         message: String,
         address: String,
-    ) : Result {
+    ) : Result<String> {
         return ethereum.ethSignTypedDataV4(typedData = message, address)
     }
 
-    suspend fun getBalance(address: String, block: String = "latest") : Result {
+    suspend fun getBalance(address: String, block: String = "latest") : Result<String> {
         return ethereum.getEthBalance(address, block)
     }
 
-    suspend fun gasPrice() : Result {
+    suspend fun gasPrice() : Result<String> {
         return ethereum.getEthGasPrice()
     }
 
-    suspend fun web3ClientVersion() : Result {
+    suspend fun web3ClientVersion() : Result<String> {
         return ethereum.getWeb3ClientVersion()
     }
 
     suspend fun sendTransaction(
-        amount: String,
+        value: String,
         from: String,
         to: String,
-    ) : Result {
-        return ethereum.sendTransaction(from = from, to = to, value = amount)
+    ) : Result<String> {
+        return ethereum.sendTransaction(from = from, to = to, value = value)
     }
 
     suspend fun switchChain(chainId: String) : SwitchChainResult {

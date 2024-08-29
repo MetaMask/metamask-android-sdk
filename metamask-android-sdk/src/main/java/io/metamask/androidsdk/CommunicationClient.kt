@@ -234,34 +234,36 @@ class CommunicationClient(
         if (!isResultMethod) {
             val resultJson = data.optString("result")
 
+
             if (resultJson.isNotEmpty()) {
-                val resultMap: Map<String, Any?>? = try {
-                    Gson().fromJson(resultJson, object : TypeToken<Map<String, Any?>>() {}.type)
+                val accounts: List<String>? = try {
+                    Gson().fromJson(resultJson, object : TypeToken<List<String>>() {}.type)
                 } catch (e: JsonSyntaxException) {
                     null
                 }
-
-                if (resultMap != null) {
-                    submittedRequests[id]?.callback?.invoke(Result.Success.ItemMap(resultMap))
-                    completeRequest(id, Result.Success.ItemMap(resultMap))
+                val account = accounts?.firstOrNull()
+                if (account != null) {
+                    submittedRequests[id]?.callback?.invoke(Result.Success(account))
+                    completeRequest(id, Result.Success(account))
                 } else {
-                    val accounts: List<String>? = try {
-                        Gson().fromJson(resultJson, object : TypeToken<List<String>>() {}.type)
+                    val resultMap: Map<String, Any?>? = try {
+                        Gson().fromJson(resultJson, object : TypeToken<Map<String, Any?>>() {}.type)
                     } catch (e: JsonSyntaxException) {
                         null
                     }
-                    val account = accounts?.firstOrNull()
-                    if (account != null) {
-                        submittedRequests[id]?.callback?.invoke(Result.Success.Item(account))
-                        completeRequest(id, Result.Success.Item(account))
+
+                    if (resultMap != null) {
+                        submittedRequests[id]?.callback?.invoke(Result.Success(resultMap))
+                        completeRequest(id, Result.Success(resultMap))
                     } else {
-                        submittedRequests[id]?.callback?.invoke(Result.Success.Item(resultJson))
-                        completeRequest(id, Result.Success.Item(resultJson))
+                        submittedRequests[id]?.callback?.invoke(Result.Success(resultJson))
+                        completeRequest(id, Result.Success(resultJson))
                     }
                 }
             } else {
+                // Handle empty result case by parsing the entire data object as a Map
                 val result: Map<String, Serializable> = Gson().fromJson(data.toString(), object : TypeToken<Map<String, Serializable>>() {}.type)
-                completeRequest(id, Result.Success.ItemMap(result))
+                completeRequest(id, Result.Success(result))
             }
             return
         }
@@ -277,14 +279,14 @@ class CommunicationClient(
 
                 if (account != null) {
                     updateAccount(account)
-                    completeRequest(id, Result.Success.Item(account))
+                    completeRequest(id, Result.Success(account))
                 }
 
                 val chainId = resultJson.optString("chainId")
 
                 if (chainId.isNotEmpty()) {
                     updateChainId(chainId)
-                    completeRequest(id, Result.Success.Item(chainId))
+                    completeRequest(id, Result.Success(chainId))
                 }
             }
             EthereumMethod.ETH_REQUEST_ACCOUNTS.value -> {
@@ -296,14 +298,14 @@ class CommunicationClient(
                     updateAccount(selectedAccount)
                 }
 
-                completeRequest(id, Result.Success.Items(accounts))
+                completeRequest(id, Result.Success(accounts))
             }
             EthereumMethod.ETH_CHAIN_ID.value -> {
                 val chainId = data.optString("result")
 
                 if (chainId.isNotEmpty()) {
                     updateChainId(chainId)
-                    completeRequest(id, Result.Success.Item(chainId))
+                    completeRequest(id, Result.Success(chainId))
                 }
             }
             EthereumMethod.ETH_SIGN_TYPED_DATA_V3.value,
@@ -312,7 +314,7 @@ class CommunicationClient(
                 val result = data.optString("result")
 
                 if (result.isNotEmpty()) {
-                    completeRequest(id, Result.Success.Item(result))
+                    completeRequest(id, Result.Success(result))
                 } else {
                     logger.error("CommunicationClient:: Unexpected response: $data")
                 }
@@ -321,12 +323,21 @@ class CommunicationClient(
                 val result = data.optString("result")
                 val results: List<String?> = Gson().fromJson(result, object : TypeToken<List<String?>>() {}.type)
                 val sanitisedResults = results.filterNotNull()
-                completeRequest(id, Result.Success.Items(sanitisedResults))
+                completeRequest(id, Result.Success(sanitisedResults))
             }
             else -> {
                 val result = data.optString("result")
-                completeRequest(id, Result.Success.Item(result))
+                completeRequest(id, Result.Success(result))
             }
+        }
+    }
+
+    private fun isPlainString(input: String): Boolean {
+        return try {
+            Gson().fromJson(input, Any::class.java)
+            false
+        } catch (e: JsonSyntaxException) {
+            true
         }
     }
 
@@ -348,7 +359,7 @@ class CommunicationClient(
         return true
     }
 
-    fun completeRequest(id: String, result: Result) {
+    fun completeRequest(id: String, result: Result<Any>) {
         if (queuedRequests[id] != null) {
             queuedRequests[id]?.callback?.invoke(result)
             queuedRequests.remove(id)
@@ -428,7 +439,7 @@ class CommunicationClient(
         }
     }
 
-    fun sendRequest(request: RpcRequest, callback: (Result) -> Unit) {
+    fun sendRequest(request: RpcRequest, callback: (Result<Any?>) -> Unit) {
         if (request.method == EthereumMethod.GET_METAMASK_PROVIDER_STATE.value) {
             clearPendingRequests()
         }
@@ -458,7 +469,7 @@ class CommunicationClient(
         }
     }
 
-    fun processRequest(request: RpcRequest, callback: (Result) -> Unit) {
+    fun processRequest(request: RpcRequest, callback: (Result<Any?>) -> Unit) {
         logger.log("CommunicationClient:: sending request $request")
         if (queuedRequests[request.id] != null) {
             queuedRequests.remove(request.id)
