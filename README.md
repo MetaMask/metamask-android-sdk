@@ -31,7 +31,7 @@ add the following entry to the `dependencies` block:
 
 ```gradle title="build.gradle"
 dependencies {
-    implementation 'io.metamask.androidsdk:metamask-android-sdk:0.5.4'
+    implementation 'io.metamask.androidsdk:metamask-android-sdk'
 }
 ```
 
@@ -204,11 +204,9 @@ The following example requests the user sign a message by calling
 
 ```kotlin
 val message = "{\"domain\":{\"chainId\":\"${ethereum.chainId}\",\"name\":\"Ether Mail\",\"verifyingContract\":\"0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC\",\"version\":\"1\"},\"message\":{\"contents\":\"Hello, Busa!\",\"from\":{\"name\":\"Kinno\",\"wallets\":[\"0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826\",\"0xDeaDbeefdEAdbeefdEadbEEFdeadbeEFdEaDbeeF\"]},\"to\":[{\"name\":\"Busa\",\"wallets\":[\"0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB\",\"0xB0BdaBea57B0BDABeA57b0bdABEA57b0BDabEa57\",\"0xB0B0b0b0b0b0B000000000000000000000000000\"]}]},\"primaryType\":\"Mail\",\"types\":{\"EIP712Domain\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"version\",\"type\":\"string\"},{\"name\":\"chainId\",\"type\":\"uint256\"},{\"name\":\"verifyingContract\",\"type\":\"address\"}],\"Group\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"members\",\"type\":\"Person[]\"}],\"Mail\":[{\"name\":\"from\",\"type\":\"Person\"},{\"name\":\"to\",\"type\":\"Person[]\"},{\"name\":\"contents\",\"type\":\"string\"}],\"Person\":[{\"name\":\"name\",\"type\":\"string\"},{\"name\":\"wallets\",\"type\":\"address[]\"}]}}"
-
 val address = ethereum.selectedAddress
-val result = ethereum.ethSignTypedDataV4(message, address)
 
-when (result) {
+when (val result = ethereum.ethSignTypedDataV4(message, address)) {
     is Result.Error -> {
         Logger.log("Ethereum sign error: ${result.error.message}")
     }
@@ -224,19 +222,17 @@ The following example requests the user to personal sign a batch of messages eac
 [`personal_sign`](https://docs.metamask.io/wallet/reference/personal_sign/) using `metamask_batch` rpc.
 
 ```kotlin
-val messages: List<String> = listOf("First message", "Second message", "Last message")
-val requestBatch: MutableList<EthereumRequest> = mutableListOf()
+val ethereumRequest1 = EthereumRequest(
+    method = EthereumMethod.PERSONAL_SIGN.value,
+    params = listOf(address, "hello world")
+)
 
-for (message in messages) {
-    val params: List<String> = listOf(address, message)
-    val ethereumRequest = EthereumRequest(
-        method = EthereumMethod.PERSONAL_SIGN.value,
-        params = params
-    )
-    requestBatch.add(ethereumRequest)
-}
+val ethereumRequest2 = EthereumRequest(
+    method = EthereumMethod.PERSONAL_SIGN.value,
+    params = listOf(address, "second message")
+)
 
-when (val result = ethereum.sendRequestBatch(requestBatch)) {
+when (val result = ethereum.sendRequestBatch(listOf(ethereumRequest1, ethereumRequest2))) {
     is Result.Error -> {
         Logger.log("Ethereum batch sign error: ${result.error.message}")
     }
@@ -257,7 +253,6 @@ val from = ethereum.selectedAddress
 val to = "0x0000000000000000000000000000000000000000"
 val value = "0x8ac7230489e80000"
 
-// Make a transaction request
 when (val result = ethereum.sendTransaction(from, to, value)) {
     is Result.Success -> {
         Logger.log("Ethereum transaction result: ${result.value}")
@@ -272,23 +267,15 @@ when (val result = ethereum.sendTransaction(from, to, value)) {
 #### Example: Switch chain
 
 The following example switches to a new Ethereum chain by calling
-[`wallet_switchEthereumChain`](https://docs.metamask.io/wallet/reference/wallet_switchethereumchain/)
-and [`wallet_addEthereumChain`](https://docs.metamask.io/wallet/reference/wallet_addethereumchain/).
+[`wallet_switchEthereumChain`](https://docs.metamask.io/wallet/reference/wallet_switchethereumchain/).
 
 ```kotlin
-val result = ethereum.switchEthereumChain(chainId)
-
-when(result) {
-    is Result.Success -> {
-        SwitchChainResult.Success("Successfully switched to ${Network.chainNameFor(chainId)} ($chainId)")
+when(val result = ethereum.switchEthereumChain(chainId)) {
+    is Result.Success.Item -> {
+        // successfully switched to chainId
     }
     is Result.Error -> {
-        if (result.error.code == ErrorType.UNRECOGNIZED_CHAIN_ID.code || result.error.code == ErrorType.SERVER_ERROR.code) {
-            val message = "${Network.chainNameFor(chainId)} ($chainId) has not been added to your MetaMask wallet. Add chain?"
-            SwitchChainResult.Error(result.error.code, message)
-        } else {
-            SwitchChainResult.Error(result.error.code,"Add chain error: ${result.error.message}")
-        }
+        // handle error
     }
 }
 ```
@@ -305,18 +292,17 @@ val params: Map<String, Any> = mutableMapOf(
     "value" to "0x8ac7230489e80000"
 )
 
-val transactionRequest = EthereumRequest(
+val sendTransactionRequest = EthereumRequest(
     method = EthereumMethod.ETH_SEND_TRANSACTION.value,
     params = listOf(params)
 )
-ethereum.connectWith(transactionRequest) { result ->
-    when (result) {
-        is Result.Error -> {
-            Logger.log("Ethereum connectWith error: ${result.error.message}")
-        }
-        is Result.Success -> {
-            Logger.log("Ethereum connectWith result: ${result.value}")
-        }
+
+when (val result = ethereum.connectWith(sendTransactionRequest)) {
+    is Result.Error -> {
+        // handle error
+    }
+    is Result.Success -> {
+        // transaction hash ${result.value}
     }
 }
 ```
