@@ -7,7 +7,6 @@ import android.os.IBinder
 import io.metamask.androidsdk.KeyExchangeMessageType.*
 import io.metamask.nativesdk.IMessegeService
 import io.metamask.androidsdk.Event.*
-import io.metamask.androidsdk.MockInfuraProvider
 import org.json.JSONObject
 import org.junit.Assert.*
 import org.junit.Before
@@ -43,7 +42,7 @@ class EthereumTests {
     private lateinit var ethereum: Ethereum
     private lateinit var mockStorage: MockKeyStorage
     private lateinit var communicationClient: CommunicationClient
-    private lateinit var mockInfuraProvider: MockInfuraProvider
+    private lateinit var mockInfuraProvider: MockReadOnlyRPCProvider
 
     @Before
     fun setup() {
@@ -60,7 +59,7 @@ class EthereumTests {
         keyExchange = KeyExchange(mockCrypto, logger)
         mockStorage = MockKeyStorage()
         sessionManager = SessionManager(mockStorage)
-        mockInfuraProvider = MockInfuraProvider(SDKOptions(infuraAPIKey = "01234567").infuraAPIKey, logger)
+        mockInfuraProvider = MockReadOnlyRPCProvider("01234567", null, logger)
 
         mockCommunicationClientModule = MockCommunicationClientModule(
             context,
@@ -75,7 +74,7 @@ class EthereumTests {
         ethereum = Ethereum(
             context,
             DappMetadata("testApp","http://www.testapp.com", iconUrl = null, base64Icon = null),
-            sdkOptions = SDKOptions(infuraAPIKey = "01234567"),
+            sdkOptions = SDKOptions(infuraAPIKey = "01234567", readonlyRPCMap = null),
             logger,
             mockCommunicationClientModule,
             mockInfuraProvider

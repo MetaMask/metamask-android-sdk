@@ -2,7 +2,7 @@ package io.metamask.androidsdk
 
 import org.json.JSONObject
 
-open class InfuraProvider(private val infuraAPIKey: String?, readonlyRPCMap: Map<String, String>?, private val logger: Logger = DefaultLogger) {
+open class ReadOnlyRPCProvider(private val infuraAPIKey: String?, readonlyRPCMap: Map<String, String>?, private val logger: Logger = DefaultLogger) {
     val rpcUrls: Map<String, String> = when {
         readonlyRPCMap != null && infuraAPIKey != null -> {
             // Merge infuraReadonlyRPCMap with readonlyRPCMap, overriding infura's keys if they are present in readonlyRPCMap
