@@ -23,7 +23,7 @@ open class ReadOnlyRPCProvider(private val infuraAPIKey: String?, readonlyRPCMap
         return mapOf(
             // ###### Ethereum ######
             // Mainnet
-            "0x1" to "https://mainnet.infura.io/v3/${infuraAPIKey}",
+            //"0x1" to "https://mainnet.infura.io/v3/${infuraAPIKey}",
     
             // Sepolia 11155111
             "0x2a" to "https://sepolia.infura.io/v3/${infuraAPIKey}",
@@ -99,7 +99,13 @@ open class ReadOnlyRPCProvider(private val infuraAPIKey: String?, readonlyRPCMap
         params["id"] = request.id
         params["params"] = request.params ?: listOf<String>()
 
-        httpClient.newCall("${rpcUrls[chainId]}", parameters = params) { response, ioException ->
+        val endpoint = rpcUrls[chainId]
+        if (endpoint == null) {
+            callback?.invoke(Result.Error(RequestError(-1, "There is no defined network for chainId $chainId, please provide it via readonlyRPCMap")))
+            return
+        }
+
+        httpClient.newCall(endpoint, parameters = params) { response, ioException ->
             if (response != null) {
                 logger.log("InfuraProvider:: response $response")
                 try {
