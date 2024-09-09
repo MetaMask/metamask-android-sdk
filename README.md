@@ -71,8 +71,12 @@ code to your project file:
 class SomeModel(context: Context) {
     
     val dappMetadata = DappMetadata("Droid Dapp", "https://www.droiddapp.io")
-    val infuraAPIKey = "1234567890" // To use the Infura API to make read-only requests, specify your Infura API key using the `infuraAPIKey` option in `SDKOptions`
-    val readonlyRPCMap = mapOf("0x1" to "hptts://www.testrpc.com") // To use your own node (for example, with Hardhat) to make read-only requests, specify your node's chain ID and RPC URL using the `readonlyRPCMap` option
+    
+    // To use the Infura API to make read-only requests, specify your Infura API key using the `infuraAPIKey` option in `SDKOptions`
+    val infuraAPIKey = "1234567890"
+
+    // To use your own node (for example, with Hardhat) to make read-only requests, specify your node's chain ID and RPC URL 
+    val readonlyRPCMap = mapOf("0x1" to "hptts://www.testrpc.com") using the `readonlyRPCMap` option
 
     // A) Using callbacks
     val ethereum = Ethereum(context, dappMetadata, SDKOptions(infuraAPIKey, readonlyRPCMap))
