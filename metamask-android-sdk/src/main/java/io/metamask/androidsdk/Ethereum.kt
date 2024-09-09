@@ -5,10 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
@@ -22,9 +19,13 @@ class Ethereum (
     sdkOptions: SDKOptions? = null,
     private val logger: Logger = DefaultLogger,
     private val communicationClientModule: CommunicationClientModuleInterface = CommunicationClientModule(context),
-    private val infuraProvider: InfuraProvider? = sdkOptions?.let {
-        if (it.infuraAPIKey.isNotEmpty()) {
-            InfuraProvider(it.infuraAPIKey)
+    private val readOnlyRPCProvider: ReadOnlyRPCProvider? = sdkOptions?.let { options ->
+        val infuraAPIKey: String? = options.infuraAPIKey
+        val readonlyRPCMap: Map<String, String>? = options.readonlyRPCMap
+    
+        // Only create ReadOnlyRPCProvider if either infuraAPIKey or readonlyRPCMap is provided
+        if (infuraAPIKey != null || readonlyRPCMap != null) {
+            ReadOnlyRPCProvider(infuraAPIKey, readonlyRPCMap)
         } else {
             null
         }
@@ -366,9 +367,9 @@ class Ethereum (
             return
         }
 
-        if (EthereumMethod.isReadOnly(request.method) && infuraProvider?.supportsChain(chainId) == true) {
+        if (EthereumMethod.isReadOnly(request.method) && readOnlyRPCProvider?.supportsChain(chainId) == true) {
             logger.log("Ethereum:: Using Infura API for method ${request.method} on chain $chainId")
-            infuraProvider.makeRequest(request, chainId, dappMetadata, callback)
+            readOnlyRPCProvider.makeRequest(request, chainId, dappMetadata, callback)
         } else {
             communicationClient?.sendRequest(request) { response ->
                 callback?.invoke(response)
