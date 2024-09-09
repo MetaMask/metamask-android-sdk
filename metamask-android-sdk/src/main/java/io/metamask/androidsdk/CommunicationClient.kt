@@ -290,7 +290,7 @@ class CommunicationClient(
             EthereumMethod.ETH_REQUEST_ACCOUNTS.value -> {
                 val result = data.optString("result")
                 val accounts: List<String> = Gson().fromJson(result, object : TypeToken<List<String>>() {}.type)
-                val selectedAccount = accounts.getOrNull(0)
+                val selectedAccount = accounts.firstOrNull()
 
                 if (selectedAccount != null) {
                     updateAccount(selectedAccount)
