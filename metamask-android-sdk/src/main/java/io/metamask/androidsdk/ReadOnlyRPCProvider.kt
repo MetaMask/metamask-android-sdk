@@ -18,7 +18,7 @@ open class ReadOnlyRPCProvider(private val infuraAPIKey: String?, private val re
     fun supportsChain(chainId: String): Boolean {
         val apiKey = infuraAPIKey ?: ""
         val readonlyMap = readonlyRPCMap ?: mapOf()
-        return !rpcUrls[chainId].isNullOrEmpty() && (readonlyMap.containsKey(chainId) || !apiKey.isEmpty())
+        return !rpcUrls[chainId].isNullOrEmpty() && (readonlyMap.containsKey(chainId) || apiKey.isNotEmpty())
     }
 
     fun infuraReadonlyRPCMap(infuraAPIKey: String) : Map<String, String> {
