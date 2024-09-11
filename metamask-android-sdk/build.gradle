@@ -15,7 +15,7 @@ android {
         targetSdk 33
 
         ext.versionCode = 1
-        ext.versionName = "0.6.4"
+        ext.versionName = "0.6.5"
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         consumerProguardFiles 'consumer-rules.pro'
@@ -67,7 +67,7 @@ dependencies {
 
 ext {
     PUBLISH_GROUP_ID = 'io.metamask.androidsdk'
-    PUBLISH_VERSION = '0.6.4'
+    PUBLISH_VERSION = '0.6.5'
     PUBLISH_ARTIFACT_ID = 'metamask-android-sdk'
 }
 
