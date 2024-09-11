@@ -5,6 +5,19 @@ The MetaMask Android SDK Native Module is a Kotlin [Android Native Module](https
 
 This module handles encrypted communication between the dapp and MetaMask and then relays the messages over to the Android SDK communication layer implemented in React Native in the wallet. The wallet calls the Native Module via  NativeModules - an API that enables react-native code to call native Kotlin primitives.
 
+## Compiling
+To compile the nativesdk as a `.aar` file, you need to modify the project's `settings.gradle` file to have the nativesdk as a standalone module to include to the project:
+```
+include ':app'
+include ':nativesdk'
+include ':metamask-android-sdk'
+```
+Then run
+```
+./gradlew assembleDebug
+```
+The output file will be located in `nativesdk/build/outputs/aar`. This nativesdk library is then embedded in the MetaMask mobile in the path `android/libs/nativesdk.aar`. It becomes the server-side component of the AIDL communication mechanism described below in the Architecture section.
+
 ## Architecture
 The client SDK communicates with the server SDK (Android Native Module) via IPC implemented using AIDL. 
 

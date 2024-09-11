@@ -205,7 +205,7 @@ class MessageService : Service(), MetaMaskConnectionStatusCallback {
 
             Logger.log("MessageService:: $keysExchangedMessage")
             val payload = keyExchange.encrypt(keysExchangedMessage)
-            sendMessage(payload)
+            sendMessage(message=payload)
         }
     }
 

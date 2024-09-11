@@ -48,9 +48,7 @@ class KeyExchange {
 
     fun resetKeys() {
         privateKey = crypto.generatePrivateKey()
-        privateKey?.let {
-            publicKey = crypto.publicKey(it)
-        }
+        publicKey = crypto.publicKey(privateKey)
         setIsKeysExchanged(false)
         theirPublicKey = null
     }
