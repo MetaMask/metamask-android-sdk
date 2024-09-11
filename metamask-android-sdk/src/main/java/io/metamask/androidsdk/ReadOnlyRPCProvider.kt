@@ -2,7 +2,7 @@ package io.metamask.androidsdk
 
 import org.json.JSONObject
 
-open class ReadOnlyRPCProvider(private val infuraAPIKey: String?, readonlyRPCMap: Map<String, String>?, private val logger: Logger = DefaultLogger) {
+open class ReadOnlyRPCProvider(private val infuraAPIKey: String?, private val readonlyRPCMap: Map<String, String>?, private val logger: Logger = DefaultLogger) {
     val rpcUrls: Map<String, String> = when {
         readonlyRPCMap != null && infuraAPIKey != null -> {
             // Merge infuraReadonlyRPCMap with readonlyRPCMap, overriding infura's keys if they are present in readonlyRPCMap
@@ -16,14 +16,16 @@ open class ReadOnlyRPCProvider(private val infuraAPIKey: String?, readonlyRPCMap
     }
 
     fun supportsChain(chainId: String): Boolean {
-        return !rpcUrls[chainId].isNullOrEmpty()
+        val apiKey = infuraAPIKey ?: ""
+        val readonlyMap = readonlyRPCMap ?: mapOf()
+        return !rpcUrls[chainId].isNullOrEmpty() && (readonlyMap.containsKey(chainId) || apiKey.isNotEmpty())
     }
 
     fun infuraReadonlyRPCMap(infuraAPIKey: String) : Map<String, String> {
         return mapOf(
             // ###### Ethereum ######
             // Mainnet
-            //"0x1" to "https://mainnet.infura.io/v3/${infuraAPIKey}",
+            "0x1" to "https://mainnet.infura.io/v3/${infuraAPIKey}",
     
             // Sepolia 11155111
             "0x2a" to "https://sepolia.infura.io/v3/${infuraAPIKey}",

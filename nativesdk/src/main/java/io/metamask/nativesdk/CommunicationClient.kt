@@ -97,15 +97,6 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
         connectionStatusManager.onMetaMaskBroadcastUnregistered()
     }
 
-    override fun invalidate() {
-        super.invalidate()
-        Logger.log("CommunicationClient:: invalidate - app terminated")
-
-        if (!didPerformTearDown) {
-            destroyActiveConnections()
-        }
-    }
-
     override fun onCatalystInstanceDestroy() {
         super.onCatalystInstanceDestroy()
         Logger.log("CommunicationClient:: onCatalystInstanceDestroy - app terminating")
@@ -142,13 +133,14 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
 
         Logger.log("CommunicationClient:: Binding native module")
         val intent = Intent(reactAppContext, MessageService::class.java)
-        return reactAppContext.bindService(
+        val success = reactAppContext.bindService(
             intent,
             serviceConnection,
             Context.BIND_IMPORTANT)
 
         // Metamask ready, start sending messages
         connectionStatusManager.onMetaMaskReady()
+        return success
     }
 
     @ReactMethod
@@ -184,7 +176,7 @@ class CommunicationClient(reactContext: ReactApplicationContext) : ReactContextB
 
         if (type == "ready") {
             val dataJson = json.optJSONObject("data")
-            val id = dataJson.optString("id")
+            val id = dataJson?.optString("id")
             val sessionId = SessionManager.getInstance().sessionId
 
             if (id != sessionId) {

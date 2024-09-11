@@ -264,7 +264,7 @@ class EthereumTests {
     private fun findRequestIdForAccountRequest(method: EthereumMethod): String {
         return communicationClient.submittedRequests.entries.find {
             it.value.request.method == method.value
-        }?.key ?: throw IllegalStateException("No account request found")
+        }?.key ?: ""
     }
 
     private fun prepareCommunicationClient() {

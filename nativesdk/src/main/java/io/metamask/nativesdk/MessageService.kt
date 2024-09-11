@@ -162,11 +162,17 @@ class MessageService : Service(), MetaMaskConnectionStatusCallback {
         }
     }
 
-    private fun sendMessage(message: String) {
+    private fun sendMessage(key: String = MESSAGE, message: String) {
         val bundle = Bundle().apply {
-            putString(MESSAGE, message)
+            putString(key, message)
         }
-        dappMessageServiceCallback?.onMessageReceived(bundle)
+        try {
+            synchronized(this@MessageService) {
+                dappMessageServiceCallback?.onMessageReceived(bundle)
+            } 
+        } catch (e: Exception) {
+            Logger.log("MessageService:: Error sending message to dapp: ${e.message}")
+        }
     }
 
     private fun handleKeyExchange(message: String) {
@@ -199,7 +205,7 @@ class MessageService : Service(), MetaMaskConnectionStatusCallback {
 
             Logger.log("MessageService:: $keysExchangedMessage")
             val payload = keyExchange.encrypt(keysExchangedMessage)
-            sendMessage(payload)
+            sendMessage(message=payload)
         }
     }
 
@@ -248,18 +254,17 @@ class MessageService : Service(), MetaMaskConnectionStatusCallback {
     private fun resumeQueuedJobs() {
         Logger.log("MessageService:: Resuming jobs")
 
-        while (jobQueue.isNotEmpty()) {
-            val job = jobQueue.removeFirstOrNull()
-            job?.invoke()
+        synchronized(this) {
+            while (jobQueue.isNotEmpty()) {
+                val job = jobQueue.removeFirstOrNull()
+                job?.invoke()
+            }
         }
     }
 
     private fun sendKeyExchangeMessage(message: String) {
         Logger.log("MessageService:: Sending key exchange: $message")
-        val bundle = Bundle().apply {
-            putString(KEY_EXCHANGE, message)
-        }
-        dappMessageServiceCallback?.onMessageReceived(bundle)
+        sendMessage(key=KEY_EXCHANGE, message=message)
     }
 
     private fun handleMessage(message: String, id: String) {
@@ -329,12 +334,7 @@ class MessageService : Service(), MetaMaskConnectionStatusCallback {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == "local.service") {
                 val message = intent.getStringExtra(EventType.MESSAGE.value) as String
-
-                val bundle = Bundle().apply {
-                    putString(EventType.MESSAGE.value, message)
-                }
-
-                dappMessageServiceCallback?.onMessageReceived(bundle)
+                sendMessage(message=message)              
             }
         }
     }
