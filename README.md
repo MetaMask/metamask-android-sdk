@@ -31,9 +31,10 @@ add the following entry to the `dependencies` block:
 
 ```gradle title="build.gradle"
 dependencies {
-    implementation 'io.metamask.androidsdk:metamask-android-sdk'
+    implementation 'io.metamask.androidsdk:metamask-android-sdk:"Latest Version Of Metmask Android Sdk"'
 }
 ```
+Note :- Latest Metamask Android Sdk version can be fetched from metamask-android-sdk github https://github.com/MetaMask/metamask-android-sdk   OR   from https://central.sonatype.com/search?q=metamask android sdk
 
 Then, sync your project with the Gradle settings.
 Once the syncing completes, you can set up the rest of your project.
