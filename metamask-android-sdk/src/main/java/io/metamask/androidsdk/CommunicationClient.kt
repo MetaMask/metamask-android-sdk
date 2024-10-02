@@ -112,27 +112,15 @@ class CommunicationClient(
         )
         parameters.putAll(params)
 
-        when(event) {
-            Event.SDK_CONNECTION_REQUEST_STARTED -> {
-                parameters["commLayer"] = SDKInfo.PLATFORM
-                parameters["sdkVersion"] = SDKInfo.VERSION
-                parameters["url"] = dappMetadata?.url ?: ""
-                parameters["title"] = dappMetadata?.name ?: ""
-                parameters["platform"] = SDKInfo.PLATFORM
-                parameters["channelId"] = sessionId
-            }
-            Event.SDK_RPC_REQUEST -> {
-                parameters["commLayer"] = SDKInfo.PLATFORM
-                parameters["sdkVersion"] = SDKInfo.VERSION
-                parameters["url"] = dappMetadata?.url ?: ""
-                parameters["title"] = dappMetadata?.name ?: ""
-                parameters["platform"] = SDKInfo.PLATFORM
-                parameters["timestamp"] = TimeStampGenerator.timestamp()
-                parameters["channelId"] = sessionId
-                parameters["from"] = "mobile"
-            }
-            else -> Unit
-        }
+        parameters["commLayer"] = SDKInfo.PLATFORM
+        parameters["sdkVersion"] = SDKInfo.VERSION
+        parameters["url"] = dappMetadata?.url ?: ""
+        parameters["title"] = dappMetadata?.name ?: ""
+        parameters["platform"] = SDKInfo.PLATFORM
+        parameters["timestamp"] = TimeStampGenerator.timestamp()
+        parameters["channelId"] = sessionId
+        parameters["dappId"] = appContextRef.get()?.packageName ?: "N/A"
+        parameters["from"] = "mobile"
         tracker.trackEvent(event, parameters)
     }
 
