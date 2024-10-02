@@ -22,8 +22,8 @@ interface Tracker {
 
 class Endpoints {
     companion object {
-        private const val BASE_URL = "https://metamask-sdk-socket.metafi.codefi.network"
-        const val ANALYTICS = "$BASE_URL/debug"
+        private const val BASE_URL = "https://metamask-sdk.api.cx.metamask.io"
+        const val ANALYTICS = "$BASE_URL/evt"
     }
 }
 
