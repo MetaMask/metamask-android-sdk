@@ -1,3 +1,9 @@
+co author Nathaniel Hooker
+
+
+
+
+
 pluginManagement {
     repositories {
         gradlePluginPortal()
